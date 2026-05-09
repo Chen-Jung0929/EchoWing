@@ -1,0 +1,33 @@
+{
+  "status": "success",
+  "analysis_id": "req_20260509_perch_001",
+  "chunk_duration": "5.0s",
+  "predictions": {
+    "top_species": [
+      {
+        "species_id": "sparrow_01",
+        "name": "麻雀 (Tree Sparrow)",
+        "probability": 0.92
+      },
+      {
+        "species_id": "pigeon_02",
+        "name": "野鴿 (Rock Dove)",
+        "probability": 0.15
+      }
+    ],
+    "top_classes": [
+      {
+        "class_name": "雀形目 (Passeriformes)",
+        "probability": 0.95
+      }
+    ],
+    "attention_weights": [
+      0.01, 0.02, 0.05, 0.80, 0.10, 0.01, 0.01, 0.00, 0.00, 0.00
+    ]
+  },
+  "decision_support": {
+    "risk_analysis": "信心水準達 92%，預測結果極為明確。注意力權重高度集中於該 5 秒片段的中段，此聲學特徵與麻雀典型的急促鳴叫高度吻合。",
+    "action_recommendation": "建議直接採納此辨識結果並標記為高可信度紀錄。若將此數據應用於嚴謹的生態調查，建議輔以實地視覺影像進行二次確認。",
+    "disclaimer": "免責聲明：本網站之 AI 模組僅提供分析與行動建議，不作最後決定。本平台不保證辨識結果之絕對正確性，亦不構成預測承諾、最終決策或行為保證。"
+  }
+}
