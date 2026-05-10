@@ -18,7 +18,21 @@ const t = {
     selectedFile: '已選擇檔案',
     errorTitle: '辨識失敗',
     retryBtn: '重新上傳',
+
+    mockMode: 'Mock data mode：後端尚未連線，已載入本地測試資料',
+    topSpecies: '主要物種預測',
+    topClasses: '主要分類預測',
+    attentionWeights: '注意力權重',
+    decisionSupport: '決策輔助',
+    riskAnalysis: '風險分析',
+    actionRecommendation: '行動建議',
+    disclaimer: '免責聲明',
+    probability: '信心分數',
+    speciesId: '物種 ID',
+    className: '分類名稱',
+    backendError: '後端錯誤',
   },
+
   en: {
     title: 'BirdCLEF 2026',
     subtitle: 'Acoustic Recognition',
@@ -35,6 +49,19 @@ const t = {
     selectedFile: 'Selected file',
     errorTitle: 'Recognition Failed',
     retryBtn: 'Upload Again',
+
+    mockMode: 'Mock data mode: backend is not connected; local test data has been loaded.',
+    topSpecies: 'Top Species',
+    topClasses: 'Top Classes',
+    attentionWeights: 'Attention Weights',
+    decisionSupport: 'Decision Support',
+    riskAnalysis: 'Risk Analysis',
+    actionRecommendation: 'Action Recommendation',
+    disclaimer: 'Disclaimer',
+    probability: 'Confidence',
+    speciesId: 'Species ID',
+    className: 'Class Name',
+    backendError: 'Backend Error',
   },
 };
 
@@ -48,6 +75,8 @@ function wait(ms) {
     window.setTimeout(resolve, ms);
   });
 }
+
+
 
 /**
  * 正式版辨識函式
@@ -102,6 +131,20 @@ async function loadMockPredictionResult(file) {
       type: file.type,
     },
   };
+}
+
+function getLocalizedText(value, lang) {
+  if (value == null) return '';
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'object') {
+    return value[lang] ?? value.en ?? value.zh ?? '';
+  }
+
+  return String(value);
 }
 
 export default function App() {
@@ -367,7 +410,7 @@ const handleProcess = async () => {
         )}
 
         {/* 3. 結果頁視圖 */}
-        {viewState === 'result' && predictionResult && (
+   {viewState === 'result' && predictionResult && (
   <div className="w-full max-w-4xl bg-[var(--c-card)] p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--c-text)]/5">
     <div className="text-center mb-8">
       <h2 className="text-3xl font-black mb-2 text-[var(--c-text)]">
@@ -376,7 +419,7 @@ const handleProcess = async () => {
 
       {predictionResult.is_mock && (
         <p className="text-sm font-bold text-amber-600 bg-amber-500/10 inline-block px-4 py-2 rounded-full">
-          Mock data mode：後端尚未連線，已載入本地測試資料
+          {dict.mockMode}
         </p>
       )}
     </div>
@@ -385,7 +428,7 @@ const handleProcess = async () => {
       {/* Top species */}
       <section className="bg-[var(--c-bg)] rounded-2xl p-6">
         <h3 className="text-xl font-black text-[var(--c-text)] mb-4">
-          Top Species
+          {dict.topSpecies}
         </h3>
 
         <div className="space-y-4">
@@ -397,16 +440,21 @@ const handleProcess = async () => {
               <div className="flex justify-between items-center gap-4">
                 <div>
                   <p className="font-black text-[var(--c-text)]">
-                    {species.name}
+                    {getLocalizedText(species.name, lang)}
                   </p>
                   <p className="text-xs text-[var(--c-text)]/50">
-                    {species.species_id}
+                    {dict.speciesId}: {species.species_id}
                   </p>
                 </div>
 
-                <p className="text-2xl font-black text-[var(--c-primary)]">
-                  {Math.round(species.probability * 100)}%
-                </p>
+                <div className="text-right">
+                  <p className="text-xs text-[var(--c-text)]/50">
+                    {dict.probability}
+                  </p>
+                  <p className="text-2xl font-black text-[var(--c-primary)]">
+                    {Math.round(species.probability * 100)}%
+                  </p>
+                </div>
               </div>
 
               <div className="mt-3 h-2 rounded-full bg-[var(--c-text)]/10 overflow-hidden">
@@ -423,23 +471,33 @@ const handleProcess = async () => {
       {/* Top classes */}
       <section className="bg-[var(--c-bg)] rounded-2xl p-6">
         <h3 className="text-xl font-black text-[var(--c-text)] mb-4">
-          Top Classes
+          {dict.topClasses}
         </h3>
 
         <div className="space-y-4">
           {predictionResult.predictions?.top_classes?.map((item) => (
             <div
-              key={item.class_name}
+              key={JSON.stringify(item.class_name)}
               className="border border-[var(--c-text)]/10 rounded-xl p-4"
             >
               <div className="flex justify-between items-center gap-4">
-                <p className="font-black text-[var(--c-text)]">
-                  {item.class_name}
-                </p>
+                <div>
+                  <p className="text-xs text-[var(--c-text)]/50">
+                    {dict.className}
+                  </p>
+                  <p className="font-black text-[var(--c-text)]">
+                    {getLocalizedText(item.class_name, lang)}
+                  </p>
+                </div>
 
-                <p className="text-2xl font-black text-[var(--c-primary)]">
-                  {Math.round(item.probability * 100)}%
-                </p>
+                <div className="text-right">
+                  <p className="text-xs text-[var(--c-text)]/50">
+                    {dict.probability}
+                  </p>
+                  <p className="text-2xl font-black text-[var(--c-primary)]">
+                    {Math.round(item.probability * 100)}%
+                  </p>
+                </div>
               </div>
 
               <div className="mt-3 h-2 rounded-full bg-[var(--c-text)]/10 overflow-hidden">
@@ -457,7 +515,7 @@ const handleProcess = async () => {
     {/* Attention weights */}
     <section className="mt-6 bg-[var(--c-bg)] rounded-2xl p-6">
       <h3 className="text-xl font-black text-[var(--c-text)] mb-4">
-        Attention Weights
+        {dict.attentionWeights}
       </h3>
 
       <div className="flex items-end gap-2 h-32">
@@ -483,27 +541,52 @@ const handleProcess = async () => {
     {/* Decision support */}
     <section className="mt-6 bg-[var(--c-bg)] rounded-2xl p-6">
       <h3 className="text-xl font-black text-[var(--c-text)] mb-4">
-        Decision Support
+        {dict.decisionSupport}
       </h3>
 
       <div className="space-y-4 text-[var(--c-text)]/80 leading-relaxed">
         <div>
           <p className="font-black text-[var(--c-text)] mb-1">
-            Risk Analysis
+            {dict.riskAnalysis}
           </p>
-          <p>{predictionResult.decision_support?.risk_analysis}</p>
+          <p>
+            {getLocalizedText(
+              predictionResult.decision_support?.risk_analysis,
+              lang
+            )}
+          </p>
         </div>
 
         <div>
           <p className="font-black text-[var(--c-text)] mb-1">
-            Action Recommendation
+            {dict.actionRecommendation}
           </p>
-          <p>{predictionResult.decision_support?.action_recommendation}</p>
+          <p>
+            {getLocalizedText(
+              predictionResult.decision_support?.action_recommendation,
+              lang
+            )}
+          </p>
         </div>
 
-        <div className="text-sm text-[var(--c-text)]/50 border-t border-[var(--c-text)]/10 pt-4">
-          {predictionResult.decision_support?.disclaimer}
+        <div>
+          <p className="font-black text-[var(--c-text)] mb-1">
+            {dict.disclaimer}
+          </p>
+          <p className="text-sm text-[var(--c-text)]/50 border-t border-[var(--c-text)]/10 pt-4">
+            {getLocalizedText(
+              predictionResult.decision_support?.disclaimer,
+              lang
+            )}
+          </p>
         </div>
+
+        {predictionResult.backend_error && (
+          <div className="text-xs text-[var(--c-text)]/40 border-t border-[var(--c-text)]/10 pt-4">
+            <span className="font-bold">{dict.backendError}: </span>
+            {predictionResult.backend_error}
+          </div>
+        )}
       </div>
     </section>
 
@@ -542,78 +625,100 @@ const handleProcess = async () => {
   );
 }
 
+function getLocalizedText(value, lang) {
+  if (value == null) return '';
+
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'object') {
+    return value[lang] ?? value.en ?? value.zh ?? '';
+  }
+
+  return String(value);
+}
+
 function KiwiAnimation() {
-  const [frame, setFrame] = useState(1);
-  const [progress01, setProgress01] = useState(0);
-  const [imageError, setImageError] = useState(false);
+const [frame, setFrame] = useState(1);
+const [progress01, setProgress01] = useState(0);
+const [imageError, setImageError] = useState(false);
 
-  const STAGE_SIZE = 400;
-  const CENTER = STAGE_SIZE / 2;
+const STAGE_SIZE = 400;
+const CENTER = STAGE_SIZE / 2;
 
-  const FRUIT_SIZE = 300; 
-  const FRUIT_LEFT = (STAGE_SIZE - FRUIT_SIZE) / 2;
-  const FRUIT_TOP = (STAGE_SIZE - FRUIT_SIZE) / 2;
-  const FRUIT_VISUAL_RADIUS = 38;
-  const FOOT_ORBIT_RADIUS = 60;
+const FRUIT_SIZE = 300;
+const FRUIT_LEFT = (STAGE_SIZE - FRUIT_SIZE) / 2;
+const FRUIT_TOP = (STAGE_SIZE - FRUIT_SIZE) / 2;
+const FRUIT_VISUAL_RADIUS = 38;
+const FOOT_ORBIT_RADIUS = 60;
 
-  const FRAME_CONFIG = {
-    1: {
-      w: 108,
-      h: 82,
-      footPxX: 8, 
-      footPxY: 85, 
+const FRAME_CONFIG = {
+1: {
+    w: 108,
+    h: 82,
+    footPxX: 8,
+    footPxY: 85,
     },
-    2: {
-      w: 108,
-      h: 82,
-      footPxX: 8,
-      footPxY: 85,
+2: {
+    w: 108,
+    h: 82,
+    footPxX: 8,
+    footPxY: 85,
     },
-  };
-
-  const cfg = FRAME_CONFIG[frame];
-  const START_ANGLE_RAD = Math.PI + Math.PI/18;
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setFrame((prev) => (prev === 1 ? 2 : 1));
-    }, 200);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setProgress01((prev) => {
-        const next = prev + 0.005;
-        return next >= 1 ? 0 : next;
-      });
-    }, 30);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const motion = useMemo(() => {
-    const theta = START_ANGLE_RAD + progress01 * Math.PI * 2;
-
-    const footX = CENTER + FOOT_ORBIT_RADIUS * Math.cos(theta);
-    const footY = CENTER + FOOT_ORBIT_RADIUS * Math.sin(theta);
-
-    const birdAngleDeg = (theta * 180) / Math.PI + 90;
-
-    const revealDeg =
-      (((theta - START_ANGLE_RAD) * 180) / Math.PI + 360) % 360;
-
-    return {
-      theta,
-      footX,
-      footY,
-      birdAngleDeg,
-      revealDeg,
     };
-  }, [progress01]);
 
-  const revealMask = `conic-gradient(
+const cfg = FRAME_CONFIG[frame];
+const START_ANGLE_RAD = Math.PI + Math.PI/36;
+
+useEffect(() => {
+const interval = setInterval(() => {
+setFrame((prev) => (prev === 1 ? 2 : 1));
+}, 200);
+
+
+return () => clearInterval(interval);
+
+
+}, []);
+
+useEffect(() => {
+const interval = setInterval(() => {
+setProgress01((prev) => {
+const next = prev + 0.005;
+return next >= 1 ? 0 : next;
+});
+}, 30);
+
+
+return () => clearInterval(interval);
+
+
+}, []);
+
+const motion = useMemo(() => {
+const theta = START_ANGLE_RAD + progress01 * Math.PI * 2;
+
+const footX = CENTER + FOOT_ORBIT_RADIUS * Math.cos(theta);
+const footY = CENTER + FOOT_ORBIT_RADIUS * Math.sin(theta);
+
+const birdAngleDeg = (theta * 180) / Math.PI + 90;
+
+const revealDeg =
+  (((theta - START_ANGLE_RAD) * 180) / Math.PI + 360) % 360;
+
+return {
+  theta,
+  footX,
+  footY,
+  birdAngleDeg,
+  revealDeg,
+};
+
+
+}, [progress01]);
+
+const revealMask = `conic-gradient(
     from -90deg,
     black 0deg,
     black ${motion.revealDeg}deg,
@@ -621,74 +726,72 @@ function KiwiAnimation() {
     transparent 360deg
   )`;
 
-  if (imageError) {
-    return (
-      <div className="relative w-64 h-64 flex items-center justify-center text-4xl">
-        🥝
-      </div>
-    );
-  }
+if (imageError) {
+return ( <div className="relative w-64 h-64 flex items-center justify-center text-4xl">
+🥝 </div>
+);
+}
 
-  return (
-    <div
-      className="relative flex items-center justify-center"
+return (
+<div
+className="relative flex items-center justify-center"
+style={{
+width: `${STAGE_SIZE}px`,
+height: `${STAGE_SIZE}px`,
+}}
+>
+{/* kiwi fruit */}
+<div
+className="absolute"
+style={{
+left: `${FRUIT_LEFT}px`,
+top: `${FRUIT_TOP}px`,
+width: `${FRUIT_SIZE}px`,
+height: `${FRUIT_SIZE}px`,
+}}
+> <img
+       src="/kiwi-fruit.png"
+       alt=""
+       className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none opacity-15"
+     />
+
+    <img
+      src="/kiwi-fruit.png"
+      alt="Loading progress"
+      className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
       style={{
-        width: `${STAGE_SIZE}px`,
-        height: `${STAGE_SIZE}px`,
+        WebkitMaskImage: revealMask,
+        maskImage: revealMask,
+        WebkitMaskSize: "100% 100%",
+        maskSize: "100% 100%",
+        WebkitMaskRepeat: "no-repeat",
+        maskRepeat: "no-repeat",
       }}
-    >
-      {/* kiwi fruit */}
-      <div
-        className="absolute"
-        style={{
-          left: `${FRUIT_LEFT}px`,
-          top: `${FRUIT_TOP}px`,
-          width: `${FRUIT_SIZE}px`,
-          height: `${FRUIT_SIZE}px`,
-        }}
-      >
-        <img
-          src="/kiwi-fruit.png"
-          alt=""
-          className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none opacity-15"
-        />
+    />
+  </div>
 
-        <img
-          src="/kiwi-fruit.png"
-          alt="Loading progress"
-          className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
-          style={{
-            WebkitMaskImage: revealMask,
-            maskImage: revealMask,
-            WebkitMaskSize: "100% 100%",
-            maskSize: "100% 100%",
-            WebkitMaskRepeat: "no-repeat",
-            maskRepeat: "no-repeat",
-          }}
-        />
-      </div>
+  <div
+    className="absolute pointer-events-none"
+    style={{
+      width: `${cfg.w}px`,
+      height: `${cfg.h}px`,
+      left: `${motion.footX - cfg.footPxX}px`,
+      top: `${motion.footY - cfg.footPxY}px`,
+      transform: `rotate(${motion.birdAngleDeg}deg)`,
+      transformOrigin: `${cfg.footPxX}px ${cfg.footPxY}px`,
+    }}
+  >
+    <img
+      src={`/kiwi${frame}.png`}
+      alt="Walking Kiwi"
+      onError={() => setImageError(true)}
+      className="w-full h-full object-contain drop-shadow-md select-none"
+      style={{
+        transform: "scaleX(-1)",
+      }}
+    />
+  </div>
+</div>
 
-      <div
-        className="absolute pointer-events-none"
-        style={{
-          width: `${cfg.w}px`,
-          height: `${cfg.h}px`,
-          left: `${motion.footX - cfg.footPxX}px`,
-          top: `${motion.footY - cfg.footPxY}px`,
-          transform: `rotate(${motion.birdAngleDeg}deg)`,
-          transformOrigin: `${cfg.footPxX}px ${cfg.footPxY}px`,
-        }}
-      >
-        <img
-          src={`/kiwi${frame}.png`}
-          alt="Walking Kiwi"
-          onError={() => setImageError(true)}
-          className="w-full h-full object-contain drop-shadow-md select-none"
-          style={{
-            transform: "scaleX(-1)",
-          }}
-        />
-      </div>
-    </div>
-  );
+);
 }
