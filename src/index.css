@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --c-bg: #f1e0e2;
+  --c-bg: #E9D5CC;
   --c-card: #d8c8b7;
   --c-primary: #7e98a7;
   --c-secondary: #adc2cf;
@@ -14,7 +14,7 @@
   --c-card: #233340;
   --c-primary: #cf8872;
   --c-secondary: #7b6275;
-  --c-text: #f1e0e2;
+  --c-text: #E9D5CC;
   --c-muted: #1a1a1a;
 }
 
@@ -35,3 +35,149 @@ body {
 }
 
 .dark .canvas-texture { opacity: 0.1; mix-blend-mode: overlay; }
+
+@keyframes day-cloud-float {
+  0% {
+    transform: translateY(-30px);
+  }
+  
+  100% {
+    transform: translateY(-15px);
+  }
+}
+
+.animate-day-cloud-float {
+  animation: day-cloud-float 7s ease-in-out infinite alternate;
+}
+
+@keyframes day-bird-flight {
+  0% {
+    transform: translateX(-75vw) translateY(-16px);
+  }
+  10% {
+    transform: translateX(-60vw) translateY(-14px);
+  }
+  20% {
+    transform: translateX(-45vw) translateY(-12px);
+  }
+  30% {
+    transform: translateX(-30vw) translateY(-10px);
+  }
+  40% {
+    transform: translateX(-15vw) translateY(-8px);
+  }
+  50% {
+    transform: translateX(0vw) translateY(-6px);
+  }
+  60% {
+    transform: translateX(15vw) translateY(-4px);
+  }
+  70% {
+    transform: translateX(30vw) translateY(-2px);
+  }
+  80% {
+    transform: translateX(45vw) translateY(0px);
+  }
+  90% {
+    transform: translateX(60vw) translateY(2px);
+  }
+  100% {
+    transform: translateX(75vw) translateY(4px);
+  }
+}
+
+.animate-day-bird-flight {
+  animation: day-bird-flight 24s linear infinite;
+}
+
+@keyframes day-cloud-float {
+  0% {
+    transform: translateY(-30px);
+  }
+
+  100% {
+    transform: translateY(-15px);
+  }
+}
+
+.animate-day-cloud-float {
+  animation: day-cloud-float 7s ease-in-out infinite alternate;
+}
+
+@keyframes day-bird-flight {
+  0% {
+    transform: translateX(-75vw) translateY(-16px);
+  }
+  10% {
+    transform: translateX(-60vw) translateY(-14px);
+  }
+  20% {
+    transform: translateX(-45vw) translateY(-12px);
+  }
+  30% {
+    transform: translateX(-30vw) translateY(-10px);
+  }
+  40% {
+    transform: translateX(-15vw) translateY(-8px);
+  }
+  50% {
+    transform: translateX(0vw) translateY(-6px);
+  }
+  60% {
+    transform: translateX(15vw) translateY(-4px);
+  }
+  70% {
+    transform: translateX(30vw) translateY(-2px);
+  }
+  80% {
+    transform: translateX(45vw) translateY(0px);
+  }
+  90% {
+    transform: translateX(60vw) translateY(2px);
+  }
+  100% {
+    transform: translateX(75vw) translateY(4px);
+  }
+}
+
+.animate-day-bird-flight {
+  animation: day-bird-flight 24s linear infinite;
+}
+
+@keyframes starTrailDraw {
+  0% {
+    stroke-dashoffset: 260;
+    opacity: 0.08;
+  }
+
+  12% {
+    opacity: 0.75;
+  }
+
+  60% {
+    opacity: 0.55;
+  }
+
+  100% {
+    stroke-dashoffset: -260;
+    opacity: 0.08;
+  }
+}
+
+.night-star-field {
+  position: absolute;
+  inset: 0;
+  opacity: 0.45;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(220, 235, 255, 0.7) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 24% 32%, rgba(220, 235, 255, 0.55) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 42% 16%, rgba(220, 235, 255, 0.65) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 68% 24%, rgba(220, 235, 255, 0.5) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 82% 18%, rgba(220, 235, 255, 0.6) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 74% 42%, rgba(220, 235, 255, 0.45) 0 1px, transparent 1.5px);
+}
+
+.night-star-trails {
+  opacity: 0.82;
+  mix-blend-mode: screen;
+}
