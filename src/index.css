@@ -1,3 +1,37 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+:root {
+  --c-bg: #f1e0e2;
+  --c-card: #d8c8b7;
+  --c-primary: #7e98a7;
+  --c-secondary: #adc2cf;
+  --c-text: #394d65;
+  --c-muted: #f5f5f5;
+}
+
+.dark {
+  --c-bg: #141a1a;
+  --c-card: #233340;
+  --c-primary: #cf8872;
+  --c-secondary: #7b6275;
+  --c-text: #f1e0e2;
+  --c-muted: #1a1a1a;
+}
+
+body {
+  background-color: var(--c-bg);
+  color: var(--c-text);
+  transition: background-color 0.5s ease, color 0.5s ease;
+}
+
+.canvas-texture {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  opacity: 0.2;
+  mix-blend-mode: multiply;
+  background-image: url('data:image/svg+xml;utf8,%3Csvg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%25" height="100%25" filter="url(%23noise)"/%3E%3C/svg%3E');
+}
+
+.dark .canvas-texture { opacity: 0.1; mix-blend-mode: overlay; }

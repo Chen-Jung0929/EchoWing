@@ -20,13 +20,17 @@ export default function AudioUploader({ onChunksProcessed }) {
 
     try {
       const chunks = await processAudio(selectedFile);
-      console.log("切割完成，共產生", chunks.length, "個 Blob:", chunks);
       
-      // 新增 2：將切割好的 Blob 陣列存入 State
-      setPreviewChunks(chunks);
+      // 新增：整理要傳給後端與 PDF 報告的中繼資料
+      const fileInfo = {
+        name: selectedFile.name,
+        // 粗略計算總時長 ( Chunk 數量 * 5 秒 )
+        duration: (chunks.length * 5).toFixed(1) 
+      };
 
       if (onChunksProcessed) {
-        onChunksProcessed(chunks);
+        // 將 chunks 與 fileInfo 一起傳給上層的 App.jsx
+        onChunksProcessed(chunks, fileInfo);
       }
     } catch (err) {
       console.error(err);
