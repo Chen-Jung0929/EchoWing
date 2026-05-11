@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import  { useState, useEffect, useMemo, useRef } from 'react';
 
 // --- 語系字典 ---
 const t = {
@@ -829,78 +829,102 @@ function NightHeroScene() {
 }
 
 function StarTrailField() {
-  const arcs = [
-    { r: 260, y: 410, opacity: 0.85, width: 1.1, duration: 12 },
-    { r: 300, y: 440, opacity: 0.72, width: 1.0, duration: 14 },
-    { r: 340, y: 470, opacity: 0.62, width: 0.9, duration: 16 },
-    { r: 380, y: 500, opacity: 0.52, width: 0.85, duration: 18 },
-    { r: 420, y: 530, opacity: 0.42, width: 0.8, duration: 20 },
-    { r: 460, y: 560, opacity: 0.34, width: 0.75, duration: 22 },
-    { r: 500, y: 590, opacity: 0.28, width: 0.7, duration: 24 },
-  ];
+  const canvasRef = useRef(null);
+
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    // 1. 創建一個巨大的正方形畫布 (保證旋轉時能覆蓋各種螢幕尺寸)
+    const size = 3000;
+    
+    // 解決視網膜螢幕 (Retina Display) 的模糊/鋸齒問題
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    ctx.scale(dpr, dpr);
+
+    const center = size / 2;
+
+    // 2. 設定星軌顏色庫 (使用純 RGB，方便做透明度漸層)
+    const colors = [
+      '205, 224, 239', // 灰藍白
+      '238, 246, 255', // 亮白
+      '170, 205, 230', // 深灰藍
+      '220, 200, 190', // 微暖橘
+    ];
+
+    ctx.clearRect(0, 0, size, size);
+
+    // 3. 靜態繪製 400 條平滑星軌
+    const numTrails = 400;
+    for (let i = 0; i < numTrails; i++) {
+      const radius = 50 + Math.random() * 1400;
+      const startAngle = Math.random() * Math.PI * 2;
+      const trailLength = (Math.random() * 0.4) + 0.1; // 軌跡長度 (弧度)
+      const endAngle = startAngle + trailLength;
+
+      const baseColor = colors[Math.floor(Math.random() * colors.length)];
+      const thickness = Math.random() * 1.5 + 0.8; // 筆觸粗細
+
+      // 🌟 核心抗鋸齒技術：將一條尾巴切成 30 小段，手動繪製出平滑的「透明度漸層」
+      const segments = 20;
+      const step = trailLength / segments;
+      // 重疊係數：確保線段之間沒有 1px 的裂縫
+      const overlap = 0.1 / radius; 
+
+      for (let j = 0; j < segments; j++) {
+        const segStart = startAngle + (j * step);
+        const segEnd = segStart + step + overlap;
+
+        ctx.beginPath();
+        ctx.arc(center, center, radius, segStart, segEnd);
+        
+        // 透明度由 0 漸變到 0.8
+        const opacity = (j / segments) * 0.8;
+        ctx.strokeStyle = `rgba(${baseColor}, ${opacity})`;
+        ctx.lineWidth = thickness;
+        ctx.stroke();
+      }
+
+      // 畫出星星本體的亮點 (圓潤的端點)
+      ctx.beginPath();
+      ctx.arc(center, center, radius, endAngle, endAngle + 0.001);
+      ctx.strokeStyle = `rgba(${baseColor}, 0.8)`;
+      ctx.lineCap = 'round';
+      ctx.lineWidth = thickness + 0.4;
+      ctx.stroke();
+      ctx.lineCap = 'butt'; // 復原狀態
+    }
+  }, []);
 
   return (
-    <svg
-      className="absolute inset-0 w-full h-full night-star-trails"
-      viewBox="0 0 1440 900"
-      preserveAspectRatio="xMidYMid slice"
-      aria-hidden="true"
+    <div
+      className="absolute pointer-events-none"
+      style={{
+        // 定位北極星中心點：設在畫面正上方
+        top: '0%',     
+        left: '50%',    
+        width: '3000px',
+        height: '3000px',
+        // 讓 3000x3000 的方塊中心點，對齊畫面的 top/left 設定
+        transform: 'translate(-50%, -50%)',
+        zIndex: 0
+      }}
     >
-      <defs>
-        <filter id="starTrailGlow">
-          <feGaussianBlur stdDeviation="1.2" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-
-      {arcs.map((arc, index) => (
-        <path
-          key={index}
-          d={`M ${720 - arc.r} ${arc.y} A ${arc.r} ${arc.r} 0 0 1 ${
-            720 + arc.r
-          } ${arc.y}`}
-          fill="none"
-          stroke="rgba(205, 224, 239, 0.9)"
-          strokeWidth={arc.width}
-          strokeLinecap="round"
-          strokeDasharray="18 18"
-          filter="url(#starTrailGlow)"
-          opacity={arc.opacity}
-          style={{
-            animation: `starTrailDraw ${arc.duration}s linear ${index * 0.4}s infinite`,
-          }}
-        />
-      ))}
-
-      <path
-        d="M 280 245 A 520 520 0 0 1 780 125"
-        fill="none"
-        stroke="rgba(238, 246, 255, 0.95)"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        strokeDasharray="42 260"
-        filter="url(#starTrailGlow)"
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full"
         style={{
-          animation: 'starTrailDraw 9s linear infinite',
+          opacity: 0.85,
+          mixBlendMode: 'screen',
+          // 🌟 交給顯卡處理的純粹旋轉，絕對絲滑
+          animation: 'starfield-spin 350s linear infinite'
         }}
       />
-
-      <path
-        d="M 400 320 A 430 430 0 0 1 900 220"
-        fill="none"
-        stroke="rgba(170, 205, 230, 0.85)"
-        strokeWidth="1.2"
-        strokeLinecap="round"
-        strokeDasharray="32 220"
-        filter="url(#starTrailGlow)"
-        style={{
-          animation: 'starTrailDraw 11s linear 1.5s infinite',
-        }}
-      />
-    </svg>
+    </div>
   );
 }
 

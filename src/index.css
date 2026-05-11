@@ -144,40 +144,7 @@ body {
   animation: day-bird-flight 24s linear infinite;
 }
 
-@keyframes starTrailDraw {
-  0% {
-    stroke-dashoffset: 260;
-    opacity: 0.08;
-  }
-
-  12% {
-    opacity: 0.75;
-  }
-
-  60% {
-    opacity: 0.55;
-  }
-
-  100% {
-    stroke-dashoffset: -260;
-    opacity: 0.08;
-  }
-}
-
-.night-star-field {
-  position: absolute;
-  inset: 0;
-  opacity: 0.45;
-  background-image:
-    radial-gradient(circle at 12% 18%, rgba(220, 235, 255, 0.7) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 24% 32%, rgba(220, 235, 255, 0.55) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 42% 16%, rgba(220, 235, 255, 0.65) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 68% 24%, rgba(220, 235, 255, 0.5) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 82% 18%, rgba(220, 235, 255, 0.6) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 74% 42%, rgba(220, 235, 255, 0.45) 0 1px, transparent 1.5px);
-}
-
-.night-star-trails {
-  opacity: 0.82;
-  mix-blend-mode: screen;
+@keyframes starfield-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
