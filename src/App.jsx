@@ -426,7 +426,7 @@ export default function App() {
             className="min-h-screen flex flex-col items-center justify-center px-6 pt-24"
             style={{
               background: isDarkMode
-                ? '#3D342F'
+                ? 'linear-gradient(to bottom, #141a1a 0%, #3D342F 100%)'
                 : 'linear-gradient(to bottom, #E9D5CC 0%, #DCD7DC 100%)',
             }}
           >
@@ -443,7 +443,7 @@ export default function App() {
             className="min-h-screen px-6 pt-28 pb-16 flex justify-center"
             style={{
               background: isDarkMode
-                ? '#3D342F'
+                ? 'linear-gradient(to bottom, #141a1a 0%, #3D342F 100%)'
                 : 'linear-gradient(to bottom, #E9D5CC 0%, #DCD7DC 100%)',
             }}
           >
