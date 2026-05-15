@@ -1,0 +1,9 @@
+data/raw/*
+data/processed/*
+*.csv
+*.parquet
+*.pkl
+*.joblib
+.env
+__pycache__/
+venv/
