@@ -23,6 +23,7 @@ class Settings(BaseSettings):
     num_threads: int = min(4, os.cpu_count() or 1)
 
     species_output_index: int = 1
+    attention_output_index: int = 2
     onnx_input_name: str | None = None
 
     max_chunks: int = 24

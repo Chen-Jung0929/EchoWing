@@ -1,6 +1,6 @@
 // 這裡設定後端伺服器的網址。開發期間通常是 localhost 的某個 port。
 // 未來部署時，可以透過 Vite 的環境變數 ( .env ) 動態替換。
-const API_BASE_URL = 'http://localhost:8000/api'; 
+const API_BASE_URL = 'http://localhost:5713/api'; 
 
 /**
  * 將音訊區塊陣列傳送至後端進行推論

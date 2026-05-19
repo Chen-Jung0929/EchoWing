@@ -92,15 +92,20 @@ class BirdChunkPredictor:
                 f"Species dim {logits.shape[-1]} != num labels {len(self.labels)}"
             )
 
-    def predict_waveform_batch(self, chunks: torch.Tensor) -> np.ndarray:
+    def predict_waveform_batch(
+        self, chunks: torch.Tensor
+    ) -> tuple[np.ndarray, np.ndarray | None]:
         """
         chunks: shape (N, 1, CHUNK_SAMPLES), float32 CPU tensor is fine if moved here
-        Returns probs float32 array (N, num_classes).
+        Returns (species_probs, attention_weights) where species_probs is (N, num_classes)
+        and attention_weights is (N, T) or None when the ONNX model has no attention head.
         """
         chunks = chunks.to(device=self.device, dtype=torch.float32)
         n = chunks.shape[0]
         bs = max(1, self.settings.batch_size)
         probs_parts: list[np.ndarray] = []
+        attn_parts: list[np.ndarray] = []
+        has_attention = False
 
         with torch.no_grad():
             for start in range(0, n, bs):
@@ -108,13 +113,30 @@ class BirdChunkPredictor:
                 mel = self.mel(batch)
                 mel_np = mel.detach().cpu().numpy().astype(np.float32, copy=False)
                 outs = self.session.run(None, {self.input_name: mel_np})
-                idx = self.settings.species_output_index
-                logits = np.asarray(outs[idx])
+                sp_idx = self.settings.species_output_index
+                logits = np.asarray(outs[sp_idx])
                 probs = torch.sigmoid(torch.from_numpy(logits)).numpy().astype(
                     np.float32, copy=False
                 )
                 probs_parts.append(probs)
 
+                attn_idx = self.settings.attention_output_index
+                if attn_idx < len(outs):
+                    has_attention = True
+                    attn_parts.append(
+                        np.asarray(outs[attn_idx], dtype=np.float32).reshape(
+                            probs.shape[0], -1
+                        )
+                    )
+
         out = np.concatenate(probs_parts, axis=0)
         out = np.clip(np.nan_to_num(out, nan=0.0, posinf=1.0, neginf=0.0), 0.0, 1.0)
-        return out.astype(np.float32, copy=False)
+
+        attention: np.ndarray | None = None
+        if has_attention and attn_parts:
+            attention = np.concatenate(attn_parts, axis=0)
+            attention = np.clip(
+                np.nan_to_num(attention, nan=0.0, posinf=1.0, neginf=0.0), 0.0, 1.0
+            )
+
+        return out.astype(np.float32, copy=False), attention

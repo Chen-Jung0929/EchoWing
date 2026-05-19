@@ -1,15 +1,11 @@
 """
-API response contract for POST /api/predict (see notebooks/api.js).
+API response contract for POST /api/predict (aligned with frontend mock_data/perch_result.json).
 
-Response JSON:
-- labels: ordered class ids (strings), same order as probs[i] per chunk
-- chunks: one entry per uploaded chunk, sorted by chunk index
-  - index: chunk order (from filename chunk_<n>.wav when parseable)
-  - probs: length len(labels); raw sigmoid minus val_line.json baseline, clipped to [0,1]
-  - top_k: convenience list of {label, score} descending (size <= response_top_k)
-  - error: null or machine-readable string (e.g. decode_failed)
-- original_filename, sample_rate: echo from request
-- warnings: optional strings (e.g. filename sort fallback)
+Each chunk entry matches a single perch_result object (without status / chunk_duration):
+- analysis_id
+- predictions: top_species, top_classes, attention_weights
+- decision_support (optional)
+- error: set when decode fails
 """
 
 from __future__ import annotations
@@ -19,23 +15,45 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 
-class TopKItem(BaseModel):
-    label: str
-    score: float
+class ZhAndEn(BaseModel):
+    zh: str
+    en: str
+
+
+class TopSpecies(BaseModel):
+    species_id: str
+    name: ZhAndEn
+    probability: float
+
+
+class TopClass(BaseModel):
+    class_name: ZhAndEn
+    probability: float
+
+
+class Prediction(BaseModel):
+    top_species: list[TopSpecies]
+    top_classes: list[TopClass]
+    attention_weights: list[float] | None = None
+
+
+class DecisionSupport(BaseModel):
+    risk_analysis: ZhAndEn
+    action_recommendation: ZhAndEn
+    disclaimer: ZhAndEn
 
 
 class ChunkPrediction(BaseModel):
     index: int
-    probs: list[float] | None = None
-    top_k: list[TopKItem] | None = None
+    analysis_id: str
+    predictions: Prediction | None = None
+    decision_support: DecisionSupport | None = None
     error: str | None = None
 
 
 class PredictResponse(BaseModel):
-    labels: list[str]
     chunks: list[ChunkPrediction]
     original_filename: str = ""
-    sample_rate: int = 32_000
     warnings: list[str] = Field(default_factory=list)
 
 

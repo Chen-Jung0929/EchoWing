@@ -1,9 +1,5 @@
+# 根目錄 .gitignore 已涵蓋通用規則；此處僅保留 backend 專用補充
 data/raw/*
+!data/raw/.gitkeep
 data/processed/*
-*.csv
-*.parquet
-*.pkl
-*.joblib
-.env
-__pycache__/
-venv/
+!data/processed/.gitkeep

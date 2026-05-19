@@ -1,16 +1,21 @@
-# React + Vite
+# BirdCLEF 前端
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite + Tailwind CSS 介面。完整說明（安裝、API、環境變數）請見專案根目錄 [README.md](../README.md)。
 
-Currently, two official plugins are available:
+## 開發
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+需同時啟動後端（預設 `http://127.0.0.1:8000`），開發伺服器會將 `/api` 代理至後端。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 指令
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+| 指令 | 說明 |
+|------|------|
+| `npm run dev` | 開發伺服器 |
+| `npm run build` | 正式版建置 |
+| `npm run preview` | 預覽建置結果 |
+| `npm run lint` | ESLint |

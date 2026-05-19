@@ -1,4 +1,9 @@
 import  { useState, useEffect, useMemo, useRef } from 'react';
+import { useAudioProcessor } from './hooks/useAudioProcessor';
+import { analyzeAudioChunks } from './services/api';
+import ChunkResultsView from './utils/ChunkResultsView';
+import AttentionWeightsSection from './utils/AttentionWeightsSection';
+import { MdClose, MdLanguage, MdDarkMode, MdLightMode, MdCloudUpload } from 'react-icons/md';
 
 // --- 語系字典 ---
 const t = {
@@ -14,6 +19,9 @@ const t = {
     langToggle: 'English',
     noFileWarning: '請先上傳音訊或影片檔案',
     resultTitle: '預測結果',
+    taskLabel: '聲學辨識分析',
+    analyzedAt: '分析時間',
+    sourceFile: '原始檔案',
     backBtn: '返回首頁',
     selectedFile: '已選擇檔案',
     errorTitle: '辨識失敗',
@@ -23,14 +31,36 @@ const t = {
     topSpecies: '主要物種預測',
     topClasses: '主要分類預測',
     attentionWeights: '注意力權重',
+    attentionBinsLabel: '個時間窗',
+    collapseAttention: '收合注意力權重',
+    expandAttention: '展開注意力權重',
     decisionSupport: '決策輔助',
     riskAnalysis: '風險分析',
     actionRecommendation: '行動建議',
     disclaimer: '免責聲明',
     probability: '信心分數',
+    percent: '百分比',
     speciesId: '物種 ID',
     className: '分類名稱',
     backendError: '後端錯誤',
+    backendResult: '後端推論結果',
+    chunksCount: '音訊片段',
+    chunkLabel: '片段',
+    topPredictions: 'Top-K 預測',
+    warnings: '警告',
+    classLabels: '類別總數',
+    decodeFailed: '此片段解碼失敗',
+    rawResponse: '完整回應 (JSON)',
+    summaryLabel: '總覽',
+    summaryTabShort: '總',
+    tabHoverHint: '滑鼠移至分頁可預覽物種',
+    prevPage: '上一頁',
+    nextPage: '下一頁',
+    validChunks: '有效片段',
+    voteModeHint: '以下為各片段 Top 預測的投票彙整結果',
+    voteCount: '得票',
+    appearsInChunks: '出現片段',
+    noSpeciesHint: '尚無物種預測',
   },
 
   en: {
@@ -45,6 +75,9 @@ const t = {
     langToggle: '中文',
     noFileWarning: 'Please upload an audio or video file first.',
     resultTitle: 'Prediction Results',
+    taskLabel: 'Acoustic analysis',
+    analyzedAt: 'Analyzed at',
+    sourceFile: 'Source file',
     backBtn: 'Back to Home',
     selectedFile: 'Selected file',
     errorTitle: 'Recognition Failed',
@@ -54,20 +87,43 @@ const t = {
     topSpecies: 'Top Species',
     topClasses: 'Top Classes',
     attentionWeights: 'Attention Weights',
+    attentionBinsLabel: 'time windows',
+    collapseAttention: 'Collapse attention weights',
+    expandAttention: 'Expand attention weights',
     decisionSupport: 'Decision Support',
     riskAnalysis: 'Risk Analysis',
     actionRecommendation: 'Action Recommendation',
     disclaimer: 'Disclaimer',
     probability: 'Confidence',
+    percent: 'Percent',
     speciesId: 'Species ID',
     className: 'Class Name',
     backendError: 'Backend Error',
+    backendResult: 'Backend Inference Result',
+    chunksCount: 'Audio chunks',
+    chunkLabel: 'Chunk',
+    topPredictions: 'Top-K predictions',
+    warnings: 'Warnings',
+    classLabels: 'Total classes',
+    decodeFailed: 'Decode failed for this chunk',
+    rawResponse: 'Full response (JSON)',
+    summaryLabel: 'Summary',
+    summaryTabShort: 'All',
+    tabHoverHint: 'Hover a tab to preview species',
+    prevPage: 'Previous',
+    nextPage: 'Next',
+    validChunks: 'Valid segments',
+    voteModeHint: 'Vote aggregate across segment top predictions',
+    voteCount: 'Votes',
+    appearsInChunks: 'Segments',
+    noSpeciesHint: 'No species prediction',
   },
 };
 
-const USE_MOCK_FALLBACK = true;
+const USE_MOCK_FALLBACK = false;
 const MOCK_RESULT_URL = '/mock_data/perch_result.json';
 const MOCK_LOADING_DURATION_MS = 6000;
+const LOADING_DURATION_MS = 6000;
 
 
 function wait(ms) {
@@ -76,31 +132,12 @@ function wait(ms) {
   });
 }
 
-async function runBirdRecognition(file) {
-  const formData = new FormData();
-  formData.append('file', file);
-
-  const response = await fetch('/api/predict', {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    let errorMessage = `Request failed with status ${response.status}`;
-
-    try {
-      const errorData = await response.json();
-      if (errorData?.message) {
-        errorMessage = errorData.message;
-      }
-    } catch {
-      // 保留原始錯誤訊息
-    }
-
-    throw new Error(errorMessage);
-  }
-
-  return response.json();
+function isBackendPredictResponse(data) {
+  return (
+    Array.isArray(data?.chunks) &&
+    data.chunks.length > 0 &&
+    (data.chunks[0]?.predictions != null || data.chunks[0]?.error != null)
+  );
 }
 
 async function loadMockPredictionResult(file) {
@@ -147,6 +184,7 @@ export default function App() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [predictionResult, setPredictionResult] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const { processAudio, isProcessing } = useAudioProcessor();
 
   const dict = t[lang];
 
@@ -188,6 +226,15 @@ export default function App() {
   const isDarkMode =
     themeMode === 'dark' || (themeMode === 'system' && systemIsDark);
 
+  const handleThemeToggle = () => {
+    setThemeMode((prev) => {
+      if (prev === 'system') {
+        return systemIsDark ? 'light' : 'dark';
+      }
+      return prev === 'light' ? 'dark' : 'light';
+    });
+  };
+
   const showHeroScene = viewState === 'landing';
 
   const resetToLanding = () => {
@@ -206,6 +253,15 @@ export default function App() {
     setErrorMessage('');
   };
 
+  const fileRef = useRef(null);
+  // 清除選擇的檔案
+  const handleFileClear = () => {
+    fileRef.current.value = '';
+    setSelectedFile(null);
+    setPredictionResult(null);
+    setErrorMessage('');
+  };
+
   const handleProcess = async () => {
     if (!selectedFile) {
       setErrorMessage(dict.noFileWarning);
@@ -217,8 +273,16 @@ export default function App() {
     setPredictionResult(null);
 
     try {
-      const result = await runBirdRecognition(selectedFile);
-      setPredictionResult(result);
+      const chunks = await processAudio(selectedFile);
+      const result = await analyzeAudioChunks(chunks, {
+        name: selectedFile.name,
+      });
+
+      await wait(LOADING_DURATION_MS);
+      setPredictionResult({
+        ...result,
+        processed_at: new Date().toISOString(),
+      });
       setViewState('result');
     } catch (backendError) {
       console.error('Backend prediction failed:', backendError);
@@ -232,6 +296,7 @@ export default function App() {
 
           setPredictionResult({
             ...mockResult,
+            processed_at: new Date().toISOString(),
             backend_error:
               backendError instanceof Error
                 ? backendError.message
@@ -288,79 +353,57 @@ export default function App() {
             BirdCLEF
           </div>
 
-          <button
-            onClick={() => setIsMenuOpen((prev) => !prev)}
-            className="p-2 rounded-lg hover:bg-[var(--c-card)]/40 transition-colors focus:outline-none"
-            aria-label="Open menu"
-          >
-            <svg
-              className="w-6 h-6 text-[var(--c-text)]"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={handleThemeToggle}
+              className="p-2 rounded-lg hover:bg-[var(--c-card)]/40 transition-colors focus:outline-none"
+              aria-label={isDarkMode ? dict.themeLight : dict.themeDark}
             >
-              {isMenuOpen ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
+              {isDarkMode ? (
+                <MdDarkMode className="w-6 h-6 text-[var(--c-text)]" />
               ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
+                <MdLightMode className="w-6 h-6 text-[var(--c-text)]" />
               )}
-            </svg>
-          </button>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen((prev) => !prev)}
+              className="p-2 rounded-lg hover:bg-[var(--c-card)]/40 transition-colors focus:outline-none"
+              aria-label="Language"
+              aria-expanded={isMenuOpen}
+            >
+              <MdLanguage className="w-6 h-6 text-[var(--c-text)]" />
+            </button>
+          </div>
         </div>
 
         {isMenuOpen && (
-          <div className="absolute top-full right-0 w-full md:w-64 bg-[var(--c-card)]/90 backdrop-blur-md border-b md:border-l md:border-b md:rounded-bl-2xl border-[var(--c-text)]/10 shadow-2xl p-6 flex flex-col space-y-6">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest opacity-50 mb-3">
-                Language
-              </p>
-              <button
-                onClick={() => {
-                  setLang((prev) => (prev === 'zh' ? 'en' : 'zh'));
-                  setIsMenuOpen(false);
-                }}
-                className="w-full text-left font-bold text-[var(--c-primary)] hover:opacity-70 transition-opacity"
-              >
-                {dict.langToggle}
-              </button>
-            </div>
-
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest opacity-50 mb-3">
-                Theme
-              </p>
-              <div className="flex flex-col space-y-3">
-                {['light', 'dark', 'system'].map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => {
-                      setThemeMode(mode);
-                      setIsMenuOpen(false);
-                    }}
-                    className={`text-left text-sm font-bold transition-all ${
-                      themeMode === mode
-                        ? 'text-[var(--c-primary)] translate-x-2'
-                        : 'text-[var(--c-text)] opacity-70 hover:opacity-100'
-                    }`}
-                  >
-                    {mode === 'light'
-                      ? dict.themeLight
-                      : mode === 'dark'
-                        ? dict.themeDark
-                        : dict.themeSystem}
-                  </button>
-                ))}
-              </div>
+          <div className="absolute top-full right-0 w-full md:w-48 bg-[var(--c-card)]/90 backdrop-blur-md border-b md:border-l md:border-b md:rounded-bl-2xl border-[var(--c-text)]/10 shadow-2xl p-4">
+            <div className="flex gap-2" role="listbox" aria-label="Language">
+              {[
+                { code: 'zh', label: '中文' },
+                { code: 'en', label: 'English' },
+              ].map(({ code, label }) => (
+                <button
+                  key={code}
+                  type="button"
+                  role="option"
+                  aria-selected={lang === code}
+                  onClick={() => {
+                    setLang(code);
+                    setIsMenuOpen(false);
+                  }}
+                  className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-bold transition-all ${
+                    lang === code
+                      ? 'bg-[var(--c-primary)]/20 text-[var(--c-primary)] ring-2 ring-[var(--c-primary)]/40'
+                      : 'text-[var(--c-text)]/70 hover:bg-[var(--c-card)]/60 hover:text-[var(--c-text)]'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
         )}
@@ -381,20 +424,23 @@ export default function App() {
               </div>
 
               <div className="w-full bg-[var(--c-card)]/72 backdrop-blur-md p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.10)] border border-[var(--c-text)]/5 flex flex-col space-y-6">
-                <label className="w-full py-4 rounded-xl border-2 border-dashed border-[var(--c-primary)] text-[var(--c-primary)] font-bold text-lg hover:bg-[var(--c-primary)] hover:text-[var(--c-muted)] transition-all duration-300 cursor-pointer text-center">
-                  + {dict.uploadBtn}
+                <label className="w-full py-4 rounded-xl border-2 border-dashed border-[var(--c-primary)] text-[var(--c-primary)] font-bold text-lg hover:bg-[var(--c-primary)] hover:text-[var(--c-muted)] transition-all duration-300 cursor-pointer flex flex-col items-center justify-center gap-1">
+                  <MdCloudUpload className="w-10 h-10 text-[var(--c-primary)]" />
+                  <span className="text-center">{dict.uploadBtn}</span>
                   <input
                     type="file"
                     accept="audio/*,video/*"
                     onChange={handleFileChange}
                     className="hidden"
+                    ref={fileRef}
                   />
                 </label>
 
                 {selectedFile && (
-                  <div className="text-sm text-[var(--c-text)]/70 bg-[var(--c-bg)]/70 rounded-xl px-4 py-3 break-all">
+                  <div className="flex text-sm text-[var(--c-text)]/70 bg-[var(--c-bg)]/70 rounded-xl px-4 py-3 break-all">
                     <span className="font-bold">{dict.selectedFile}：</span>
                     {selectedFile.name}
+                    <MdClose className="ml-auto w-5 h-5 text-[var(--c-text)]" onClick={handleFileClear} />
                   </div>
                 )}
 
@@ -406,14 +452,14 @@ export default function App() {
 
                 <button
                   onClick={handleProcess}
-                  disabled={!selectedFile}
+                  disabled={!selectedFile || isProcessing}
                   className={`w-full py-4 rounded-xl font-black text-lg shadow-lg transition-all duration-300 ${
-                    selectedFile
+                    selectedFile && !isProcessing
                       ? 'bg-[var(--c-primary)] text-[var(--c-bg)] hover:shadow-xl hover:-translate-y-1 hover:brightness-110'
                       : 'bg-[var(--c-text)]/20 text-[var(--c-text)]/40 cursor-not-allowed'
                   }`}
                 >
-                  {dict.processBtn}
+                  {isProcessing ? dict.loadingText : dict.processBtn}
                 </button>
               </div>
             </div>
@@ -489,9 +535,177 @@ export default function App() {
   );
 }
 
+/* ---------------- Perch-style result body (single chunk) ---------------- */
+
+function PerchResultBody({ chunk, dict, lang, isSummary = false }) {
+  return (
+    <>
+      <div className="grid md:grid-cols-2 gap-6">
+        <section className="bg-[var(--c-bg)]/72 rounded-2xl p-6">
+          <h3 className="text-xl font-black text-[var(--c-text)] mb-4">
+            {dict.topSpecies}
+          </h3>
+          <div className="space-y-4">
+            {chunk.predictions?.top_species?.map((species) => (
+              <div
+                key={species.species_id}
+                className="border border-[var(--c-text)]/10 rounded-xl p-4"
+              >
+                <div className="flex justify-between items-center gap-4">
+                  <div>
+                    <p className="font-black text-[var(--c-text)]">
+                      {getLocalizedText(species.name, lang)}
+                    </p>
+                    <p className="text-xs text-[var(--c-text)]/50">
+                      {dict.speciesId}: {species.species_id}
+                    </p>
+                    {isSummary && species.vote_count != null && (
+                      <p className="text-xs text-[var(--c-primary)]/80 mt-1">
+                        {dict.voteCount}: {species.vote_count}
+                        {species.chunk_indices?.length > 0 && (
+                          <>
+                            {' '}
+                            · {dict.appearsInChunks}:{' '}
+                            {species.chunk_indices.map((i) => i + 1).join('、')}
+                          </>
+                        )}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-[var(--c-text)]/50">
+                      {isSummary ? dict.percent : dict.probability}
+                    </p>
+                    <p className="text-2xl font-black text-[var(--c-primary)]">
+                      {Math.round(species.probability * 100)}%
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 h-2 rounded-full bg-[var(--c-text)]/10 overflow-hidden">
+                  <div
+                    className="h-full bg-[var(--c-primary)] rounded-full"
+                    style={{ width: `${species.probability * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="bg-[var(--c-bg)]/72 rounded-2xl p-6">
+          <h3 className="text-xl font-black text-[var(--c-text)] mb-4">
+            {dict.topClasses}
+          </h3>
+          <div className="space-y-4">
+            {chunk.predictions?.top_classes?.map((item) => (
+              <div
+                key={JSON.stringify(item.class_name)}
+                className="border border-[var(--c-text)]/10 rounded-xl p-4"
+              >
+                <div className="flex justify-between items-center gap-4">
+                  <div>
+                    <p className="text-xs text-[var(--c-text)]/50">
+                      {dict.className}
+                    </p>
+                    <p className="font-black text-[var(--c-text)]">
+                      {getLocalizedText(item.class_name, lang)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-[var(--c-text)]/50">
+                      {dict.percent}
+                    </p>
+                    <p className="text-2xl font-black text-[var(--c-primary)]">
+                      {Math.round(item.probability * 100)}%
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-3 h-2 rounded-full bg-[var(--c-text)]/10 overflow-hidden">
+                  <div
+                    className="h-full bg-[var(--c-primary)] rounded-full"
+                    style={{ width: `${item.probability * 100}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+
+      <AttentionWeightsSection
+        weights={chunk.predictions?.attention_weights}
+        dict={dict}
+        isSummary={isSummary}
+      />
+
+      <section className="mt-6 bg-[var(--c-bg)]/72 rounded-2xl p-6">
+        <h3 className="text-xl font-black text-[var(--c-text)] mb-4">
+          {dict.decisionSupport}
+        </h3>
+        <div className="space-y-4 text-[var(--c-text)]/80 leading-relaxed">
+          <div>
+            <p className="font-black text-[var(--c-text)] mb-1">{dict.riskAnalysis}</p>
+            <p>{getLocalizedText(chunk.decision_support?.risk_analysis, lang)}</p>
+          </div>
+          <div>
+            <p className="font-black text-[var(--c-text)] mb-1">
+              {dict.actionRecommendation}
+            </p>
+            <p>
+              {getLocalizedText(
+                chunk.decision_support?.action_recommendation,
+                lang
+              )}
+            </p>
+          </div>
+          <div>
+            <p className="font-black text-[var(--c-text)] mb-1">{dict.disclaimer}</p>
+            <p className="text-sm text-[var(--c-text)]/50 border-t border-[var(--c-text)]/10 pt-4">
+              {getLocalizedText(chunk.decision_support?.disclaimer, lang)}
+            </p>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ---------------- Backend result (path B) ---------------- */
+
+function BackendResultPanel({ result, dict, lang, resetToLanding }) {
+  return (
+    <ChunkResultsView
+      result={result}
+      dict={dict}
+      lang={lang}
+      getLocalizedText={getLocalizedText}
+      resetToLanding={resetToLanding}
+      renderChunkBody={(chunk, { isSummary } = {}) => (
+        <PerchResultBody
+          chunk={chunk}
+          dict={dict}
+          lang={lang}
+          isSummary={isSummary}
+        />
+      )}
+    />
+  );
+}
+
 /* ---------------- Result Panel ---------------- */
 
 function ResultPanel({ predictionResult, dict, lang, resetToLanding }) {
+  if (isBackendPredictResponse(predictionResult)) {
+    return (
+      <BackendResultPanel
+        result={predictionResult}
+        dict={dict}
+        lang={lang}
+        resetToLanding={resetToLanding}
+      />
+    );
+  }
+
   return (
     <div className="w-full max-w-4xl bg-[var(--c-card)]/82 backdrop-blur-md p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--c-text)]/5">
       <div className="text-center mb-8">
@@ -572,7 +786,7 @@ function ResultPanel({ predictionResult, dict, lang, resetToLanding }) {
 
                   <div className="text-right">
                     <p className="text-xs text-[var(--c-text)]/50">
-                      {dict.probability}
+                      {dict.percent}
                     </p>
                     <p className="text-2xl font-black text-[var(--c-primary)]">
                       {Math.round(item.probability * 100)}%
@@ -592,30 +806,11 @@ function ResultPanel({ predictionResult, dict, lang, resetToLanding }) {
         </section>
       </div>
 
-      <section className="mt-6 bg-[var(--c-bg)]/72 rounded-2xl p-6">
-        <h3 className="text-xl font-black text-[var(--c-text)] mb-4">
-          {dict.attentionWeights}
-        </h3>
-
-        <div className="flex items-end gap-2 h-32">
-          {predictionResult.predictions?.attention_weights?.map((weight, index) => (
-            <div
-              key={`${index}-${weight}`}
-              className="flex-1 flex flex-col items-center justify-end gap-2"
-            >
-              <div
-                className="w-full rounded-t-lg bg-[var(--c-primary)] opacity-80"
-                style={{
-                  height: `${Math.max(weight * 100, 3)}%`,
-                }}
-              />
-              <span className="text-xs text-[var(--c-text)]/50">
-                {index + 1}
-              </span>
-            </div>
-          ))}
-        </div>
-      </section>
+      <AttentionWeightsSection
+        weights={predictionResult.predictions?.attention_weights}
+        dict={dict}
+        isSummary={false}
+      />
 
       <section className="mt-6 bg-[var(--c-bg)]/72 rounded-2xl p-6">
         <h3 className="text-xl font-black text-[var(--c-text)] mb-4">

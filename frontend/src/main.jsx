@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css' 
 
+document.title = 'BirdCLEF 2026';
+document.querySelector('link[rel="icon"]').href = '/kiwi1.png';
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />

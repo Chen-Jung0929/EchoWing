@@ -109,10 +109,12 @@ def main() -> None:
             if c.get("error"):
                 print(f"[FAIL] chunk index {c.get('index')}: {c['error']}")
                 raise SystemExit(1)
-            pr = c.get("probs") or []
+            preds = c.get("predictions") or {}
+            top = (preds.get("top_species") or [None])[0]
             print(
-                f"[OK] chunk index {c.get('index')}: len(probs)={len(pr)}, "
-                f"top_k[0]={(c.get('top_k') or [None])[0]}"
+                f"[OK] chunk index {c.get('index')}: "
+                f"analysis_id={c.get('analysis_id')}, "
+                f"top_species[0]={top}"
             )
     finally:
         if ctx is not None:
