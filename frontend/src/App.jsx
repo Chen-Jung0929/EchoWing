@@ -5,7 +5,16 @@ import ChunkResultsView from './utils/ChunkResultsView';
 import AttentionWeightsSection from './utils/AttentionWeightsSection';
 import TopClassesSegmentSection from './utils/TopClassesSegmentSection';
 import ExpandableSpeciesList from './utils/ExpandableSpeciesList';
-import { MdClose, MdLanguage, MdDarkMode, MdLightMode, MdCloudUpload } from 'react-icons/md';
+import { ResultTitleBar } from './utils/ResultTitleActions';
+import {
+  MdClose,
+  MdLanguage,
+  MdDarkMode,
+  MdLightMode,
+  MdCloudUpload,
+  MdLogin,
+  MdLogout,
+} from 'react-icons/md';
 
 // --- 語系字典 ---
 const t = {
@@ -65,6 +74,10 @@ const t = {
     noSpeciesHint: '尚無物種預測',
     expandSpeciesList: '展開其餘 {count} 筆物種',
     collapseSpeciesList: '收合為前 5 名',
+    saveResult: '儲存預測結果',
+    printResult: '列印預測結果',
+    login: '登入',
+    logout: '登出',
   },
 
   en: {
@@ -123,13 +136,17 @@ const t = {
     noSpeciesHint: 'No species prediction',
     expandSpeciesList: 'Show {count} more species',
     collapseSpeciesList: 'Show top 5 only',
+    saveResult: 'Save prediction result',
+    printResult: 'Print prediction result',
+    login: 'Log in',
+    logout: 'Log out',
   },
 };
 
 const USE_MOCK_FALLBACK = false;
 const MOCK_RESULT_URL = '/mock_data/perch_result.json';
 const MOCK_LOADING_DURATION_MS = 6000;
-const LOADING_DURATION_MS = 6000;
+const LOADING_DURATION_MS = 3000;
 
 
 function wait(ms) {
@@ -190,6 +207,7 @@ export default function App() {
   const [themeMode, setThemeMode] = useState('system');
   const [viewState, setViewState] = useState('landing');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [systemIsDark, setSystemIsDark] = useState(false);
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -284,12 +302,15 @@ export default function App() {
     setPredictionResult(null);
 
     try {
-      const chunks = await processAudio(selectedFile);
-      const result = await analyzeAudioChunks(chunks, {
-        name: selectedFile.name,
-      });
-
-      await wait(LOADING_DURATION_MS);
+      const [, result] = await Promise.all([
+        wait(LOADING_DURATION_MS),
+        (async () => {
+          const chunks = await processAudio(selectedFile);
+          return analyzeAudioChunks(chunks, {
+            name: selectedFile.name,
+          });
+        })(),
+      ]);
       setPredictionResult({
         ...result,
         processed_at: new Date().toISOString(),
@@ -386,6 +407,20 @@ export default function App() {
               aria-expanded={isMenuOpen}
             >
               <MdLanguage className="w-6 h-6 text-[var(--c-text)]" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsLoggedIn((prev) => !prev)}
+              className="p-2 rounded-lg hover:bg-[var(--c-card)]/40 transition-colors focus:outline-none"
+              aria-label={isLoggedIn ? dict.logout : dict.login}
+              aria-pressed={isLoggedIn}
+            >
+              {isLoggedIn ? (
+                <MdLogout className="w-6 h-6 text-[var(--c-text)]" />
+              ) : (
+                <MdLogin className="w-6 h-6 text-[var(--c-text)]" />
+              )}
             </button>
           </div>
         </div>
@@ -497,19 +532,21 @@ export default function App() {
         {/* 3. 結果頁 */}
         {viewState === 'result' && predictionResult && (
           <div
-            className="min-h-screen px-6 pt-28 pb-16 flex justify-center"
+            className="min-h-screen px-4 sm:px-6 pt-28 pb-16"
             style={{
               background: isDarkMode
                 ? 'linear-gradient(to bottom, #141a1a 0%, #3D342F 100%)'
                 : 'linear-gradient(to bottom, #E9D5CC 0%, #DCD7DC 100%)',
             }}
           >
-            <ResultPanel
-              predictionResult={predictionResult}
-              dict={dict}
-              lang={lang}
-              resetToLanding={resetToLanding}
-            />
+            <div className="mx-auto flex w-full max-w-4xl justify-center">
+              <ResultPanel
+                predictionResult={predictionResult}
+                dict={dict}
+                lang={lang}
+                resetToLanding={resetToLanding}
+              />
+            </div>
           </div>
         )}
 
@@ -656,13 +693,11 @@ function ResultPanel({ predictionResult, dict, lang, resetToLanding }) {
 
   return (
     <div className="w-full max-w-4xl bg-[var(--c-card)]/82 backdrop-blur-md p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--c-text)]/5">
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-black mb-2 text-[var(--c-text)]">
-          {dict.resultTitle}
-        </h2>
+      <div className="mb-8">
+        <ResultTitleBar dict={dict} />
 
         {predictionResult.is_mock && (
-          <p className="text-sm font-bold text-amber-600 bg-amber-500/10 inline-block px-4 py-2 rounded-full">
+          <p className="mt-3 text-center text-sm font-bold text-amber-600 bg-amber-500/10 inline-block px-4 py-2 rounded-full">
             {dict.mockMode}
           </p>
         )}

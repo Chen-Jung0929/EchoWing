@@ -4,6 +4,7 @@ import {
   aggregateChunksByVote,
   chunkTimeRangeLabel,
 } from './aggregateByVote';
+import { ResultTitleBar } from './ResultTitleActions';
 
 function formatAnalyzedAt(isoString, lang) {
   if (!isoString) return '—';
@@ -183,12 +184,11 @@ export default function ChunkResultsView({
     <div className="w-full max-w-4xl bg-[var(--c-card)]/82 backdrop-blur-md p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--c-text)]/5">
       {/* Part A — overflow-visible 避免裁切 tooltip */}
       <div className="sticky top-24 z-10 -mx-2 px-2 py-4 mb-2 overflow-visible bg-[var(--c-card)]/95 backdrop-blur-md border-b border-[var(--c-text)]/10">
-        <header className="text-center mb-4 mt-2">
-          <h2 className="text-2xl md:text-3xl font-black text-[var(--c-text)] tracking-tight">
-            {dict.resultTitle}
-          </h2>
+        <header className="mb-4 mt-2">
+          <ResultTitleBar dict={dict} />
 
-          <details className="mt-2 inline-block text-left max-w-full">
+
+          <details className="mt-2 flex flex-col items-center max-w-full">
             <summary className="cursor-pointer text-xs text-[var(--c-text)]/45 hover:text-[var(--c-primary)] transition-colors list-none [&::-webkit-details-marker]:hidden">
               <span className="underline decoration-dotted underline-offset-2">
                 {dict.sourceFile}
@@ -198,6 +198,7 @@ export default function ChunkResultsView({
               {filename}
             </p>
           </details>
+
 
           <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
             <ResultBadge>
