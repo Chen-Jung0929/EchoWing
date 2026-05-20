@@ -135,6 +135,10 @@ npm run build
 
 產出於 `frontend/dist/`。需自行設定靜態檔伺服器，並將 API 請求導向後端（`VITE_API_BASE`）。
 
+## Development Notes
+
+可在 `frontend/` 目錄執行 `npm install` 安裝依賴，並用 `npm run build` 檢查前端是否可成功建置。
+
 ## 授權與免責
 
 本專案 AI 模組僅供分析與決策輔助參考，不保證辨識結果之絕對正確性。實際保育或研究用途請以專業鑑定為準。
