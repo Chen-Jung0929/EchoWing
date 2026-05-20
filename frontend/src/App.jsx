@@ -3,6 +3,8 @@ import { useAudioProcessor } from './hooks/useAudioProcessor';
 import { analyzeAudioChunks } from './services/api';
 import ChunkResultsView from './utils/ChunkResultsView';
 import AttentionWeightsSection from './utils/AttentionWeightsSection';
+import TopClassesSegmentSection from './utils/TopClassesSegmentSection';
+import ExpandableSpeciesList from './utils/ExpandableSpeciesList';
 import { MdClose, MdLanguage, MdDarkMode, MdLightMode, MdCloudUpload } from 'react-icons/md';
 
 // --- 語系字典 ---
@@ -61,6 +63,8 @@ const t = {
     voteCount: '得票',
     appearsInChunks: '出現片段',
     noSpeciesHint: '尚無物種預測',
+    expandSpeciesList: '展開其餘 {count} 筆物種',
+    collapseSpeciesList: '收合為前 5 名',
   },
 
   en: {
@@ -117,6 +121,8 @@ const t = {
     voteCount: 'Votes',
     appearsInChunks: 'Segments',
     noSpeciesHint: 'No species prediction',
+    expandSpeciesList: 'Show {count} more species',
+    collapseSpeciesList: 'Show top 5 only',
   },
 };
 
@@ -537,98 +543,29 @@ export default function App() {
 
 /* ---------------- Perch-style result body (single chunk) ---------------- */
 
-function PerchResultBody({ chunk, dict, lang, isSummary = false }) {
+function PerchResultBody({ chunk, dict, lang, isSummary = false, backendError }) {
   return (
     <>
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="flex flex-col gap-6">
+        <TopClassesSegmentSection
+          items={chunk.predictions?.top_classes}
+          getLocalizedText={getLocalizedText}
+          lang={lang}
+          dict={dict}
+        />
+
         <section className="bg-[var(--c-bg)]/72 rounded-2xl p-6">
           <h3 className="text-xl font-black text-[var(--c-text)] mb-4">
             {dict.topSpecies}
           </h3>
-          <div className="space-y-4">
-            {chunk.predictions?.top_species?.map((species) => (
-              <div
-                key={species.species_id}
-                className="border border-[var(--c-text)]/10 rounded-xl p-4"
-              >
-                <div className="flex justify-between items-center gap-4">
-                  <div>
-                    <p className="font-black text-[var(--c-text)]">
-                      {getLocalizedText(species.name, lang)}
-                    </p>
-                    <p className="text-xs text-[var(--c-text)]/50">
-                      {dict.speciesId}: {species.species_id}
-                    </p>
-                    {isSummary && species.vote_count != null && (
-                      <p className="text-xs text-[var(--c-primary)]/80 mt-1">
-                        {dict.voteCount}: {species.vote_count}
-                        {species.chunk_indices?.length > 0 && (
-                          <>
-                            {' '}
-                            · {dict.appearsInChunks}:{' '}
-                            {species.chunk_indices.map((i) => i + 1).join('、')}
-                          </>
-                        )}
-                      </p>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-[var(--c-text)]/50">
-                      {isSummary ? dict.percent : dict.probability}
-                    </p>
-                    <p className="text-2xl font-black text-[var(--c-primary)]">
-                      {Math.round(species.probability * 100)}%
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-3 h-2 rounded-full bg-[var(--c-text)]/10 overflow-hidden">
-                  <div
-                    className="h-full bg-[var(--c-primary)] rounded-full"
-                    style={{ width: `${species.probability * 100}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="bg-[var(--c-bg)]/72 rounded-2xl p-6">
-          <h3 className="text-xl font-black text-[var(--c-text)] mb-4">
-            {dict.topClasses}
-          </h3>
-          <div className="space-y-4">
-            {chunk.predictions?.top_classes?.map((item) => (
-              <div
-                key={JSON.stringify(item.class_name)}
-                className="border border-[var(--c-text)]/10 rounded-xl p-4"
-              >
-                <div className="flex justify-between items-center gap-4">
-                  <div>
-                    <p className="text-xs text-[var(--c-text)]/50">
-                      {dict.className}
-                    </p>
-                    <p className="font-black text-[var(--c-text)]">
-                      {getLocalizedText(item.class_name, lang)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-[var(--c-text)]/50">
-                      {dict.percent}
-                    </p>
-                    <p className="text-2xl font-black text-[var(--c-primary)]">
-                      {Math.round(item.probability * 100)}%
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-3 h-2 rounded-full bg-[var(--c-text)]/10 overflow-hidden">
-                  <div
-                    className="h-full bg-[var(--c-primary)] rounded-full"
-                    style={{ width: `${item.probability * 100}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+          <ExpandableSpeciesList
+            species={chunk.predictions?.top_species}
+            dict={dict}
+            lang={lang}
+            isSummary={isSummary}
+            getLocalizedText={getLocalizedText}
+            previewCount={5}
+          />
         </section>
       </div>
 
@@ -664,6 +601,12 @@ function PerchResultBody({ chunk, dict, lang, isSummary = false }) {
               {getLocalizedText(chunk.decision_support?.disclaimer, lang)}
             </p>
           </div>
+          {backendError ? (
+            <div className="text-xs text-[var(--c-text)]/40 border-t border-[var(--c-text)]/10 pt-4">
+              <span className="font-bold">{dict.backendError}: </span>
+              {backendError}
+            </div>
+          ) : null}
         </div>
       </section>
     </>
@@ -720,148 +663,16 @@ function ResultPanel({ predictionResult, dict, lang, resetToLanding }) {
         )}
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <section className="bg-[var(--c-bg)]/72 rounded-2xl p-6">
-          <h3 className="text-xl font-black text-[var(--c-text)] mb-4">
-            {dict.topSpecies}
-          </h3>
-
-          <div className="space-y-4">
-            {predictionResult.predictions?.top_species?.map((species) => (
-              <div
-                key={species.species_id}
-                className="border border-[var(--c-text)]/10 rounded-xl p-4"
-              >
-                <div className="flex justify-between items-center gap-4">
-                  <div>
-                    <p className="font-black text-[var(--c-text)]">
-                      {getLocalizedText(species.name, lang)}
-                    </p>
-                    <p className="text-xs text-[var(--c-text)]/50">
-                      {dict.speciesId}: {species.species_id}
-                    </p>
-                  </div>
-
-                  <div className="text-right">
-                    <p className="text-xs text-[var(--c-text)]/50">
-                      {dict.probability}
-                    </p>
-                    <p className="text-2xl font-black text-[var(--c-primary)]">
-                      {Math.round(species.probability * 100)}%
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-3 h-2 rounded-full bg-[var(--c-text)]/10 overflow-hidden">
-                  <div
-                    className="h-full bg-[var(--c-primary)] rounded-full"
-                    style={{ width: `${species.probability * 100}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="bg-[var(--c-bg)]/72 rounded-2xl p-6">
-          <h3 className="text-xl font-black text-[var(--c-text)] mb-4">
-            {dict.topClasses}
-          </h3>
-
-          <div className="space-y-4">
-            {predictionResult.predictions?.top_classes?.map((item) => (
-              <div
-                key={JSON.stringify(item.class_name)}
-                className="border border-[var(--c-text)]/10 rounded-xl p-4"
-              >
-                <div className="flex justify-between items-center gap-4">
-                  <div>
-                    <p className="text-xs text-[var(--c-text)]/50">
-                      {dict.className}
-                    </p>
-                    <p className="font-black text-[var(--c-text)]">
-                      {getLocalizedText(item.class_name, lang)}
-                    </p>
-                  </div>
-
-                  <div className="text-right">
-                    <p className="text-xs text-[var(--c-text)]/50">
-                      {dict.percent}
-                    </p>
-                    <p className="text-2xl font-black text-[var(--c-primary)]">
-                      {Math.round(item.probability * 100)}%
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-3 h-2 rounded-full bg-[var(--c-text)]/10 overflow-hidden">
-                  <div
-                    className="h-full bg-[var(--c-primary)] rounded-full"
-                    style={{ width: `${item.probability * 100}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-
-      <AttentionWeightsSection
-        weights={predictionResult.predictions?.attention_weights}
+      <PerchResultBody
+        chunk={{
+          predictions: predictionResult.predictions,
+          decision_support: predictionResult.decision_support,
+        }}
         dict={dict}
+        lang={lang}
         isSummary={false}
+        backendError={predictionResult.backend_error}
       />
-
-      <section className="mt-6 bg-[var(--c-bg)]/72 rounded-2xl p-6">
-        <h3 className="text-xl font-black text-[var(--c-text)] mb-4">
-          {dict.decisionSupport}
-        </h3>
-
-        <div className="space-y-4 text-[var(--c-text)]/80 leading-relaxed">
-          <div>
-            <p className="font-black text-[var(--c-text)] mb-1">
-              {dict.riskAnalysis}
-            </p>
-            <p>
-              {getLocalizedText(
-                predictionResult.decision_support?.risk_analysis,
-                lang
-              )}
-            </p>
-          </div>
-
-          <div>
-            <p className="font-black text-[var(--c-text)] mb-1">
-              {dict.actionRecommendation}
-            </p>
-            <p>
-              {getLocalizedText(
-                predictionResult.decision_support?.action_recommendation,
-                lang
-              )}
-            </p>
-          </div>
-
-          <div>
-            <p className="font-black text-[var(--c-text)] mb-1">
-              {dict.disclaimer}
-            </p>
-            <p className="text-sm text-[var(--c-text)]/50 border-t border-[var(--c-text)]/10 pt-4">
-              {getLocalizedText(
-                predictionResult.decision_support?.disclaimer,
-                lang
-              )}
-            </p>
-          </div>
-
-          {predictionResult.backend_error && (
-            <div className="text-xs text-[var(--c-text)]/40 border-t border-[var(--c-text)]/10 pt-4">
-              <span className="font-bold">{dict.backendError}: </span>
-              {predictionResult.backend_error}
-            </div>
-          )}
-        </div>
-      </section>
 
       <div className="text-center mt-8">
         <button
