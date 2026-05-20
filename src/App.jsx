@@ -3,7 +3,7 @@ import  { useState, useEffect, useMemo, useRef } from 'react';
 // --- 語系字典 ---
 const t = {
   zh: {
-    title: 'BirdCLEF 2026',
+    title: 'EchoWing',
     subtitle: '聲學辨識系統',
     uploadBtn: '上傳音訊或影片',
     processBtn: '開始處理並辨識',
@@ -34,7 +34,7 @@ const t = {
   },
 
   en: {
-    title: 'BirdCLEF 2026',
+    title: 'EchoWing',
     subtitle: 'Acoustic Recognition',
     uploadBtn: 'Upload Audio/Video',
     processBtn: 'Process & Identify',
@@ -285,7 +285,7 @@ export default function App() {
             className="text-xl font-black tracking-wider text-[var(--c-text)] cursor-pointer"
             onClick={resetToLanding}
           >
-            BirdCLEF
+            EchoWing
           </div>
 
           <button
