@@ -8,7 +8,7 @@ import { MdClose, MdLanguage, MdDarkMode, MdLightMode, MdCloudUpload } from 'rea
 // --- 語系字典 ---
 const t = {
   zh: {
-    title: 'BirdCLEF 2026',
+    title: 'EchoWing',
     subtitle: '鳥聲辨識',
     uploadBtn: '上傳音訊或影片',
     processBtn: '開始處理並辨識',
@@ -64,7 +64,7 @@ const t = {
   },
 
   en: {
-    title: 'BirdCLEF 2026',
+    title: 'EchoWing',
     subtitle: 'Bird Sound Recognition',
     uploadBtn: 'Upload Audio/Video',
     processBtn: 'Process & Identify',
@@ -355,7 +355,7 @@ export default function App() {
             className="text-xl font-black tracking-wider text-[var(--c-text)] cursor-pointer"
             onClick={resetToLanding}
           >
-            BirdCLEF
+            EchoWing
           </div>
 
           <div className="flex items-center gap-1">
