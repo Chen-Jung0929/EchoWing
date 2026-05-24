@@ -17,16 +17,18 @@ from starlette.concurrency import run_in_threadpool
 from app.adjustion import load_taxonomy_map
 from app.audio_mel import configure_torch_threads, load_waveform_fixed_chunk
 from app.config import Settings, get_settings
-from app.inference import BirdChunkPredictor
+from app.inference import BirdChunkPredictor, create_predictor
 from app.schemas import (
     ChunkPrediction,
     DecisionSupport,
     Prediction,
     PredictResponse,
+    SpectrogramPayload,
     TopClass,
     TopSpecies,
     ZhAndEn,
 )
+from app.spectrogram import compute_spectrogram_payload
 
 logger = logging.getLogger(__name__)
 
@@ -82,23 +84,28 @@ def _build_top_species(
     labels: list[str],
     taxonomy: dict[str, dict[str, str]],
     k: int,
-) -> list[TopSpecies]:
+    *,
+    threshold: float,
+) -> tuple[list[TopSpecies], list[TopSpecies], bool]:
     k_eff = max(1, min(k, len(labels), len(probs)))
     idxs = np.argsort(-probs)[:k_eff]
-    out: list[TopSpecies] = []
+    candidates: list[TopSpecies] = []
     for i in idxs:
         species_id = labels[i]
         meta = taxonomy.get(species_id, {})
         common = meta.get("com_name") or species_id
         scientific = meta.get("sci_name") or common
-        out.append(
+        candidates.append(
             TopSpecies(
                 species_id=species_id,
                 name=ZhAndEn(zh=common, en=common or scientific),
                 probability=float(probs[i]),
             )
         )
-    return out
+
+    qualified = [s for s in candidates if s.probability >= threshold]
+    reference = [s for s in candidates if s.probability < threshold]
+    return qualified, reference, bool(qualified)
 
 
 def _build_top_classes(
@@ -106,12 +113,15 @@ def _build_top_classes(
     labels: list[str],
     taxonomy: dict[str, dict[str, str]],
     k: int,
+    *,
+    threshold: float,
 ) -> list[TopClass]:
     k_eff = max(1, min(k, len(labels), len(probs)))
     idxs = np.argsort(-probs)[:k_eff]
     class_counts: dict[str, int] = {}
-    out: list[TopClass] = []
     for i in idxs:
+        if float(probs[i]) < threshold:
+            continue
         species_id = labels[i]
         meta = taxonomy.get(species_id)
         if not meta:
@@ -119,26 +129,44 @@ def _build_top_classes(
         class_counts[meta["class"]] = class_counts.get(meta["class"], 0) + 1
 
     ranked = sorted(class_counts.items(), key=lambda item: -item[1])[:k_eff]
-    for cls, count in ranked:
-        out.append(
-            TopClass(
-                class_name=ZhAndEn(zh=cls, en=cls),
-                probability=count / k_eff,
-            )
+    return [
+        TopClass(
+            class_name=ZhAndEn(zh=cls, en=cls),
+            probability=count / max(len(ranked), 1),
         )
-    return out
+        for cls, count in ranked
+    ]
 
 
-def _build_decision_support(top_species: list[TopSpecies]) -> DecisionSupport:
-    if not top_species:
+def _build_decision_support(
+    top_species: list[TopSpecies],
+    *,
+    threshold: float,
+    meets_threshold: bool,
+) -> DecisionSupport:
+    threshold_pct = int(round(threshold * 100))
+
+    if not meets_threshold or not top_species:
         return DecisionSupport(
             risk_analysis=ZhAndEn(
-                zh="無法取得有效預測結果。",
-                en="No valid prediction could be produced.",
+                zh=(
+                    f"最高信心分數未達 {threshold_pct}% 門檻，"
+                    "本片段無可靠物種辨識結果。"
+                ),
+                en=(
+                    f"Top confidence did not reach the {threshold_pct}% threshold; "
+                    "no reliable species identification for this segment."
+                ),
             ),
             action_recommendation=ZhAndEn(
-                zh="請重新上傳音訊或檢查檔案格式。",
-                en="Please re-upload the audio or verify the file format.",
+                zh=(
+                    "建議在較安靜環境重新錄製、延長含鳥鳴的片段，"
+                    "或改用其他時段音訊後再試。"
+                ),
+                en=(
+                    "Try re-recording in a quieter setting, use a longer segment "
+                    "with bird calls, or upload audio from another time window."
+                ),
             ),
             disclaimer=DISCLAIMER,
         )
@@ -151,11 +179,11 @@ def _build_decision_support(top_species: list[TopSpecies]) -> DecisionSupport:
     return DecisionSupport(
         risk_analysis=ZhAndEn(
             zh=(
-                f"信心水準達 {pct}%，預測結果為 {name_zh}。"
+                f"信心水準達 {pct}%（門檻 {threshold_pct}%），預測結果為 {name_zh}。"
                 f"此 5 秒片段的聲學特徵與模型訓練物種分布一致。"
             ),
             en=(
-                f"The confidence level reached {pct}% for {name_en}. "
+                f"Confidence reached {pct}% (threshold {threshold_pct}%) for {name_en}. "
                 "The acoustic features in this 5-second segment align with the model's "
                 "trained species distribution."
             ),
@@ -183,19 +211,32 @@ def _chunk_from_probs(
     taxonomy: dict[str, dict[str, str]],
     top_k: int,
     attention_row: np.ndarray | None,
+    confidence_threshold: float,
+    spectrogram: SpectrogramPayload | None = None,
 ) -> ChunkPrediction:
-    top_species = _build_top_species(probs, labels, taxonomy, top_k)
-    top_classes = _build_top_classes(probs, labels, taxonomy, top_k)
+    top_species, reference_species, meets_threshold = _build_top_species(
+        probs, labels, taxonomy, top_k, threshold=confidence_threshold
+    )
+    top_classes = _build_top_classes(
+        probs, labels, taxonomy, top_k, threshold=confidence_threshold
+    )
     predictions = Prediction(
         top_species=top_species,
         top_classes=top_classes,
         attention_weights=_format_attention_weights(attention_row),
+        meets_confidence_threshold=meets_threshold,
+        reference_species=reference_species,
     )
     return ChunkPrediction(
         index=chunk_index,
         analysis_id=_make_analysis_id(chunk_index),
         predictions=predictions,
-        decision_support=_build_decision_support(top_species),
+        decision_support=_build_decision_support(
+            top_species,
+            threshold=confidence_threshold,
+            meets_threshold=meets_threshold,
+        ),
+        spectrogram=spectrogram,
         error=None,
     )
 
@@ -205,13 +246,20 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     configure_torch_threads(settings.num_threads)
     app.state.settings = settings
-    app.state.predictor = BirdChunkPredictor(settings)
+    app.state.predictor = create_predictor(settings)
     app.state.taxonomy = load_taxonomy_map(settings.taxonomy_csv_path)
     app.state.prediction_sem = asyncio.Semaphore(settings.max_concurrent_predictions)
+    if settings.inference_backend == "perch":
+        model_desc = (
+            f"perch={settings.perch_savedmodel_path}, head={settings.pseudo_head_path}"
+        )
+    else:
+        model_desc = str(settings.onnx_model_path)
     logger.info(
-        "Loaded predictor: %s classes, model=%s",
+        "Loaded %s predictor: %s classes, %s",
+        settings.inference_backend,
         len(app.state.predictor.labels),
-        settings.onnx_model_path,
+        model_desc,
     )
     yield
 
@@ -241,12 +289,18 @@ app.add_middleware(
 class HealthResponse(BaseModel):
     ok: bool
     num_classes: int
+    confidence_threshold: float
 
 
 @app.get("/api/health", response_model=HealthResponse)
 async def health(request: Request) -> HealthResponse:
+    settings: Settings = request.app.state.settings
     pred = request.app.state.predictor
-    return HealthResponse(ok=True, num_classes=len(pred.labels))
+    return HealthResponse(
+        ok=True,
+        num_classes=len(pred.labels),
+        confidence_threshold=settings.confidence_threshold,
+    )
 
 
 def _process_multipart_chunks(
@@ -272,6 +326,7 @@ def _process_multipart_chunks(
 
     indices_ok: list[int] = []
     tensors_ok: list[torch.Tensor] = []
+    wave_by_idx: dict[int, torch.Tensor] = {}
     errors: dict[int, str] = {}
 
     for idx, raw, _fn in by_index:
@@ -279,7 +334,9 @@ def _process_multipart_chunks(
             w = load_waveform_fixed_chunk(
                 raw, settings, predictor.device, format_hint="wav"
             )
-            tensors_ok.append(w.squeeze(0))
+            wave = w.squeeze(0)
+            wave_by_idx[idx] = wave
+            tensors_ok.append(wave)
             indices_ok.append(idx)
         except Exception as exc:  # noqa: BLE001 — return per-chunk error to client
             logger.warning("chunk %s decode failed: %s", idx, exc)
@@ -292,7 +349,10 @@ def _process_multipart_chunks(
         probs_all, attention_all = predictor.predict_waveform_batch(stacked)
         for i, idx in enumerate(indices_ok):
             p = probs_all[i]
-            prob_by_idx[idx] = np.clip(p - predictor.baseline, 0.0, 1.0)
+            if getattr(predictor, "uses_baseline", False):
+                prob_by_idx[idx] = np.clip(p - predictor.baseline, 0.0, 1.0)
+            else:
+                prob_by_idx[idx] = np.clip(p, 0.0, 1.0)
             if attention_all is not None:
                 attn_by_idx[idx] = attention_all[i]
 
@@ -318,6 +378,10 @@ def _process_multipart_chunks(
                 taxonomy=taxonomy,
                 top_k=top_k_n,
                 attention_row=attn_by_idx.get(idx),
+                confidence_threshold=settings.confidence_threshold,
+                spectrogram=compute_spectrogram_payload(
+                    wave_by_idx[idx], settings, predictor.device
+                ),
             )
         )
 
@@ -334,6 +398,7 @@ def _process_multipart_chunks(
         chunks=chunks_out,
         original_filename=original_filename,
         warnings=warnings,
+        confidence_threshold=settings.confidence_threshold,
     )
 
 

@@ -1,8 +1,19 @@
-# 根目錄 .gitignore 已涵蓋通用規則；此處僅保留 backend 專用補充
+# 本地資料目錄（保留空目錄結構）
 data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
-app/__pycache__/*
-!app/__pycache__/.gitkeep
-venv/*
+
+# 虛擬環境（根目錄 .gitignore 亦涵蓋）
+venv/
+.venv/
+
+# 環境設定
+.env
+
+# 大型模型權重（taxonomy 等小檔仍納版控，見下方例外）
+models/*
+!models/.gitkeep
+!models/taxonomy.csv
+!models/val_line.json
+!models/resnet18_v3_int8.onnx

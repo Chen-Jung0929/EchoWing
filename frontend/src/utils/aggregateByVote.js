@@ -10,11 +10,12 @@ const DISCLAIMER = {
 };
 
 /**
- * 投票聚合：每個有效片段的 top_species / top_classes 各計一票（同片段內同一物種只計一次）。
+ * 投票聚合：僅統計各片段通過信心門檻的 top_species / top_classes。
  * @param {ChunkEntry[]} chunks
- * @returns {{ predictions: Predictions, decision_support: object, validChunkCount: number } | null}
+ * @param {{ confidenceThreshold?: number }} [options]
  */
-export function aggregateChunksByVote(chunks) {
+export function aggregateChunksByVote(chunks, options = {}) {
+  const confidenceThreshold = options.confidenceThreshold ?? 0.8;
   const validChunks = (chunks ?? []).filter((c) => !c.error && c.predictions);
   if (validChunks.length === 0) return null;
 
@@ -97,21 +98,29 @@ export function aggregateChunksByVote(chunks) {
       top_species,
       top_classes,
       attention_weights: attention_weights.length > 0 ? attention_weights : null,
+      meets_confidence_threshold: top_species.length > 0,
+      reference_species: [],
     },
-    decision_support: buildSummaryDecisionSupport(top_species, n),
+    decision_support: buildSummaryDecisionSupport(
+      top_species,
+      n,
+      confidenceThreshold
+    ),
   };
 }
 
-function buildSummaryDecisionSupport(topSpecies, validCount) {
+function buildSummaryDecisionSupport(topSpecies, validCount, threshold = 0.8) {
+  const thresholdPct = Math.round(threshold * 100);
+
   if (!topSpecies.length) {
     return {
       risk_analysis: {
-        zh: '無法從有效片段彙整預測結果。',
-        en: 'Could not aggregate predictions from valid segments.',
+        zh: `各片段皆未達 ${thresholdPct}% 信心門檻，無可靠物種辨識總覽。`,
+        en: `No segment met the ${thresholdPct}% confidence threshold; no reliable species summary.`,
       },
       action_recommendation: {
-        zh: '請重新上傳音訊或檢查檔案格式。',
-        en: 'Please re-upload the audio or verify the file format.',
+        zh: '建議重新錄製含清晰鳥鳴的片段，或逐段查看低信心候選與決策輔助說明。',
+        en: 'Re-record with clearer bird calls, or review each segment’s reference candidates and decision support.',
       },
       disclaimer: DISCLAIMER,
     };

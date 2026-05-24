@@ -1,6 +1,7 @@
 import os
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -11,6 +12,10 @@ class Settings(BaseSettings):
         env_file=".env",
         extra="ignore",
     )
+
+    inference_backend: Literal["perch", "onnx"] = "perch"
+    perch_savedmodel_path: Path = Path("models/perch_v2_cpu_savedmodel")
+    pseudo_head_path: Path = Path("models/pseudo_best_model.pt")
 
     onnx_model_path: Path = Path("models/resnet18_v3_int8.onnx")
     taxonomy_csv_path: Path = Path("models/taxonomy.csv")
@@ -29,7 +34,8 @@ class Settings(BaseSettings):
     max_chunks: int = 24
     max_body_mb: int = 50
     max_concurrent_predictions: int = 2
-    response_top_k: int = 10
+    response_top_k: int = 5
+    confidence_threshold: float = 0.8
 
 
 @lru_cache

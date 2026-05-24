@@ -1,118 +1,245 @@
-// src/components/ReportGenerator/ReportGenerator.jsx
-import React, { useRef } from 'react';
+import { forwardRef, useImperativeHandle, useRef } from 'react';
 import html2pdf from 'html2pdf.js';
-// 1. 引入我們做好的 Visualizer
-import Visualizer from '../Visualizer/Visualizer';
+import SpectrogramView from '../Visualizer/SpectrogramView';
+import { sanitizeCloneForHtml2Canvas } from '../../utils/spectrogramCache';
 
-// 2. 接收 audioChunk
-export default function ReportGenerator({ data, audioInfo, audioChunk }) {
-  const reportRef = useRef();
+function pickLocalized(value, lang) {
+  if (value == null) return '';
+  if (typeof value === 'string') return value;
+  return value[lang] ?? value.zh ?? value.en ?? '';
+}
 
-  const handleDownload = () => {
-    const element = reportRef.current;
-    const opt = {
-      margin: 10,
-      filename: `Bird_Analysis_${data.analysis_id}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      pagebreak: { mode: 'css', avoid: ['section', 'footer'] }
-    };
+const reportStyles = {
+  root: {
+    width: '190mm',
+    padding: '2rem',
+    backgroundColor: '#ffffff',
+    color: '#1f2937',
+    fontFamily: 'Arial, sans-serif',
+    wordBreak: 'break-word',
+  },
+  h1: { fontSize: '1.875rem', fontWeight: 700, color: '#166534', margin: 0 },
+  h2: {
+    fontSize: '1.25rem',
+    fontWeight: 700,
+    backgroundColor: '#f3f4f6',
+    padding: '0.5rem',
+    marginBottom: '0.75rem',
+  },
+  header: {
+    borderBottom: '2px solid #16a34a',
+    paddingBottom: '1rem',
+    marginBottom: '2rem',
+  },
+  meta: { fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' },
+  section: { marginBottom: '2rem' },
+  table: { width: '100%', borderCollapse: 'collapse', textAlign: 'left' },
+  th: { padding: '0.5rem 0', borderBottom: '1px solid #d1d5db' },
+  td: { padding: '0.5rem 0', borderBottom: '1px solid #e5e7eb', fontSize: '0.875rem' },
+  box: {
+    padding: '1.25rem',
+    border: '2px solid #bfdbfe',
+    backgroundColor: '#eff6ff',
+    borderRadius: '0.5rem',
+  },
+  footer: {
+    marginTop: '3rem',
+    paddingTop: '1.5rem',
+    borderTop: '1px solid #e5e7eb',
+    fontSize: '0.75rem',
+    color: '#6b7280',
+    fontStyle: 'italic',
+  },
+};
 
-    html2pdf().set(opt).from(element).save();
-  };
+const ReportGenerator = forwardRef(function ReportGenerator(
+  {
+    data,
+    audioInfo,
+    spectrogram,
+    spectrogramVariant = 'chunk',
+    spectrogramSegmentCount,
+    lang = 'zh',
+    hidden = true,
+  },
+  ref
+) {
+  const reportRef = useRef(null);
+
+  useImperativeHandle(ref, () => ({
+    downloadPdf: async () => {
+      if (!reportRef.current || !data) {
+        throw new Error('Report data is not ready');
+      }
+
+      const baseName =
+        audioInfo?.name?.replace(/\.[^/.]+$/, '') || 'birdclef_analysis';
+      const suffix = data.analysis_id ?? 'report';
+
+      const opt = {
+        margin: 10,
+        filename: `${baseName}_${suffix}.pdf`,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          backgroundColor: '#ffffff',
+          onclone: (clonedDoc) => {
+            const root = clonedDoc.querySelector('[data-pdf-report-root]');
+            if (root) sanitizeCloneForHtml2Canvas(clonedDoc, root);
+          },
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: 'css', avoid: ['section', 'footer'] },
+      };
+
+      await new Promise((resolve) => setTimeout(resolve, 400));
+      await html2pdf().set(opt).from(reportRef.current).save();
+    },
+  }));
 
   if (!data) return null;
 
-  return (
-    <div className="flex flex-col items-center mt-6">
-      <button
-        onClick={handleDownload}
-        className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-full shadow-lg transition-all transform hover:scale-105"
-      >
-        📥 下載完整辨識報告 (PDF)
-      </button>
+  const speciesRows = data.predictions?.top_species ?? [];
+  const reportTitle =
+    lang === 'zh' ? '鳥類聲學辨識分析報告' : 'Bird Acoustic Analysis Report';
 
-      {/* 將報告藏在螢幕外，避免被切斷，並加上 break-words */}
-      <div className="absolute top-[-9999px] left-[-9999px] overflow-hidden opacity-0 pointer-events-none">
-        <div 
-          ref={reportRef} 
-          className="p-8 bg-white text-gray-800 font-sans break-words"
-          style={{ width: '190mm' }}
-        >
-          {/* --- 報告標頭與樣本資訊維持不變 --- */}
-          <header className="border-b-2 border-green-600 pb-4 mb-8">
-            <h1 className="text-3xl font-bold text-green-800">鳥類聲學辨識分析報告</h1>
-            <p className="text-sm text-gray-500">報告編號：{data.analysis_id} | 生成日期：{new Date().toLocaleString()}</p>
-          </header>
+  const content = (
+    <div ref={reportRef} data-pdf-report-root style={reportStyles.root}>
+      <header style={reportStyles.header}>
+        <h1 style={reportStyles.h1}>{reportTitle}</h1>
+        <p style={reportStyles.meta}>
+          {lang === 'zh' ? '報告編號' : 'Report ID'}：{data.analysis_id} |{' '}
+          {new Date().toLocaleString(lang === 'zh' ? 'zh-TW' : 'en-US')}
+        </p>
+      </header>
 
-          <section className="mb-8 break-inside-avoid">
-            <h2 className="text-xl font-bold bg-gray-100 p-2 mb-3">1. 樣本資訊 (Sample Information)</h2>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <p><strong>原始檔名：</strong> {audioInfo?.name || '未知檔案'}</p>
-              <p><strong>音訊時長：</strong> {audioInfo?.duration || '5.0'} s</p>
-              <p><strong>採樣率：</strong> 32,000 Hz (Resampled)</p>
-              <p><strong>音訊通道：</strong> 單聲道 (Mono-mix)</p>
-            </div>
-          </section>
-
-          <section className="mb-8 break-inside-avoid">
-            <h2 className="text-xl font-bold bg-gray-100 p-2 mb-3">2. 辨識結果 (Identification Results)</h2>
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b">
-                  <th className="py-2">物種名稱 (Species Name)</th>
-                  <th className="py-2 text-right">信心水準 (Confidence)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.predictions.top_species.map((s, idx) => (
-                  <tr key={idx} className="border-b text-sm">
-                    <td className="py-2">{s.name}</td>
-                    <td className="py-2 text-right">{(s.probability * 100).toFixed(1)}%</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-
-          {/* --- 3. 可解釋性分析：替換為真實波形圖 --- */}
-          <section className="mb-8 break-inside-avoid">
-            <h2 className="text-xl font-bold bg-gray-100 p-2 mb-3">3. 可解釋性分析 (Explainability - XAI)</h2>
-            <p className="text-sm mb-4 text-justify leading-relaxed">
-              下圖呈現 AI 模型在該 5 秒片段中的注意力分佈與原始聲波 (Waveform) 的疊加關係。紅色熱力區域代表模型判斷物種的關鍵聲學特徵 (Acoustic Features) 所在位置：
-            </p>
-            
-            {/* 判斷如果有音訊檔案，就畫出 Visualizer */}
-            <div className="border border-gray-300 rounded-lg overflow-hidden">
-              {audioChunk ? (
-                <Visualizer 
-                  audioBlob={audioChunk} 
-                  attentionWeights={data.predictions.attention_weights} 
-                  chunkIndex={0} 
-                />
-              ) : (
-                <div className="p-10 text-center text-gray-400">音訊資料載入中...</div>
-              )}
-            </div>
-          </section>
-
-          {/* --- 4. 決策支援與免責聲明維持不變 (已加上 text-justify) --- */}
-          <section className="mb-8 p-5 border-2 border-blue-200 bg-blue-50 rounded-lg break-inside-avoid">
-            <h2 className="text-xl font-bold text-blue-900 mb-3">4. 專家決策建議 (Decision Support)</h2>
-            <div className="text-sm space-y-4 text-justify leading-relaxed text-blue-900">
-              <p><strong>風險分析：</strong> {data.decision_support.risk_analysis}</p>
-              <p><strong>行動建議：</strong> {data.decision_support.action_recommendation}</p>
-            </div>
-          </section>
-
-          <footer className="mt-12 pt-6 border-t border-gray-200 text-center break-inside-avoid">
-            <p className="text-xs text-gray-500 leading-relaxed italic text-justify">
-              {data.decision_support.disclaimer}
-            </p>
-          </footer>
+      <section style={reportStyles.section}>
+        <h2 style={reportStyles.h2}>
+          {lang === 'zh' ? '1. 樣本資訊' : '1. Sample Information'}
+        </h2>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '0.875rem' }}>
+          <p>
+            <strong>{lang === 'zh' ? '原始檔名' : 'Source file'}：</strong>{' '}
+            {audioInfo?.name || '—'}
+          </p>
+          <p>
+            <strong>{lang === 'zh' ? '音訊時長' : 'Duration'}：</strong>{' '}
+            {audioInfo?.duration ?? '5.0'} s
+          </p>
+          <p>
+            <strong>{lang === 'zh' ? '採樣率' : 'Sample rate'}：</strong> 32,000 Hz
+          </p>
+          <p>
+            <strong>{lang === 'zh' ? '音訊通道' : 'Channels'}：</strong>{' '}
+            {lang === 'zh' ? '單聲道 (Mono)' : 'Mono'}
+          </p>
         </div>
-      </div>
+      </section>
+
+      <section style={reportStyles.section}>
+        <h2 style={reportStyles.h2}>
+          {lang === 'zh' ? '2. 辨識結果' : '2. Identification Results'}
+        </h2>
+        {speciesRows.length === 0 ? (
+          <p style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+            {lang === 'zh'
+              ? '無達信心門檻的物種辨識結果。'
+              : 'No species met the confidence threshold.'}
+          </p>
+        ) : (
+          <table style={reportStyles.table}>
+            <thead>
+              <tr>
+                <th style={reportStyles.th}>{lang === 'zh' ? '物種名稱' : 'Species'}</th>
+                <th style={{ ...reportStyles.th, textAlign: 'right' }}>
+                  {lang === 'zh' ? '信心水準' : 'Confidence'}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {speciesRows.map((s) => (
+                <tr key={s.species_id}>
+                  <td style={reportStyles.td}>{pickLocalized(s.name, lang)}</td>
+                  <td style={{ ...reportStyles.td, textAlign: 'right' }}>
+                    {(s.probability * 100).toFixed(1)}%
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      <section style={reportStyles.section}>
+        <h2 style={reportStyles.h2}>
+          {lang === 'zh' ? '3. 音訊頻譜 (Spectrogram)' : '3. Audio Spectrogram'}
+        </h2>
+        <p style={{ fontSize: '0.875rem', marginBottom: '1rem' }}>
+          {lang === 'zh'
+            ? spectrogramVariant === 'summary'
+              ? '下圖為全部片段拼接後的 Mel 頻譜（後端運算）。'
+              : '下圖為該片段的 Mel 頻譜（後端運算）。'
+            : spectrogramVariant === 'summary'
+              ? 'Stitched Mel spectrogram for all segments (server-side).'
+              : 'Mel spectrogram for this segment (server-side).'}
+        </p>
+        {spectrogram ? (
+          <SpectrogramView
+            spectrogram={spectrogram}
+            chunkIndex={audioInfo?.chunkIndex ?? 0}
+            variant={spectrogramVariant}
+            segmentCount={spectrogramSegmentCount}
+            lang={lang}
+            compact
+          />
+        ) : (
+          <div style={{ padding: '2.5rem', textAlign: 'center', color: '#9ca3af' }}>
+            {lang === 'zh' ? '無可用頻譜資料' : 'No spectrogram available'}
+          </div>
+        )}
+      </section>
+
+      <section style={{ ...reportStyles.section, ...reportStyles.box }}>
+        <h2 style={{ ...reportStyles.h2, backgroundColor: 'transparent', color: '#1e3a8a' }}>
+          {lang === 'zh' ? '4. 決策建議' : '4. Decision Support'}
+        </h2>
+        <div style={{ fontSize: '0.875rem', color: '#1e3a8a' }}>
+          <p>
+            <strong>{lang === 'zh' ? '風險分析' : 'Risk analysis'}：</strong>{' '}
+            {pickLocalized(data.decision_support?.risk_analysis, lang)}
+          </p>
+          <p>
+            <strong>{lang === 'zh' ? '行動建議' : 'Recommendation'}：</strong>{' '}
+            {pickLocalized(data.decision_support?.action_recommendation, lang)}
+          </p>
+        </div>
+      </section>
+
+      <footer style={reportStyles.footer}>
+        {pickLocalized(data.decision_support?.disclaimer, lang)}
+      </footer>
     </div>
   );
-}
+
+  if (hidden) {
+    return (
+      <div
+        style={{
+          position: 'absolute',
+          top: '-9999px',
+          left: '-9999px',
+          overflow: 'hidden',
+          opacity: 0,
+          pointerEvents: 'none',
+        }}
+      >
+        {content}
+      </div>
+    );
+  }
+
+  return content;
+});
+
+export default ReportGenerator;

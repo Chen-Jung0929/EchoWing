@@ -2,9 +2,10 @@ import  { useState, useEffect, useMemo, useRef } from 'react';
 import { useAudioProcessor } from './hooks/useAudioProcessor';
 import { analyzeAudioChunks } from './services/api';
 import ChunkResultsView from './utils/ChunkResultsView';
-import AttentionWeightsSection from './utils/AttentionWeightsSection';
+import ChunkVisualizerSection from './utils/ChunkVisualizerSection';
+import { buildSpectrogramCache } from './utils/spectrogramCache';
 import TopClassesSegmentSection from './utils/TopClassesSegmentSection';
-import ExpandableSpeciesList from './utils/ExpandableSpeciesList';
+import SpeciesResultsSection from './utils/SpeciesResultsSection';
 import { ResultTitleBar } from './utils/ResultTitleActions';
 import {
   MdClose,
@@ -42,6 +43,8 @@ const t = {
     topSpecies: '主要物種預測',
     topClasses: '主要分類預測',
     attentionWeights: '注意力權重',
+    spectrogramTitle: '音訊頻譜圖',
+    spectrogramHint: '橫軸為時間、縱軸為 Mel 頻率；由後端運算，前端暫存顯示',
     attentionBinsLabel: '個時間窗',
     collapseAttention: '收合注意力權重',
     expandAttention: '展開注意力權重',
@@ -72,10 +75,22 @@ const t = {
     voteCount: '得票',
     appearsInChunks: '出現片段',
     noSpeciesHint: '尚無物種預測',
+    lowConfidenceTitle: '未達 {threshold}% 信心門檻',
+    lowConfidenceBody:
+      '此片段的最高預測分數低於系統門檻，不列入正式辨識結果。請參考下方候選清單或重新錄製音訊。',
+    showReferenceSpecies: '查看低信心候選（{count} 筆，僅供參考）',
+    hideReferenceSpecies: '收合低信心候選',
+    referenceSpeciesHint: '以下分數未達門檻，僅供參考，請勿作為正式辨識結論。',
+    referenceOnlyLabel: '參考分數',
+    confidenceThresholdBadge: '信心門檻 {threshold}%',
+    segmentLowConfidence: '低信心',
+    segmentLowConfidenceHint: '未達信心門檻',
     expandSpeciesList: '展開其餘 {count} 筆物種',
     collapseSpeciesList: '收合為前 5 名',
     saveResult: '儲存預測結果',
     printResult: '列印預測結果',
+    downloadResult: '下載 PDF 報告',
+    downloadDone: '已下載',
     login: '登入',
     logout: '登出',
   },
@@ -104,6 +119,9 @@ const t = {
     topSpecies: 'Top Species',
     topClasses: 'Top Classes',
     attentionWeights: 'Attention Weights',
+    spectrogramTitle: 'Spectrogram',
+    spectrogramHint:
+      'Mel frequency vs time; computed on the server and cached in the browser',
     attentionBinsLabel: 'time windows',
     collapseAttention: 'Collapse attention weights',
     expandAttention: 'Expand attention weights',
@@ -134,10 +152,23 @@ const t = {
     voteCount: 'Votes',
     appearsInChunks: 'Segments',
     noSpeciesHint: 'No species prediction',
+    lowConfidenceTitle: 'Below {threshold}% confidence threshold',
+    lowConfidenceBody:
+      'The top score for this segment is below the system threshold and is not shown as a formal identification. See reference candidates below or try another recording.',
+    showReferenceSpecies: 'Show low-confidence candidates ({count}, reference only)',
+    hideReferenceSpecies: 'Hide reference candidates',
+    referenceSpeciesHint:
+      'Scores below the threshold are for reference only—not formal identifications.',
+    referenceOnlyLabel: 'Reference score',
+    confidenceThresholdBadge: 'Threshold {threshold}%',
+    segmentLowConfidence: 'Low',
+    segmentLowConfidenceHint: 'Below confidence threshold',
     expandSpeciesList: 'Show {count} more species',
     collapseSpeciesList: 'Show top 5 only',
     saveResult: 'Save prediction result',
     printResult: 'Print prediction result',
+    downloadResult: 'Download PDF report',
+    downloadDone: 'Downloaded',
     login: 'Log in',
     logout: 'Log out',
   },
@@ -212,6 +243,7 @@ export default function App() {
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [predictionResult, setPredictionResult] = useState(null);
+  const [spectrogramByIndex, setSpectrogramByIndex] = useState({});
   const [errorMessage, setErrorMessage] = useState('');
   const { processAudio, isProcessing } = useAudioProcessor();
 
@@ -269,6 +301,7 @@ export default function App() {
   const resetToLanding = () => {
     setViewState('landing');
     setPredictionResult(null);
+    setSpectrogramByIndex({});
     setErrorMessage('');
   };
 
@@ -279,6 +312,7 @@ export default function App() {
 
     setSelectedFile(file);
     setPredictionResult(null);
+    setSpectrogramByIndex({});
     setErrorMessage('');
   };
 
@@ -288,6 +322,7 @@ export default function App() {
     fileRef.current.value = '';
     setSelectedFile(null);
     setPredictionResult(null);
+    setSpectrogramByIndex({});
     setErrorMessage('');
   };
 
@@ -300,15 +335,18 @@ export default function App() {
     setViewState('loading');
     setErrorMessage('');
     setPredictionResult(null);
+    setSpectrogramByIndex({});
 
     try {
       const [, result] = await Promise.all([
         wait(LOADING_DURATION_MS),
         (async () => {
           const chunks = await processAudio(selectedFile);
-          return analyzeAudioChunks(chunks, {
+          const result = await analyzeAudioChunks(chunks, {
             name: selectedFile.name,
           });
+          setSpectrogramByIndex(buildSpectrogramCache(result.chunks));
+          return result;
         })(),
       ]);
       setPredictionResult({
@@ -378,11 +416,14 @@ export default function App() {
         }`}
       >
         <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div
-            className="text-xl font-black tracking-wider text-[var(--c-text)] cursor-pointer"
-            onClick={resetToLanding}
-          >
-            EchoWing
+          <div className="flex items-center gap-2">
+            <img src="/logo.png" alt="EchoWing" className="w-10 h-10" />
+            <div
+              className="text-xl font-black tracking-wider text-[var(--c-text)] cursor-pointer"
+              onClick={resetToLanding}
+            >
+              EchoWing
+            </div>
           </div>
 
           <div className="flex items-center gap-1">
@@ -545,6 +586,7 @@ export default function App() {
                 dict={dict}
                 lang={lang}
                 resetToLanding={resetToLanding}
+                spectrogramByIndex={spectrogramByIndex}
               />
             </div>
           </div>
@@ -585,7 +627,16 @@ export default function App() {
 
 /* ---------------- Perch-style result body (single chunk) ---------------- */
 
-function PerchResultBody({ chunk, dict, lang, isSummary = false, backendError }) {
+function PerchResultBody({
+  chunk,
+  dict,
+  lang,
+  isSummary = false,
+  backendError,
+  confidenceThreshold = 0.8,
+  spectrogramByIndex = {},
+  resultChunks = [],
+}) {
   return (
     <>
       <div className="flex flex-col gap-6">
@@ -600,8 +651,9 @@ function PerchResultBody({ chunk, dict, lang, isSummary = false, backendError })
           <h3 className="text-xl font-black text-[var(--c-text)] mb-4">
             {dict.topSpecies}
           </h3>
-          <ExpandableSpeciesList
-            species={chunk.predictions?.top_species}
+          <SpeciesResultsSection
+            predictions={chunk.predictions}
+            confidenceThreshold={confidenceThreshold}
             dict={dict}
             lang={lang}
             isSummary={isSummary}
@@ -611,10 +663,13 @@ function PerchResultBody({ chunk, dict, lang, isSummary = false, backendError })
         </section>
       </div>
 
-      <AttentionWeightsSection
-        weights={chunk.predictions?.attention_weights}
-        dict={dict}
+      <ChunkVisualizerSection
+        chunk={chunk}
         isSummary={isSummary}
+        resultChunks={resultChunks}
+        spectrogramCache={spectrogramByIndex}
+        dict={dict}
+        lang={lang}
       />
 
       <section className="mt-6 bg-[var(--c-bg)]/72 rounded-2xl p-6">
@@ -657,7 +712,7 @@ function PerchResultBody({ chunk, dict, lang, isSummary = false, backendError })
 
 /* ---------------- Backend result (path B) ---------------- */
 
-function BackendResultPanel({ result, dict, lang, resetToLanding }) {
+function BackendResultPanel({ result, dict, lang, resetToLanding, spectrogramByIndex }) {
   return (
     <ChunkResultsView
       result={result}
@@ -665,12 +720,16 @@ function BackendResultPanel({ result, dict, lang, resetToLanding }) {
       lang={lang}
       getLocalizedText={getLocalizedText}
       resetToLanding={resetToLanding}
-      renderChunkBody={(chunk, { isSummary } = {}) => (
+      spectrogramByIndex={spectrogramByIndex}
+      renderChunkBody={(chunk, opts = {}) => (
         <PerchResultBody
           chunk={chunk}
           dict={dict}
           lang={lang}
-          isSummary={isSummary}
+          isSummary={opts.isSummary}
+          confidenceThreshold={opts.confidenceThreshold ?? result.confidence_threshold ?? 0.8}
+          spectrogramByIndex={opts.spectrogramByIndex ?? spectrogramByIndex}
+          resultChunks={opts.resultChunks ?? result.chunks}
         />
       )}
     />
@@ -679,7 +738,7 @@ function BackendResultPanel({ result, dict, lang, resetToLanding }) {
 
 /* ---------------- Result Panel ---------------- */
 
-function ResultPanel({ predictionResult, dict, lang, resetToLanding }) {
+function ResultPanel({ predictionResult, dict, lang, resetToLanding, spectrogramByIndex = {} }) {
   if (isBackendPredictResponse(predictionResult)) {
     return (
       <BackendResultPanel
@@ -687,6 +746,7 @@ function ResultPanel({ predictionResult, dict, lang, resetToLanding }) {
         dict={dict}
         lang={lang}
         resetToLanding={resetToLanding}
+        spectrogramByIndex={spectrogramByIndex}
       />
     );
   }
@@ -707,11 +767,13 @@ function ResultPanel({ predictionResult, dict, lang, resetToLanding }) {
         chunk={{
           predictions: predictionResult.predictions,
           decision_support: predictionResult.decision_support,
+          index: 0,
         }}
         dict={dict}
         lang={lang}
         isSummary={false}
         backendError={predictionResult.backend_error}
+        spectrogramByIndex={spectrogramByIndex}
       />
 
       <div className="text-center mt-8">

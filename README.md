@@ -101,9 +101,12 @@ python scripts/test_predict_two_chunks.py
 
 | 變數 | 預設 | 說明 |
 |------|------|------|
-| `TRIAGELENS_ONNX_MODEL_PATH` | `models/resnet18_v3_int8.onnx` | ONNX 模型路徑（相對於 `backend/` 工作目錄） |
+| `TRIAGELENS_INFERENCE_BACKEND` | `perch` | `perch`（Perch embedding + pseudo head）或 `onnx`（舊 ResNet ONNX） |
+| `TRIAGELENS_PERCH_SAVEDMODEL_PATH` | `models/perch_v2_cpu_savedmodel` | Perch v2 TensorFlow SavedModel 目錄 |
+| `TRIAGELENS_CONFIDENCE_THRESHOLD` | `0.8` | 物種預測信心門檻（0–1）；低於此值的候選不列入 `top_species` |
+| `TRIAGELENS_ONNX_MODEL_PATH` | `models/resnet18_v3_int8.onnx` | ONNX 模型（僅 `inference_backend=onnx` 時使用） |
 | `TRIAGELENS_TAXONOMY_CSV_PATH` | `models/taxonomy.csv` | 物種對照表 |
-| `TRIAGELENS_VAL_LINE_JSON_PATH` | `models/val_line.json` | 基線分數 JSON |
+| `TRIAGELENS_VAL_LINE_JSON_PATH` | `models/val_line.json` | 基線分數 JSON（僅 ONNX 後端會減 baseline） |
 | `TRIAGELENS_MAX_CHUNKS` | `24` | 單次請求最多片段數 |
 | `TRIAGELENS_MAX_BODY_MB` | `50` | 請求本體大小上限（MB） |
 
@@ -111,10 +114,15 @@ python scripts/test_predict_two_chunks.py
 
 ## 模型檔案
 
-`backend/models/` 應包含：
+`backend/models/` 應包含（預設 **Perch** 後端）：
 
-- `resnet18_v3_int8.onnx` — 推論模型（約 11 MB，已納入版控）
-- `taxonomy.csv` — 物種中英文名與分類
+- `perch_v2_cpu_savedmodel/` — Perch v2 embedding（TensorFlow SavedModel）
+- `pseudo_best_model.pt` — 在 Perch embedding 上訓練的 234 類分類頭
+- `taxonomy.csv` — 物種中英文名與分類（`primary_label` 對應 `target_columns`）
+
+選用（`TRIAGELENS_INFERENCE_BACKEND=onnx`）：
+
+- `resnet18_v3_int8.onnx` — 舊 ONNX 推論模型
 - `val_line.json` — 驗證基線向量
 
 若缺少 `taxonomy.csv`，啟動時 `load_taxonomy_map` 會失敗；請確認檔案存在或透過環境變數指定路徑。

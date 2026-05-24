@@ -1,9 +1,11 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import ReportGenerator from '../components/ReportGenerator/ReportGenerator';
 import {
   aggregateChunksByVote,
   chunkTimeRangeLabel,
 } from './aggregateByVote';
+import { buildReportPayload } from './ChunkVisualizerSection';
 import { ResultTitleBar } from './ResultTitleActions';
 
 function formatAnalyzedAt(isoString, lang) {
@@ -22,7 +24,15 @@ function formatAnalyzedAt(isoString, lang) {
   }
 }
 
-function SpeciesTooltipPortal({ anchorRect, title, items, getLocalizedText, lang, dict }) {
+function SpeciesTooltipPortal({
+  anchorRect,
+  title,
+  items,
+  getLocalizedText,
+  lang,
+  dict,
+  isReference = false,
+}) {
   if (!anchorRect) return null;
 
   const top = anchorRect.bottom + 8;
@@ -34,11 +44,16 @@ function SpeciesTooltipPortal({ anchorRect, title, items, getLocalizedText, lang
   );
 
   const content = !items?.length ? (
-    <p className="text-[var(--c-text)]/50">{dict.noSpeciesHint}</p>
+    <p className="text-[var(--c-text)]/50">{dict.segmentLowConfidenceHint}</p>
   ) : (
     <>
       <p className="font-black text-[var(--c-text)]/70 mb-2 border-b border-[var(--c-text)]/10 pb-1.5">
         {title}
+        {isReference ? (
+          <span className="ml-1 font-normal text-[var(--c-text)]/45">
+            · {dict.referenceOnlyLabel}
+          </span>
+        ) : null}
       </p>
       <ul className="space-y-1.5">
         {items.slice(0, 5).map((sp) => (
@@ -83,9 +98,11 @@ function SegmentTab({
   ariaLabel,
   isActive,
   failed,
+  lowConfidence,
   onClick,
   hoverTitle,
   hoverSpecies,
+  hoverIsReference,
   getLocalizedText,
   lang,
   dict,
@@ -94,7 +111,8 @@ function SegmentTab({
   const [tipRect, setTipRect] = useState(null);
 
   const showTip = () => {
-    if (hoverSpecies == null || !btnRef.current) return;
+    if (hoverSpecies == null && !lowConfidence) return;
+    if (!btnRef.current) return;
     setTipRect(btnRef.current.getBoundingClientRect());
   };
 
@@ -117,11 +135,16 @@ function SegmentTab({
             ? 'bg-[var(--c-primary)] text-[var(--c-bg)] border-transparent shadow-sm'
             : failed
               ? 'bg-red-500/10 text-red-600 border-red-500/30'
-              : 'bg-[var(--c-bg)]/80 text-[var(--c-text)]/70 border-[var(--c-text)]/10 hover:border-[var(--c-primary)]/40'
+              : lowConfidence
+                ? 'bg-amber-500/10 text-amber-800 border-amber-500/30 dark:text-amber-200'
+                : 'bg-[var(--c-bg)]/80 text-[var(--c-text)]/70 border-[var(--c-text)]/10 hover:border-[var(--c-primary)]/40'
         }`}
       >
         <span className="block truncate px-0.5">{label}</span>
         {failed ? <span className="text-[10px] opacity-80">!</span> : null}
+        {!failed && lowConfidence ? (
+          <span className="text-[10px] opacity-80">?</span>
+        ) : null}
       </button>
       {tipRect && (
         <SpeciesTooltipPortal
@@ -131,6 +154,7 @@ function SegmentTab({
           getLocalizedText={getLocalizedText}
           lang={lang}
           dict={dict}
+          isReference={hoverIsReference}
         />
       )}
     </>
@@ -148,12 +172,20 @@ export default function ChunkResultsView({
   getLocalizedText,
   renderChunkBody,
   resetToLanding,
+  spectrogramByIndex = {},
 }) {
   const chunks = result.chunks ?? [];
   const tabCount = 1 + chunks.length;
   const [pageIndex, setPageIndex] = useState(0);
+  const reportRef = useRef(null);
 
-  const summary = useMemo(() => aggregateChunksByVote(chunks), [chunks]);
+  const summary = useMemo(
+    () =>
+      aggregateChunksByVote(chunks, {
+        confidenceThreshold: result.confidence_threshold ?? 0.8,
+      }),
+    [chunks, result.confidence_threshold]
+  );
   const okChunks = chunks.filter((c) => !c.error);
 
   const isSummaryPage = pageIndex === 0;
@@ -169,7 +201,39 @@ export default function ChunkResultsView({
       }
     : null;
 
+  const reportPayload = useMemo(
+    () =>
+      buildReportPayload({
+        isSummaryPage,
+        summaryChunk,
+        activeChunk,
+        okChunks,
+        filename,
+        spectrogramCache: spectrogramByIndex,
+      }),
+    [
+      isSummaryPage,
+      summaryChunk,
+      activeChunk,
+      okChunks,
+      filename,
+      spectrogramByIndex,
+    ]
+  );
+
+  const handleDownloadResult = useCallback(async () => {
+    console.log('handleDownloadResult');
+    if (!reportRef.current?.downloadPdf) {
+      throw new Error('PDF report is not ready');
+    }
+    await reportRef.current.downloadPdf();
+  }, []);
+
+  const confidenceThreshold = result.confidence_threshold ?? 0.8;
+  const thresholdPct = Math.round(confidenceThreshold * 100);
+
   const summaryHoverSpecies = summary?.predictions?.top_species;
+  const summaryLowConfidence = summary?.predictions?.meets_confidence_threshold === false;
 
   const tabGridStyle = useMemo(
     () => ({
@@ -182,10 +246,23 @@ export default function ChunkResultsView({
 
   return (
     <div className="w-full max-w-4xl bg-[var(--c-card)]/82 backdrop-blur-md p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--c-text)]/5">
+      {reportPayload ? (
+        <ReportGenerator
+          key={reportPayload.data.analysis_id}
+          ref={reportRef}
+          data={reportPayload.data}
+          audioInfo={reportPayload.audioInfo}
+          spectrogram={reportPayload.spectrogram}
+          spectrogramVariant={reportPayload.spectrogramVariant}
+          spectrogramSegmentCount={reportPayload.spectrogramSegmentCount}
+          lang={lang}
+          hidden
+        />
+      ) : null}
       {/* Part A — overflow-visible 避免裁切 tooltip */}
       <div className="sticky top-24 z-10 -mx-2 px-2 py-4 mb-2 overflow-visible bg-[var(--c-card)]/95 backdrop-blur-md border-b border-[var(--c-text)]/10">
         <header className="mb-4 mt-2">
-          <ResultTitleBar dict={dict} />
+          <ResultTitleBar dict={dict} onDownload={handleDownloadResult} />
 
 
           <details className="mt-2 flex flex-col items-center max-w-full">
@@ -206,6 +283,9 @@ export default function ChunkResultsView({
             </ResultBadge>
             <ResultBadge>
               {dict.validChunks} · {summary?.validChunkCount ?? okChunks.length}
+            </ResultBadge>
+            <ResultBadge>
+              {dict.confidenceThresholdBadge.replace('{threshold}', String(thresholdPct))}
             </ResultBadge>
           </div>
         </header>
@@ -231,9 +311,11 @@ export default function ChunkResultsView({
             ariaLabel={dict.summaryLabel}
             isActive={pageIndex === 0}
             failed={false}
+            lowConfidence={summaryLowConfidence}
             onClick={() => setPageIndex(0)}
             hoverTitle={dict.topSpecies}
             hoverSpecies={summaryHoverSpecies}
+            hoverIsReference={false}
             getLocalizedText={getLocalizedText}
             lang={lang}
             dict={dict}
@@ -242,6 +324,13 @@ export default function ChunkResultsView({
             const page = i + 1;
             const n = chunk.index + 1;
             const fullLabel = `${dict.chunkLabel} ${n}`;
+            const preds = chunk.predictions;
+            const meets = preds?.meets_confidence_threshold ?? (preds?.top_species?.length > 0);
+            const hoverSpecies = chunk.error
+              ? []
+              : meets
+                ? preds?.top_species
+                : preds?.reference_species;
             return (
               <SegmentTab
                 key={chunk.analysis_id ?? chunk.index}
@@ -249,9 +338,11 @@ export default function ChunkResultsView({
                 ariaLabel={`${fullLabel} · ${chunkTimeRangeLabel(chunk.index)}`}
                 isActive={pageIndex === page}
                 failed={Boolean(chunk.error)}
+                lowConfidence={!chunk.error && preds && !meets}
                 onClick={() => setPageIndex(page)}
                 hoverTitle={`${fullLabel} · ${chunkTimeRangeLabel(chunk.index)}`}
-                hoverSpecies={chunk.error ? [] : chunk.predictions?.top_species}
+                hoverSpecies={hoverSpecies}
+                hoverIsReference={!chunk.error && preds && !meets}
                 getLocalizedText={getLocalizedText}
                 lang={lang}
                 dict={dict}
@@ -272,7 +363,12 @@ export default function ChunkResultsView({
               <p className="text-xs text-[var(--c-text)]/50 mb-4 text-center">
                 {dict.voteModeHint}
               </p>
-              {renderChunkBody(summaryChunk, { isSummary: true })}
+              {renderChunkBody(summaryChunk, {
+                isSummary: true,
+                confidenceThreshold,
+                spectrogramByIndex,
+                resultChunks: chunks,
+              })}
             </div>
           ) : (
             <p className="text-center text-red-500 py-8">{dict.errorTitle}</p>
@@ -283,7 +379,12 @@ export default function ChunkResultsView({
             <p className="text-sm text-[var(--c-text)]/60 mt-2">{activeChunk.error}</p>
           </div>
         ) : (
-          renderChunkBody(activeChunk, { isSummary: false })
+          renderChunkBody(activeChunk, {
+            isSummary: false,
+            confidenceThreshold,
+            spectrogramByIndex,
+            resultChunks: chunks,
+          })
         )}
       </div>
 

@@ -31,10 +31,22 @@ class TopClass(BaseModel):
     probability: float
 
 
+class SpectrogramPayload(BaseModel):
+    time_frames: int
+    freq_bins: int
+    sample_rate: int = 32_000
+    hop_length: int = 512
+    n_fft: int = 2048
+    fmax_hz: float = 16_000.0
+    values: list[list[int]]
+
+
 class Prediction(BaseModel):
     top_species: list[TopSpecies]
     top_classes: list[TopClass]
     attention_weights: list[float] | None = None
+    meets_confidence_threshold: bool = False
+    reference_species: list[TopSpecies] = Field(default_factory=list)
 
 
 class DecisionSupport(BaseModel):
@@ -48,6 +60,7 @@ class ChunkPrediction(BaseModel):
     analysis_id: str
     predictions: Prediction | None = None
     decision_support: DecisionSupport | None = None
+    spectrogram: SpectrogramPayload | None = None
     error: str | None = None
 
 
@@ -55,6 +68,7 @@ class PredictResponse(BaseModel):
     chunks: list[ChunkPrediction]
     original_filename: str = ""
     warnings: list[str] = Field(default_factory=list)
+    confidence_threshold: float = 0.8
 
 
 class ErrorBody(BaseModel):

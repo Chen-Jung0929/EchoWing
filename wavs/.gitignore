@@ -1,1 +1,4 @@
-chunk_*.wav
+# 本地測試音檔（保留目錄結構）
+*
+!.gitignore
+!.gitkeep

@@ -5,7 +5,13 @@ numpy>=1.26.0
 torch>=2.1.0
 torchaudio>=2.1.0
 soundfile>=0.12.1
-onnxruntime>=1.17.0
 pydantic-settings>=2.2.0
 httpx>=0.27.0
 pandas>=2.1.0
+
+# Perch v2 CPU SavedModel (XLA) requires TF 2.20+ and matching protobuf.
+tensorflow-cpu>=2.20.0,<2.21.0
+protobuf>=6.31.1,<8.0.0
+
+# Legacy ONNX backend (TRIAGELENS_INFERENCE_BACKEND=onnx)
+onnxruntime>=1.17.0

@@ -11,6 +11,16 @@ from app.audio_mel import AudioToMelSpectrogram
 from app.config import Settings, chunk_samples, get_settings
 
 
+def create_predictor(settings: Settings | None = None):
+    """Factory: Perch (default) or legacy ONNX ResNet."""
+    cfg = settings or get_settings()
+    if cfg.inference_backend == "onnx":
+        return BirdChunkPredictor(cfg)
+    from app.perch_inference import PerchChunkPredictor  # noqa: PLC0415 — lazy TF import
+
+    return PerchChunkPredictor(cfg)
+
+
 def load_val_line_baseline(settings: Settings) -> np.ndarray:
     path = settings.val_line_json_path
     if not path.is_file():
@@ -47,6 +57,8 @@ def load_labels(settings: Settings) -> list[str]:
 
 class BirdChunkPredictor:
     """Loads ONNX once; runs batched mel + ORT inference for arbitrary N chunks."""
+
+    uses_baseline = True
 
     def __init__(self, settings: Settings | None = None) -> None:
         self.settings = settings or get_settings()

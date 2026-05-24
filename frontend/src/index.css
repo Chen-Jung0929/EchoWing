@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  --color-*: initial;
+}
+
 :root {
   --c-bg: #E9D5CC;
   --c-card: #d8c8b7;

@@ -10,6 +10,7 @@ export default function ExpandableSpeciesList({
   isSummary = false,
   getLocalizedText,
   previewCount = DEFAULT_PREVIEW,
+  muted = false,
 }) {
   const [expanded, setExpanded] = useState(false);
   const all = Array.isArray(species) ? species : [];
@@ -27,7 +28,11 @@ export default function ExpandableSpeciesList({
       {visible.map((s) => (
         <div
           key={s.species_id}
-          className="rounded-xl border border-[var(--c-text)]/10 p-4"
+          className={`rounded-xl border p-4 ${
+            muted
+              ? 'border-[var(--c-text)]/10 bg-[var(--c-text)]/[0.03] opacity-80'
+              : 'border-[var(--c-text)]/10'
+          }`}
         >
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
@@ -52,16 +57,22 @@ export default function ExpandableSpeciesList({
             </div>
             <div className="shrink-0 text-right">
               <p className="text-xs text-[var(--c-text)]/50">
-                {isSummary ? dict.percent : dict.probability}
+                {muted ? dict.referenceOnlyLabel : isSummary ? dict.percent : dict.probability}
               </p>
-              <p className="text-2xl font-black text-[var(--c-primary)]">
+              <p
+                className={`text-2xl font-black ${
+                  muted ? 'text-[var(--c-text)]/60' : 'text-[var(--c-primary)]'
+                }`}
+              >
                 {Math.round(s.probability * 100)}%
               </p>
             </div>
           </div>
           <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--c-text)]/10">
             <div
-              className="h-full rounded-full bg-[var(--c-primary)]"
+              className={`h-full rounded-full ${
+                muted ? 'bg-[var(--c-text)]/25' : 'bg-[var(--c-primary)]'
+              }`}
               style={{ width: `${s.probability * 100}%` }}
             />
           </div>
