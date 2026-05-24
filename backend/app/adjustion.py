@@ -49,7 +49,12 @@ def load_taxonomy_map(taxonomy_csv_path: Path) -> dict[str, dict[str, str]]:
 
         eng_common = _row_field(row, "common_name_en", "common_name")
         zh_common = _normalize_zh_common(_row_field(row, "common_name_zh"))
-        zh_wiki = _row_field(row, "wiki_url_zh", "zh_wiki_url", "wiki_url")
+        zh_wiki = _row_field(
+            row, "wiki_url_zh", "zh_wiki_url", "wikipedia_zh", "source_url_wikipedia_zh"
+        )
+        en_wiki = _row_field(
+            row, "wiki_url_en", "wikipedia_en", "source_url_wikipedia_en"
+        )
         sci_name = _row_field(row, "scientific_name")
 
         mapping_dict[primary_label] = {
@@ -57,6 +62,7 @@ def load_taxonomy_map(taxonomy_csv_path: Path) -> dict[str, dict[str, str]]:
             "com_name_en": eng_common,
             "com_name_zh": zh_common,
             "zh_wiki_url": zh_wiki,
+            "en_wiki_url": en_wiki,
             "class": _row_field(row, "class_name"),
         }
 

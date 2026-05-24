@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MdExpandMore, MdExpandLess } from 'react-icons/md';
+import SpeciesWikiLink from './SpeciesWikiLink';
 
 const DEFAULT_PREVIEW = 5;
 
@@ -42,6 +43,7 @@ export default function ExpandableSpeciesList({
               <p className="text-xs text-[var(--c-text)]/50">
                 {dict.speciesId}: {s.species_id}
               </p>
+              <SpeciesWikiLink species={s} lang={lang} dict={dict} />
               {isSummary && s.vote_count != null && (
                 <p className="mt-1 text-xs text-[var(--c-primary)]/80">
                   {dict.voteCount}: {s.vote_count}

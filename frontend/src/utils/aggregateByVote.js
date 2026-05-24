@@ -1,5 +1,5 @@
 /** @typedef {{ zh: string, en: string }} LocalizedName */
-/** @typedef {{ species_id: string, name: LocalizedName, probability: number }} TopSpecies */
+/** @typedef {{ species_id: string, name: LocalizedName, probability: number, wiki_url_zh?: string | null, wiki_url_en?: string | null, scientific_name?: string }} TopSpecies */
 /** @typedef {{ class_name: LocalizedName, probability: number }} TopClass */
 /** @typedef {{ top_species?: TopSpecies[], top_classes?: TopClass[], attention_weights?: number[] }} Predictions */
 /** @typedef {{ index: number, predictions?: Predictions, decision_support?: object, error?: string | null }} ChunkEntry */
@@ -33,6 +33,9 @@ export function aggregateChunksByVote(chunks, options = {}) {
         entry = {
           species_id: sp.species_id,
           name: sp.name,
+          scientific_name: sp.scientific_name,
+          wiki_url_zh: sp.wiki_url_zh,
+          wiki_url_en: sp.wiki_url_en,
           voteCount: 0,
           chunkIndices: [],
           maxProb: 0,
@@ -50,6 +53,9 @@ export function aggregateChunksByVote(chunks, options = {}) {
     .map((e) => ({
       species_id: e.species_id,
       name: e.name,
+      scientific_name: e.scientific_name,
+      wiki_url_zh: e.wiki_url_zh,
+      wiki_url_en: e.wiki_url_en,
       probability: e.voteCount / n,
       vote_count: e.voteCount,
       chunk_indices: [...e.chunkIndices].sort((a, b) => a - b),

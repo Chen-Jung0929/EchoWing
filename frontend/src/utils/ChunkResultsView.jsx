@@ -222,7 +222,6 @@ export default function ChunkResultsView({
   );
 
   const handleDownloadResult = useCallback(async () => {
-    console.log('handleDownloadResult');
     if (!reportRef.current?.downloadPdf) {
       throw new Error('PDF report is not ready');
     }
@@ -248,13 +247,16 @@ export default function ChunkResultsView({
     <div className="w-full max-w-4xl bg-[var(--c-card)]/82 backdrop-blur-md p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--c-text)]/5">
       {reportPayload ? (
         <ReportGenerator
-          key={reportPayload.data.analysis_id}
+          key={`${reportPayload.pdfPageSlug}_${reportPayload.data.analysis_id}`}
           ref={reportRef}
           data={reportPayload.data}
           audioInfo={reportPayload.audioInfo}
           spectrogram={reportPayload.spectrogram}
           spectrogramVariant={reportPayload.spectrogramVariant}
           spectrogramSegmentCount={reportPayload.spectrogramSegmentCount}
+          isSummaryReport={reportPayload.isSummaryReport}
+          reportSegmentTitle={reportPayload.reportSegmentTitle}
+          pdfPageSlug={reportPayload.pdfPageSlug}
           lang={lang}
           hidden
         />

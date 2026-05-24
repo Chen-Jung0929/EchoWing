@@ -66,14 +66,19 @@ export function buildReportPayload({
         name: sourceName,
         duration: durationSec,
         chunkIndex: okChunks?.[0]?.index ?? 0,
+        validChunkCount: okChunks?.length ?? 0,
       },
       spectrogram: concatSpectrogramPayloads(specs),
       spectrogramVariant: 'summary',
       spectrogramSegmentCount: specs.length,
+      isSummaryReport: true,
+      reportSegmentTitle: { zh: '總覽', en: 'Summary' },
+      pdfPageSlug: 'Summary',
     };
   }
 
   if (activeChunk && !activeChunk.error) {
+    const segmentNum = activeChunk.index + 1;
     return {
       data: {
         analysis_id: activeChunk.analysis_id,
@@ -87,6 +92,12 @@ export function buildReportPayload({
       },
       spectrogram: getSpectrogramFromCache(spectrogramCache, activeChunk.index),
       spectrogramVariant: 'chunk',
+      isSummaryReport: false,
+      reportSegmentTitle: {
+        zh: `片段 ${segmentNum}`,
+        en: `Segment ${segmentNum}`,
+      },
+      pdfPageSlug: `Segment${String(segmentNum).padStart(2, '0')}`,
     };
   }
 

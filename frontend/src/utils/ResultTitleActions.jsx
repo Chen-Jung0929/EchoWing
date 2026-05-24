@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MdSave, MdDownload, MdDownloadDone } from 'react-icons/md';
 
@@ -33,9 +33,18 @@ function SaveTextButton({ label }) {
   );
 }
 
+const DOWNLOAD_DONE_MS = 3000;
+
 function DownloadButton({ ariaLabel, ariaLabelDone, onDownload }) {
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
+  const doneTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
+    };
+  }, []);
 
   const handleClick = async () => {
     if (!onDownload || busy || done) return;
@@ -43,6 +52,11 @@ function DownloadButton({ ariaLabel, ariaLabelDone, onDownload }) {
     try {
       await onDownload();
       setDone(true);
+      if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
+      doneTimerRef.current = setTimeout(() => {
+        setDone(false);
+        doneTimerRef.current = null;
+      }, DOWNLOAD_DONE_MS);
     } catch (err) {
       console.error('[Download]', err);
     } finally {

@@ -97,13 +97,15 @@ def _build_top_species(
         zh_raw = (meta.get("com_name_zh") or "").strip()
         zh_common = zh_raw if zh_raw else en_common
         scientific = meta.get("sci_name") or en_common
-        zh_wiki = meta.get("zh_wiki_url") or None
+        zh_wiki = (meta.get("zh_wiki_url") or "").strip() or None
+        en_wiki = (meta.get("en_wiki_url") or "").strip() or None
         candidates.append(
             TopSpecies(
                 species_id=species_id,
                 name=ZhAndEn(zh=zh_common, en=en_common),
                 scientific_name=scientific,
-                wiki_url_zh=zh_wiki or None,
+                wiki_url_zh=zh_wiki,
+                wiki_url_en=en_wiki,
                 probability=float(probs[i]),
             )
         )
