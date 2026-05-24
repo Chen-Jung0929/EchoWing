@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     pseudo_head_path: Path = Path("models/pseudo_best_model.pt")
 
     onnx_model_path: Path = Path("models/resnet18_v3_int8.onnx")
-    taxonomy_csv_path: Path = Path("models/taxonomy.csv")
+    taxonomy_csv_path: Path = Path("models/species_info_completed_comma.csv")
     class_order_json_path: Path | None = None
     val_line_json_path: Path = Path("models/val_line.json")
 

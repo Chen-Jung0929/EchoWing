@@ -93,12 +93,17 @@ def _build_top_species(
     for i in idxs:
         species_id = labels[i]
         meta = taxonomy.get(species_id, {})
-        common = meta.get("com_name") or species_id
-        scientific = meta.get("sci_name") or common
+        en_common = meta.get("com_name_en") or species_id
+        zh_raw = (meta.get("com_name_zh") or "").strip()
+        zh_common = zh_raw if zh_raw else en_common
+        scientific = meta.get("sci_name") or en_common
+        zh_wiki = meta.get("zh_wiki_url") or None
         candidates.append(
             TopSpecies(
                 species_id=species_id,
-                name=ZhAndEn(zh=common, en=common or scientific),
+                name=ZhAndEn(zh=zh_common, en=en_common),
+                scientific_name=scientific,
+                wiki_url_zh=zh_wiki or None,
                 probability=float(probs[i]),
             )
         )

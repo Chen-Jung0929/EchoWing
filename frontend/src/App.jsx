@@ -450,7 +450,8 @@ export default function App() {
               <MdLanguage className="w-6 h-6 text-[var(--c-text)]" />
             </button>
 
-            <button
+            
+            {/* <button
               type="button"
               onClick={() => setIsLoggedIn((prev) => !prev)}
               className="p-2 rounded-lg hover:bg-[var(--c-card)]/40 transition-colors focus:outline-none"
@@ -462,7 +463,8 @@ export default function App() {
               ) : (
                 <MdLogin className="w-6 h-6 text-[var(--c-text)]" />
               )}
-            </button>
+            </button> */}
+            
           </div>
         </div>
 

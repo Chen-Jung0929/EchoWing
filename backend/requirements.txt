@@ -15,3 +15,5 @@ protobuf>=6.31.1,<8.0.0
 
 # Legacy ONNX backend (TRIAGELENS_INFERENCE_BACKEND=onnx)
 onnxruntime>=1.17.0
+deep-translator
+wikipedia>=1.4.0

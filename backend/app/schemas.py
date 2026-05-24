@@ -23,6 +23,8 @@ class ZhAndEn(BaseModel):
 class TopSpecies(BaseModel):
     species_id: str
     name: ZhAndEn
+    scientific_name: str = ""
+    wiki_url_zh: str | None = None
     probability: float
 
 

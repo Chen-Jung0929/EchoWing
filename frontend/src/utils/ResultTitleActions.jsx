@@ -1,11 +1,22 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { MdDownload, MdDownloadDone } from 'react-icons/md';
+import { MdSave, MdDownload, MdDownloadDone } from 'react-icons/md';
 
 /** 儲存功能暫停，按鈕保留 UI */
 const SAVE_ENABLED = false;
 
-const FAB_BG = { backgroundImage: "url('/icon_bg.png')" };
+const FAB_BG = {
+  backgroundImage: "url('/icon_bg.png')",
+  backgroundSize: '135% 135%',
+  backgroundPosition: 'center',
+  backgroundRepeat: 'no-repeat',
+};
+const FAB_BTN =
+  'relative flex shrink-0 items-center justify-center rounded-full border border-[var(--c-text)]/10 shadow-md transition-transform focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--c-primary)] enabled:hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40';
+
+/** react-icons 使用 fill=currentColor；Tailwind 預設色已重置，需直接指定 SVG 顏色 */
+const FAB_ICON_COLOR = '#000000';
+const FAB_ICON_SIZE = 20;
 
 function SaveTextButton({ label }) {
   return (
@@ -14,10 +25,10 @@ function SaveTextButton({ label }) {
       disabled={!SAVE_ENABLED}
       aria-label={label}
       aria-disabled={!SAVE_ENABLED}
-      className="flex h-12 shrink-0 items-center justify-center rounded-full border border-[var(--c-text)]/10 bg-cover bg-center px-4 text-sm font-bold text-[var(--c-text)] shadow-md transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--c-primary)] enabled:hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40"
+      className={`${FAB_BTN} h-12 w-12`}
       style={FAB_BG}
     >
-      {label}
+      <MdSave color={FAB_ICON_COLOR} size={FAB_ICON_SIZE} aria-hidden />
     </button>
   );
 }
@@ -39,20 +50,18 @@ function DownloadButton({ ariaLabel, ariaLabelDone, onDownload }) {
     }
   };
 
+  const Icon = done ? MdDownloadDone : MdDownload;
+
   return (
     <button
       type="button"
       onClick={handleClick}
       disabled={!onDownload || busy}
       aria-label={done ? ariaLabelDone : ariaLabel}
-      className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-[var(--c-text)]/10 bg-cover bg-center text-[var(--c-text)] shadow-md transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--c-primary)] enabled:hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40"
+      className={`${FAB_BTN} h-12 w-12`}
       style={FAB_BG}
     >
-      {done ? (
-        <MdDownloadDone className="h-5 w-5" aria-hidden />
-      ) : (
-        <MdDownload className="h-5 w-5" aria-hidden />
-      )}
+      <Icon color={FAB_ICON_COLOR} size={FAB_ICON_SIZE} aria-hidden />
     </button>
   );
 }

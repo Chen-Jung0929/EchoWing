@@ -15,5 +15,7 @@ venv/
 models/*
 !models/.gitkeep
 !models/taxonomy.csv
+!models/taxonomy_processed.csv
+!models/species_info_completed_comma.csv
 !models/val_line.json
 !models/resnet18_v3_int8.onnx
