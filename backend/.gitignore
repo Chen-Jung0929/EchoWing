@@ -13,6 +13,7 @@ venv/
 
 # 大型模型權重（taxonomy 等小檔仍納版控，見下方例外）
 models/*
+!models/pseudo_best_model.pt
 !models/.gitkeep
 !models/taxonomy.csv
 !models/taxonomy_processed.csv
