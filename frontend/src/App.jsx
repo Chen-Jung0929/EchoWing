@@ -13,9 +13,9 @@ import {
   MdDarkMode,
   MdLightMode,
   MdCloudUpload,
-  MdLogin,
-  MdLogout,
+  MdDownload,
 } from 'react-icons/md';
+import AudioRecorder from './components/AudioRecorder/AudioRecorder';
 
 // --- 語系字典 ---
 const t = {
@@ -23,6 +23,14 @@ const t = {
     title: 'EchoWing',
     subtitle: '鳥聲辨識',
     uploadBtn: '上傳音訊或影片',
+    orDivider: '或',
+    startRecording: '錄音',
+    stopRecording: '停止',
+    downloadRecording: '下載錄音',
+    recordMaxHint: '單次錄音最長 60 秒',
+    micPermissionError: '無法使用麥克風，請確認瀏覽器權限設定。',
+    recorderNotSupported: '此瀏覽器不支援網頁錄音。',
+    recorderStartError: '無法啟動錄音，請改用其他瀏覽器或檢查音訊裝置。',
     processBtn: '開始處理並辨識',
     loadingText: '系統正在分析音訊特徵...',
     themeLight: '白天',
@@ -101,6 +109,14 @@ const t = {
     title: 'EchoWing',
     subtitle: 'Bird Sound Recognition',
     uploadBtn: 'Upload Audio/Video',
+    orDivider: 'or',
+    startRecording: 'Record',
+    stopRecording: 'Stop',
+    downloadRecording: 'Download recording',
+    recordMaxHint: 'Each recording is limited to 60 seconds.',
+    micPermissionError: 'Microphone access was denied. Check your browser permissions.',
+    recorderNotSupported: 'Recording is not supported in this browser.',
+    recorderStartError: 'Could not start recording. Try another browser or check your audio device.',
     processBtn: 'Process & Identify',
     loadingText: 'Analyzing acoustic features...',
     themeLight: 'Light Mode',
@@ -246,6 +262,8 @@ export default function App() {
   const [systemIsDark, setSystemIsDark] = useState(false);
 
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isRecordedFile, setIsRecordedFile] = useState(false);
+  const [recorderError, setRecorderError] = useState('');
   const [predictionResult, setPredictionResult] = useState(null);
   const [spectrogramByIndex, setSpectrogramByIndex] = useState({});
   const [errorMessage, setErrorMessage] = useState('');
@@ -315,6 +333,8 @@ export default function App() {
     if (!file) return;
 
     setSelectedFile(file);
+    setIsRecordedFile(false);
+    setRecorderError('');
     setPredictionResult(null);
     setSpectrogramByIndex({});
     setErrorMessage('');
@@ -325,9 +345,34 @@ export default function App() {
   const handleFileClear = () => {
     fileRef.current.value = '';
     setSelectedFile(null);
+    setIsRecordedFile(false);
+    setRecorderError('');
     setPredictionResult(null);
     setSpectrogramByIndex({});
     setErrorMessage('');
+  };
+
+  const handleRecordingComplete = (file) => {
+    if (fileRef.current) fileRef.current.value = '';
+    setSelectedFile(file);
+    setIsRecordedFile(true);
+    setRecorderError('');
+    setPredictionResult(null);
+    setSpectrogramByIndex({});
+    setErrorMessage('');
+  };
+
+  const downloadSelectedFile = () => {
+    if (!selectedFile) return;
+    const url = URL.createObjectURL(selectedFile);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = selectedFile.name;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 2_000);
   };
 
   const handleProcess = async () => {
@@ -517,23 +562,61 @@ export default function App() {
               </div>
 
               <div className="w-full bg-[var(--c-card)]/72 backdrop-blur-md p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.10)] border border-[var(--c-text)]/5 flex flex-col space-y-6">
-                <label className="w-full py-4 rounded-xl border-2 border-dashed border-[var(--c-primary)] text-[var(--c-primary)] font-bold text-lg hover:bg-[var(--c-primary)] hover:text-[var(--c-muted)] transition-all duration-300 cursor-pointer flex flex-col items-center justify-center gap-1">
-                  <MdCloudUpload className="w-10 h-10 text-[var(--c-primary)]" />
-                  <span className="text-center">{dict.uploadBtn}</span>
-                  <input
-                    type="file"
-                    accept="audio/*,video/*"
-                    onChange={handleFileChange}
-                    className="hidden"
-                    ref={fileRef}
-                  />
-                </label>
+                
+                <div className="flex w-full min-w-0 flex-col gap-2">
+                  <div className="flex w-full min-w-0 items-stretch gap-3">
+                    <label className="flex min-h-[5.5rem] min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-[var(--c-primary)] py-4 text-lg font-bold text-[var(--c-primary)] transition-all duration-300 hover:bg-[var(--c-primary)] hover:text-[var(--c-muted)]">
+                      <MdCloudUpload className="h-10 w-10 text-[var(--c-primary)]" />
+                      <span className="px-1 text-center leading-tight">{dict.uploadBtn}</span>
+                      <input
+                        type="file"
+                        accept="audio/*,video/*"
+                        onChange={handleFileChange}
+                        className="hidden"
+                        ref={fileRef}
+                      />
+                    </label>
+
+                    <div className="w-[5.5rem] shrink-0 self-stretch">
+                      <AudioRecorder
+                        dict={dict}
+                        onRecordingComplete={handleRecordingComplete}
+                        onErrorChange={setRecorderError}
+                      />
+                    </div>
+                  </div>
+
+                  <p className="text-center text-xs text-[var(--c-text)]/55">{dict.recordMaxHint}</p>
+
+                  {recorderError ? (
+                    <p className="text-center text-sm font-bold text-red-500" role="alert">
+                      {recorderError}
+                    </p>
+                  ) : null}
+                </div>
 
                 {selectedFile && (
-                  <div className="flex text-sm text-[var(--c-text)]/70 bg-[var(--c-bg)]/70 rounded-xl px-4 py-3 break-all">
-                    <span className="font-bold">{dict.selectedFile}：</span>
-                    {selectedFile.name}
-                    <MdClose className="ml-auto w-5 h-5 text-[var(--c-text)]" onClick={handleFileClear} />
+                  <div className="flex min-w-0 items-center gap-2 rounded-xl bg-[var(--c-bg)]/70 px-4 py-3 text-sm text-[var(--c-text)]/70">
+                    <span className="shrink-0 font-bold">{dict.selectedFile}：</span>
+                    <span className="min-w-0 flex-1 break-all">{selectedFile.name}</span>
+                    {isRecordedFile ? (
+                      <button
+                        type="button"
+                        onClick={downloadSelectedFile}
+                        className="shrink-0 rounded-lg p-1 text-[var(--c-text)] transition-colors hover:bg-[var(--c-card)]"
+                        aria-label={dict.downloadRecording}
+                        title={dict.downloadRecording}
+                      >
+                        <MdDownload className="h-5 w-5" aria-hidden />
+                      </button>
+                    ) : null}
+                    <button
+                      type="button"
+                      onClick={handleFileClear}
+                      className="shrink-0 rounded-lg p-1 text-[var(--c-text)] transition-colors hover:bg-[var(--c-card)]"
+                    >
+                      <MdClose className="h-5 w-5" aria-hidden />
+                    </button>
                   </div>
                 )}
 
