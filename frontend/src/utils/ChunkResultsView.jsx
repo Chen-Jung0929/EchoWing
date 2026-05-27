@@ -1,12 +1,15 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { formatMessage } from '../i18n';
+import DownloadMetadataModal from '../components/DownloadMetadataModal/DownloadMetadataModal';
 import ReportGenerator from '../components/ReportGenerator/ReportGenerator';
 import {
   aggregateChunksByVote,
   chunkTimeRangeLabel,
 } from './aggregateByVote';
-import { buildReportPayload } from './ChunkVisualizerSection';
+import { buildFullReportModel } from './buildFullReportModel';
 import { ResultTitleBar } from './ResultTitleActions';
+import { isSurveyMetadataSaved } from './surveyMetadata';
 
 function formatAnalyzedAt(isoString, lang) {
   if (!isoString) return '—';
@@ -177,7 +180,14 @@ export default function ChunkResultsView({
   const chunks = result.chunks ?? [];
   const tabCount = 1 + chunks.length;
   const [pageIndex, setPageIndex] = useState(0);
+  const [saveModalOpen, setSaveModalOpen] = useState(false);
+  const [surveyMetadata, setSurveyMetadata] = useState(null);
+  const [saveVersion, setSaveVersion] = useState(0);
+  const [modalConfirmLabel, setModalConfirmLabel] = useState(null);
   const reportRef = useRef(null);
+  const pendingDownloadRef = useRef(false);
+  const downloadResolveRef = useRef(null);
+  const downloadRejectRef = useRef(null);
 
   const summary = useMemo(
     () =>
@@ -201,32 +211,85 @@ export default function ChunkResultsView({
       }
     : null;
 
-  const reportPayload = useMemo(
+  const chunkIndices = useMemo(() => chunks.map((c) => c.index), [chunks]);
+
+  const fullReportModel = useMemo(
     () =>
-      buildReportPayload({
-        isSummaryPage,
-        summaryChunk,
-        activeChunk,
-        okChunks,
+      buildFullReportModel({
+        result,
+        chunks,
         filename,
-        spectrogramCache: spectrogramByIndex,
+        spectrogramByIndex,
+        surveyMetadata,
+        confidenceThreshold: result.confidence_threshold ?? 0.8,
       }),
-    [
-      isSummaryPage,
-      summaryChunk,
-      activeChunk,
-      okChunks,
-      filename,
-      spectrogramByIndex,
-    ]
+    [result, chunks, filename, spectrogramByIndex, surveyMetadata]
   );
 
-  const handleDownloadResult = useCallback(async () => {
+  const runPdfDownload = useCallback(async () => {
+    await new Promise((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(resolve));
+    });
     if (!reportRef.current?.downloadPdf) {
       throw new Error('PDF report is not ready');
     }
     await reportRef.current.downloadPdf();
   }, []);
+
+  const handleSaveRequest = useCallback(() => {
+    pendingDownloadRef.current = false;
+    setModalConfirmLabel(dict.saveModalConfirm);
+    setSaveModalOpen(true);
+  }, [dict.saveModalConfirm]);
+
+  const handleSaveModalClose = useCallback(() => {
+    setSaveModalOpen(false);
+    if (pendingDownloadRef.current) {
+      downloadRejectRef.current?.(new DOMException('Cancelled', 'AbortError'));
+      downloadResolveRef.current = null;
+      downloadRejectRef.current = null;
+    }
+    pendingDownloadRef.current = false;
+  }, []);
+
+  const handleSaveConfirm = useCallback(
+    async (metadata) => {
+      setSaveModalOpen(false);
+      setSurveyMetadata(metadata);
+      setSaveVersion((v) => v + 1);
+      const shouldDownload = pendingDownloadRef.current;
+      pendingDownloadRef.current = false;
+      await new Promise((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+      });
+      if (shouldDownload) {
+        try {
+          await runPdfDownload();
+          downloadResolveRef.current?.();
+        } catch (err) {
+          downloadRejectRef.current?.(err);
+          throw err;
+        } finally {
+          downloadResolveRef.current = null;
+          downloadRejectRef.current = null;
+        }
+      }
+    },
+    [runPdfDownload]
+  );
+
+  const handleDownloadResult = useCallback(() => {
+    if (isSurveyMetadataSaved(surveyMetadata)) {
+      return runPdfDownload();
+    }
+    return new Promise((resolve, reject) => {
+      downloadResolveRef.current = resolve;
+      downloadRejectRef.current = reject;
+      pendingDownloadRef.current = true;
+      setModalConfirmLabel(dict.downloadModalConfirm);
+      setSaveModalOpen(true);
+    });
+  }, [surveyMetadata, runPdfDownload, dict.downloadModalConfirm]);
 
   const confidenceThreshold = result.confidence_threshold ?? 0.8;
   const thresholdPct = Math.round(confidenceThreshold * 100);
@@ -245,26 +308,32 @@ export default function ChunkResultsView({
 
   return (
     <div className="w-full max-w-4xl bg-[var(--c-card)]/82 backdrop-blur-md p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--c-text)]/5">
-      {reportPayload ? (
+      {fullReportModel ? (
         <ReportGenerator
-          key={`${reportPayload.pdfPageSlug}_${reportPayload.data.analysis_id}`}
           ref={reportRef}
-          data={reportPayload.data}
-          audioInfo={reportPayload.audioInfo}
-          spectrogram={reportPayload.spectrogram}
-          spectrogramVariant={reportPayload.spectrogramVariant}
-          spectrogramSegmentCount={reportPayload.spectrogramSegmentCount}
-          isSummaryReport={reportPayload.isSummaryReport}
-          reportSegmentTitle={reportPayload.reportSegmentTitle}
-          pdfPageSlug={reportPayload.pdfPageSlug}
+          reportModel={fullReportModel}
           lang={lang}
-          hidden
         />
       ) : null}
+
+      <DownloadMetadataModal
+        open={saveModalOpen}
+        dict={dict}
+        chunkIndices={chunkIndices}
+        initialMetadata={surveyMetadata}
+        confirmLabel={modalConfirmLabel ?? dict.saveModalConfirm}
+        onClose={handleSaveModalClose}
+        onConfirm={handleSaveConfirm}
+      />
       {/* Part A — overflow-visible 避免裁切 tooltip */}
       <div className="sticky top-24 z-10 -mx-2 px-2 py-4 mb-2 overflow-visible bg-[var(--c-card)]/95 backdrop-blur-md border-b border-[var(--c-text)]/10">
         <header className="mb-4 mt-2">
-          <ResultTitleBar dict={dict} onDownload={handleDownloadResult} />
+          <ResultTitleBar
+            dict={dict}
+            onSave={handleSaveRequest}
+            onDownload={handleDownloadResult}
+            surveySaved={saveVersion}
+          />
 
 
           <details className="mt-2 flex flex-col items-center max-w-full">
@@ -287,7 +356,7 @@ export default function ChunkResultsView({
               {dict.validChunks} · {summary?.validChunkCount ?? okChunks.length}
             </ResultBadge>
             <ResultBadge>
-              {dict.confidenceThresholdBadge.replace('{threshold}', String(thresholdPct))}
+              {formatMessage(dict.confidenceThresholdBadge, { threshold: thresholdPct })}
             </ResultBadge>
           </div>
         </header>

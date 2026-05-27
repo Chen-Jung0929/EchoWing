@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MdExpandMore, MdExpandLess } from 'react-icons/md';
+import { formatMessage } from '../i18n';
 import SpeciesWikiLink from './SpeciesWikiLink';
 
 const DEFAULT_PREVIEW = 5;
@@ -95,7 +96,9 @@ export default function ExpandableSpeciesList({
           ) : (
             <>
               <MdExpandMore className="h-5 w-5" aria-hidden />
-              {dict.expandSpeciesList.replace('{count}', String(all.length - previewCount))}
+              {formatMessage(dict.expandSpeciesList, {
+                count: all.length - previewCount,
+              })}
             </>
           )}
         </button>

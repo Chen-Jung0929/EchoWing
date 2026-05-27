@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     max_body_mb: int = 50
     max_concurrent_predictions: int = 2
     response_top_k: int = 5
-    confidence_threshold: float = 0.8
+    confidence_threshold: float = 0.5
 
 
 @lru_cache

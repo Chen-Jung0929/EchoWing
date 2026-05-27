@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { MdExpandMore, MdExpandLess, MdInfoOutline } from 'react-icons/md';
+import { formatMessage } from '../i18n';
 import ExpandableSpeciesList from './ExpandableSpeciesList';
 
 const DEFAULT_THRESHOLD = 0.8;
@@ -50,10 +51,10 @@ export default function SpeciesResultsSection({
           />
           <div>
             <p className="font-black text-amber-900 dark:text-amber-100">
-              {dict.lowConfidenceTitle.replace('{threshold}', String(thresholdPct))}
+              {formatMessage(dict.lowConfidenceTitle, { threshold: thresholdPct })}
             </p>
             <p className="mt-1 text-sm text-amber-900/80 dark:text-amber-100/80">
-              {dict.lowConfidenceBody.replace('{threshold}', String(thresholdPct))}
+              {formatMessage(dict.lowConfidenceBody, { threshold: thresholdPct })}
             </p>
           </div>
         </div>
@@ -74,10 +75,9 @@ export default function SpeciesResultsSection({
             ) : (
               <>
                 <MdExpandMore className="h-5 w-5" aria-hidden />
-                {dict.showReferenceSpecies.replace(
-                  '{count}',
-                  String(referenceSpecies.length)
-                )}
+                {formatMessage(dict.showReferenceSpecies, {
+                  count: referenceSpecies.length,
+                })}
               </>
             )}
           </button>

@@ -2,9 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MdSave, MdDownload, MdDownloadDone } from 'react-icons/md';
 
-/** 儲存功能暫停，按鈕保留 UI */
-const SAVE_ENABLED = false;
-
 const FAB_BG = {
   backgroundImage: "url('/icon_bg.png')",
   backgroundSize: '135% 135%',
@@ -14,17 +11,35 @@ const FAB_BG = {
 const FAB_BTN =
   'relative flex shrink-0 items-center justify-center rounded-full border border-[var(--c-text)]/10 shadow-md transition-transform focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--c-primary)] enabled:hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40';
 
-/** react-icons 使用 fill=currentColor；Tailwind 預設色已重置，需直接指定 SVG 顏色 */
 const FAB_ICON_COLOR = '#000000';
 const FAB_ICON_SIZE = 20;
+const DONE_MS = 3000;
 
-function SaveTextButton({ label }) {
+function SaveTextButton({ label, labelDone, onSave, saved }) {
+  const [flashDone, setFlashDone] = useState(false);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (!saved) return undefined;
+    setFlashDone(true);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setFlashDone(false);
+      timerRef.current = null;
+    }, DONE_MS);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [saved]);
+
+  const showDone = saved && flashDone;
+
   return (
     <button
       type="button"
-      disabled={!SAVE_ENABLED}
-      aria-label={label}
-      aria-disabled={!SAVE_ENABLED}
+      onClick={onSave}
+      disabled={!onSave}
+      aria-label={showDone ? labelDone : label}
       className={`${FAB_BTN} h-12 w-12`}
       style={FAB_BG}
     >
@@ -32,8 +47,6 @@ function SaveTextButton({ label }) {
     </button>
   );
 }
-
-const DOWNLOAD_DONE_MS = 3000;
 
 function DownloadButton({ ariaLabel, ariaLabelDone, onDownload }) {
   const [done, setDone] = useState(false);
@@ -56,9 +69,11 @@ function DownloadButton({ ariaLabel, ariaLabelDone, onDownload }) {
       doneTimerRef.current = setTimeout(() => {
         setDone(false);
         doneTimerRef.current = null;
-      }, DOWNLOAD_DONE_MS);
+      }, DONE_MS);
     } catch (err) {
-      console.error('[Download]', err);
+      if (err?.name !== 'AbortError') {
+        console.error('[Download]', err);
+      }
     } finally {
       setBusy(false);
     }
@@ -80,8 +95,7 @@ function DownloadButton({ ariaLabel, ariaLabelDone, onDownload }) {
   );
 }
 
-/** 固定於整個視窗右下角的儲存／下載（Portal 至 body，不受 header sticky 影響） */
-export function ResultFloatingActions({ dict, onDownload }) {
+export function ResultFloatingActions({ dict, onSave, onDownload, surveySaved }) {
   if (typeof document === 'undefined') return null;
 
   return createPortal(
@@ -90,7 +104,12 @@ export function ResultFloatingActions({ dict, onDownload }) {
       role="group"
       aria-label={dict.resultTitle}
     >
-      <SaveTextButton label={dict.saveResult} />
+      <SaveTextButton
+        label={dict.saveResult}
+        labelDone={dict.saveDone}
+        onSave={onSave}
+        saved={surveySaved}
+      />
       <DownloadButton
         ariaLabel={dict.downloadResult}
         ariaLabelDone={dict.downloadDone}
@@ -101,14 +120,18 @@ export function ResultFloatingActions({ dict, onDownload }) {
   );
 }
 
-/** 預測結果標題 */
-export function ResultTitleBar({ dict, onDownload }) {
+export function ResultTitleBar({ dict, onSave, onDownload, surveySaved }) {
   return (
     <>
       <h2 className="text-center min-w-0 truncate text-2xl font-black tracking-tight text-[var(--c-text)] md:text-3xl">
         {dict.resultTitle}
       </h2>
-      <ResultFloatingActions dict={dict} onDownload={onDownload} />
+      <ResultFloatingActions
+        dict={dict}
+        onSave={onSave}
+        onDownload={onDownload}
+        surveySaved={surveySaved}
+      />
     </>
   );
 }
