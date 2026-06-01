@@ -40,6 +40,7 @@ const zh = {
   recorderStartError: '無法啟動錄音，請改用其他瀏覽器或檢查音訊裝置。',
   processBtn: '開始處理並辨識',
   loadingText: '系統正在分析音訊特徵...',
+  serverWakingText: '正在喚醒分析伺服器（首次約 1～2 分鐘）...',
   themeLight: '白天',
   themeDark: '黑夜',
   themeSystem: '系統',

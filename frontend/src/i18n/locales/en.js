@@ -41,6 +41,7 @@ const en = {
   recorderStartError: 'Could not start recording. Try another browser or check your audio device.',
   processBtn: 'Process & Identify',
   loadingText: 'Analyzing acoustic features...',
+  serverWakingText: 'Waking up analysis server (first time may take 1–2 min)...',
   themeLight: 'Light Mode',
   themeDark: 'Dark Mode',
   themeSystem: 'System Default',

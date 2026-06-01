@@ -1,47 +1,126 @@
-// 開發時由 vite.config.js 將 /api 代理到後端；正式環境可設 VITE_API_BASE
-const API_BASE_URL = import.meta.env.VITE_API_BASE ?? '/api';
+// 開發：vite.config.js 代理 /api → 127.0.0.1:8000
+// 正式：.env.production.local 設 VITE_API_BASE=https://<space>.hf.space/api
+export const API_BASE_URL = import.meta.env.VITE_API_BASE ?? '/api';
+
+const WARMUP_POLL_MS = 5000;
+const WARMUP_TIMEOUT_MS = 120_000;
+
+/** 是否指向遠端（HF 等），而非同源 /api 代理 */
+export function isRemoteApiBase() {
+  const base = API_BASE_URL;
+  return /^https?:\/\//i.test(base);
+}
+
+function parseErrorBody(body) {
+  if (!body || typeof body !== 'object') return null;
+  if (typeof body.message === 'string') return body.message;
+  if (body.detail && typeof body.detail === 'object' && typeof body.detail.message === 'string') {
+    return body.detail.message;
+  }
+  if (typeof body.detail === 'string') return body.detail;
+  return null;
+}
+
+async function fetchJson(path, options = {}) {
+  const response = await fetch(`${API_BASE_URL}${path}`, options);
+  let body = null;
+  try {
+    body = await response.json();
+  } catch {
+    body = null;
+  }
+  return { response, body };
+}
+
+/**
+ * 查詢 /api/health 或 /api/warmup 狀態
+ * @returns {Promise<{ ok: boolean, ready: boolean, status: string, error?: string }>}
+ */
+export async function fetchBackendStatus() {
+  const { response, body } = await fetchJson('/warmup');
+  if (!response.ok && response.status !== 503) {
+    throw new Error(parseErrorBody(body) || `伺服器回應錯誤：${response.status}`);
+  }
+  return body ?? { ok: false, ready: false, status: 'unknown' };
+}
+
+/**
+ * 輪詢直到後端模型載入完成（HF 冷啟動 / 預熱）
+ * @param {{ signal?: AbortSignal, onTick?: (payload: object) => void }} [opts]
+ */
+export async function waitForBackendReady(opts = {}) {
+  const { signal, onTick } = opts;
+  const deadline = Date.now() + WARMUP_TIMEOUT_MS;
+
+  while (Date.now() < deadline) {
+    if (signal?.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+
+    const payload = await fetchBackendStatus();
+    onTick?.(payload);
+
+    if (payload.ready) return payload;
+    if (payload.status === 'error') {
+      throw new Error(payload.error || '後端模型載入失敗');
+    }
+
+    await new Promise((resolve, reject) => {
+      const t = window.setTimeout(resolve, WARMUP_POLL_MS);
+      signal?.addEventListener(
+        'abort',
+        () => {
+          window.clearTimeout(t);
+          reject(new DOMException('Aborted', 'AbortError'));
+        },
+        { once: true }
+      );
+    });
+  }
+
+  throw new Error('後端準備逾時，請稍後再試或確認 Hugging Face Space 是否 Running');
+}
 
 /**
  * 將音訊區塊陣列傳送至後端進行推論
- * @param {Blob[]} chunks - 包含 5 秒 WAV 音訊的 Blob 陣列
- * @param {Object} metadata - 關於檔案的元資料 ( Metadata )
- * @returns {Promise<Object>} 後端回傳的 JSON 預測結果
+ * @param {Blob[]} chunks
+ * @param {Object} metadata
+ * @param {{ signal?: AbortSignal }} [opts]
  */
-export const analyzeAudioChunks = async (chunks, metadata) => {
+export const analyzeAudioChunks = async (chunks, metadata, opts = {}) => {
+  const { signal } = opts;
+
   try {
-    // 建立 FormData 物件來封裝二進位檔案
     const formData = new FormData();
 
-    // 將所有的 Blob 附加到 FormData 中
     chunks.forEach((blob, index) => {
-      // 第一個參數是後端接收的欄位名稱 ( Field Name )，請與後端工程師確認此名稱
-      // 第三個參數是檔名，有助於後端排序
       formData.append('audio_chunks', blob, `chunk_${index}.wav`);
     });
 
-    // 附加上額外的中繼資料 ( Metadata )，供後端紀錄或生成報告使用
     formData.append('original_filename', metadata.name);
     formData.append('sample_rate', 32000);
 
-    // 發送 POST 請求
     const response = await fetch(`${API_BASE_URL}/predict`, {
       method: 'POST',
       body: formData,
-      // 注意：使用 fetch 搭配 FormData 時，絕對不要手動設定 'Content-Type'
-      // 瀏覽器會自動幫您設定包含 boundary 的正確 multipart 標頭
+      signal,
     });
 
+    const errorData = await response.json().catch(() => ({}));
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.message || `伺服器回應錯誤：狀態碼 ${response.status}`);
+      const msg =
+        parseErrorBody(errorData) ||
+        (response.status === 503
+          ? '分析伺服器尚未就緒，請稍候再試'
+          : `伺服器回應錯誤：狀態碼 ${response.status}`);
+      throw new Error(msg);
     }
 
-    // 解析並回傳後端的 JSON 預測結果
-    const data = await response.json();
-    return data;
-
+    return errorData;
   } catch (error) {
+    if (error?.name === 'AbortError') throw error;
     console.error('[API Error] 音訊分析請求失敗:', error);
-    throw error; // 將錯誤往上拋，交由 UI 層處理呈現
+    throw error;
   }
 };

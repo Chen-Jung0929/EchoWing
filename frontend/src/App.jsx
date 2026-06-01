@@ -1,6 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAudioProcessor } from './hooks/useAudioProcessor';
-import { analyzeAudioChunks } from './services/api';
+import {
+  analyzeAudioChunks,
+  isRemoteApiBase,
+  waitForBackendReady,
+} from './services/api';
 import { buildSpectrogramCache } from './utils/spectrogramCache';
 import ResultPanel from './features/results/ResultPanel';
 import {
@@ -68,6 +72,7 @@ export default function App() {
   const [predictionResult, setPredictionResult] = useState(null);
   const [spectrogramByIndex, setSpectrogramByIndex] = useState({});
   const [errorMessage, setErrorMessage] = useState('');
+  const [loadingHint, setLoadingHint] = useState('');
   const { processAudio, isProcessing } = useAudioProcessor();
 
   const dict = getDict(lang);
@@ -183,6 +188,7 @@ export default function App() {
     }
 
     setViewState('loading');
+    setLoadingHint(isRemoteApiBase() ? dict.serverWakingText : '');
     setErrorMessage('');
     setPredictionResult(null);
     setSpectrogramByIndex({});
@@ -191,6 +197,16 @@ export default function App() {
       const [, result] = await Promise.all([
         wait(LOADING_DURATION_MS),
         (async () => {
+          if (isRemoteApiBase()) {
+            await waitForBackendReady({
+              onTick: (payload) => {
+                if (!payload.ready) {
+                  setLoadingHint(dict.serverWakingText);
+                }
+              },
+            });
+          }
+          setLoadingHint('');
           const chunks = await processAudio(selectedFile);
           const result = await analyzeAudioChunks(chunks, {
             name: selectedFile.name,
@@ -246,6 +262,8 @@ export default function App() {
       );
 
       setViewState('error');
+    } finally {
+      setLoadingHint('');
     }
   };
 
@@ -454,8 +472,8 @@ export default function App() {
             }}
           >
             <KiwiAnimation />
-            <p className="mt-8 text-lg font-bold text-[var(--c-primary)] tracking-widest">
-              {dict.loadingText}
+            <p className="mt-8 text-lg font-bold text-[var(--c-primary)] tracking-widest text-center px-6">
+              {loadingHint || dict.loadingText}
             </p>
           </div>
         )}
