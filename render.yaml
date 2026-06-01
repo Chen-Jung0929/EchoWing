@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: echowing-backend
+    env: docker
+    region: singapore
+    plan: free
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    envVars:
+      - key: TRIAGELENS_INFERENCE_BACKEND
+        value: onnx

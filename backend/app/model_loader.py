@@ -1,0 +1,92 @@
+"""Background model loading and warmup state for slow Perch startup (e.g. HF Spaces)."""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+from enum import Enum
+
+from starlette.concurrency import run_in_threadpool
+
+from app.adjustion import load_taxonomy_map
+from app.audio_mel import configure_torch_threads
+from app.config import Settings
+from app.inference import create_predictor
+
+logger = logging.getLogger(__name__)
+
+
+class ModelStatus(str, Enum):
+    IDLE = "idle"
+    LOADING = "loading"
+    READY = "ready"
+    ERROR = "error"
+
+
+def _load_models_sync(settings: Settings):
+    configure_torch_threads(settings.num_threads)
+    predictor = create_predictor(settings)
+    taxonomy = load_taxonomy_map(settings.taxonomy_csv_path)
+    return predictor, taxonomy
+
+
+async def ensure_models_loaded(app) -> None:
+    """Load predictor + taxonomy once; safe to call from multiple coroutines."""
+    state = app.state
+
+    if state.model_status == ModelStatus.READY:
+        return
+
+    if state.model_status == ModelStatus.ERROR:
+        raise RuntimeError(state.load_error or "Model load failed")
+
+    async with state.model_load_lock:
+        if state.model_status == ModelStatus.READY:
+            return
+
+        if state.model_status == ModelStatus.ERROR:
+            raise RuntimeError(state.load_error or "Model load failed")
+
+        if state.model_status == ModelStatus.LOADING:
+            while state.model_status == ModelStatus.LOADING:
+                await asyncio.sleep(0.25)
+            if state.model_status == ModelStatus.ERROR:
+                raise RuntimeError(state.load_error or "Model load failed")
+            return
+
+        state.model_status = ModelStatus.LOADING
+        state.load_error = None
+        settings: Settings = state.settings
+
+        try:
+            logger.info("Loading inference models (%s)...", settings.inference_backend)
+            predictor, taxonomy = await run_in_threadpool(_load_models_sync, settings)
+            state.predictor = predictor
+            state.taxonomy = taxonomy
+            state.model_status = ModelStatus.READY
+            logger.info("Models ready: %s classes", len(predictor.labels))
+        except Exception as exc:
+            state.model_status = ModelStatus.ERROR
+            state.load_error = str(exc)
+            logger.exception("Model load failed")
+            raise
+
+
+def schedule_warmup(app) -> asyncio.Task:
+    """Start background load; returns the asyncio Task."""
+    return asyncio.create_task(ensure_models_loaded(app))
+
+
+def status_payload(app) -> dict:
+    state = app.state
+    body: dict = {
+        "ok": True,
+        "ready": state.model_status == ModelStatus.READY,
+        "status": state.model_status.value,
+    }
+    if state.model_status == ModelStatus.READY and state.predictor is not None:
+        body["num_classes"] = len(state.predictor.labels)
+        body["confidence_threshold"] = state.settings.confidence_threshold
+    if state.model_status == ModelStatus.ERROR and state.load_error:
+        body["error"] = state.load_error
+    return body

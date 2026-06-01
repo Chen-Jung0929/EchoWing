@@ -34,7 +34,8 @@ npm run dev
 | **視覺化** | Mel 頻譜圖、注意力權重、物種維基百科連結 |
 | **田野紀錄** | 總覽／各片段備註（觀察者、時間、地點、環境、實地確認等） |
 | **報告** | 儲存田野資料後，以 **jsPDF** 下載含中文的 PDF 完整報告 |
-| **後端 API** | `GET /api/health`、`POST /api/predict`（multipart WAV chunks） |
+| **後端 API** | `GET /api/health`、`/api/warmup`、`/api/ready`、`POST /api/predict` |
+| **線上部署** | 建議 **Hugging Face Docker Space**（見 `backend/DEPLOY_HF.md`） |
 | **離線開發** | 可選 Mock JSON（`frontend/public/mock_data/perch_result.json`，`App.jsx` 內 `USE_MOCK_FALLBACK`） |
 
 ### 前端畫面狀態（`App.jsx`）
@@ -363,7 +364,9 @@ npm run preview        # 選用：本地預覽 dist
 
 | 方法 | 路徑 | 說明 |
 |------|------|------|
-| `GET` | `/api/health` | 服務狀態、`num_classes`、`confidence_threshold` |
+| `GET` | `/api/health` | 存活狀態；含 `ready`、`status`（模型未載入時 `num_classes` 為空） |
+| `GET` / `POST` | `/api/warmup` | 觸發／查詢預熱（HF DEMO 用） |
+| `GET` | `/api/ready` | 模型已載入回 200，否則 503 |
 | `POST` | `/api/predict` | 上傳多個 `audio_chunks`（multipart WAV） |
 
 **`POST /api/predict` 表單欄位：**
@@ -412,6 +415,27 @@ npm run preview        # 選用：本地預覽 dist
 - `val_line.json` — baseline 向量
 
 缺少模型或 taxonomy 時，啟動或首次推論會失敗；請確認檔案存在或透過環境變數指定路徑。
+
+---
+
+## 部署到 Hugging Face Spaces（推薦 DEMO）
+
+後端 **~410MB** 模型與 Docker／預熱已備於 `backend/`：
+
+| 檔案 | 用途 |
+|------|------|
+| `backend/DEPLOY_HF.md` | 完整步驟（Git LFS、Space 根目錄設 `backend`） |
+| `backend/Dockerfile` | HF Docker Space，埠 **7860** |
+| `backend/README.md` | Space 卡片（YAML frontmatter） |
+| `backend/scripts/hf_warmup.py` | 輪詢預熱直到 `ready: true` |
+
+DEMO 前：
+
+```powershell
+python backend/scripts/hf_warmup.py --url https://<帳號>-<space>.hf.space
+```
+
+前端建置：`VITE_API_BASE=https://<space>.hf.space/api` → `npm run build`。
 
 ---
 

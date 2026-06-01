@@ -48,7 +48,8 @@ class PerchChunkPredictor:
             settings.pseudo_head_path, self.device
         )
         self.baseline = np.zeros(len(self.labels), dtype=np.float32)
-        self._preflight()
+        if not settings.skip_preflight:
+            self._preflight()
 
     def _preflight(self) -> None:
         dummy = np.zeros((1, self._chunk_samples), dtype=np.float32)

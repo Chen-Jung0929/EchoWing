@@ -11,10 +11,12 @@ venv/
 # 環境設定
 .env
 
-# 大型模型權重（taxonomy 等小檔仍納版控，見下方例外）
+# 大型模型權重 — HF 部署請用 Git LFS（見 .gitattributes、DEPLOY_HF.md）
 models/*
-!models/pseudo_best_model.pt
 !models/.gitkeep
+!models/pseudo_best_model.pt
+!models/perch_v2_cpu_savedmodel/
+!models/perch_v2_cpu_savedmodel/**
 !models/taxonomy.csv
 !models/taxonomy_processed.csv
 !models/species_info_completed_comma.csv

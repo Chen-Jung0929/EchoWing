@@ -14,10 +14,15 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
-from app.adjustion import load_taxonomy_map
-from app.audio_mel import configure_torch_threads, load_waveform_fixed_chunk
+from app.audio_mel import load_waveform_fixed_chunk
 from app.config import Settings, get_settings
-from app.inference import BirdChunkPredictor, create_predictor
+from app.inference import BirdChunkPredictor
+from app.model_loader import (
+    ModelStatus,
+    ensure_models_loaded,
+    schedule_warmup,
+    status_payload,
+)
 from app.schemas import (
     ChunkPrediction,
     DecisionSupport,
@@ -251,24 +256,30 @@ def _chunk_from_probs(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
-    configure_torch_threads(settings.num_threads)
     app.state.settings = settings
-    app.state.predictor = create_predictor(settings)
-    app.state.taxonomy = load_taxonomy_map(settings.taxonomy_csv_path)
+    app.state.predictor = None
+    app.state.taxonomy = None
+    app.state.model_status = ModelStatus.IDLE
+    app.state.load_error = None
+    app.state.model_load_lock = asyncio.Lock()
     app.state.prediction_sem = asyncio.Semaphore(settings.max_concurrent_predictions)
-    if settings.inference_backend == "perch":
-        model_desc = (
-            f"perch={settings.perch_savedmodel_path}, head={settings.pseudo_head_path}"
-        )
+    app.state.warmup_task = None
+
+    if settings.eager_warmup:
+        logger.info("Scheduling background model warmup (eager_warmup=true)")
+        app.state.warmup_task = schedule_warmup(app)
     else:
-        model_desc = str(settings.onnx_model_path)
-    logger.info(
-        "Loaded %s predictor: %s classes, %s",
-        settings.inference_backend,
-        len(app.state.predictor.labels),
-        model_desc,
-    )
+        logger.info("Model warmup deferred until /api/warmup or /api/predict")
+
     yield
+
+    task = app.state.warmup_task
+    if task is not None and not task.done():
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
 
 
 app = FastAPI(title="TriageLens Audio Predict", lifespan=lifespan)
@@ -294,20 +305,55 @@ app.add_middleware(
 
 
 class HealthResponse(BaseModel):
+    """Liveness + readiness hint for load balancers and demo preheat scripts."""
+
     ok: bool
-    num_classes: int
-    confidence_threshold: float
+    ready: bool
+    status: str
+    num_classes: int | None = None
+    confidence_threshold: float | None = None
+    error: str | None = None
+
+
+@app.get("/")
+async def root() -> dict:
+    return {
+        "service": "EchoWing Bird Acoustic API",
+        "docs": "/docs",
+        "health": "/api/health",
+        "ready": "/api/ready",
+        "warmup": "/api/warmup",
+        "predict": "/api/predict",
+    }
 
 
 @app.get("/api/health", response_model=HealthResponse)
 async def health(request: Request) -> HealthResponse:
-    settings: Settings = request.app.state.settings
-    pred = request.app.state.predictor
-    return HealthResponse(
-        ok=True,
-        num_classes=len(pred.labels),
-        confidence_threshold=settings.confidence_threshold,
-    )
+    return HealthResponse(**status_payload(request.app))
+
+
+@app.get("/api/ready", response_model=HealthResponse)
+async def ready(request: Request) -> HealthResponse:
+    payload = status_payload(request.app)
+    if not payload["ready"]:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "message": "Models are not loaded yet. Call GET /api/warmup and retry.",
+                **payload,
+            },
+        )
+    return HealthResponse(**payload)
+
+
+@app.get("/api/warmup", response_model=HealthResponse)
+@app.post("/api/warmup", response_model=HealthResponse)
+async def warmup(request: Request) -> HealthResponse:
+    """Idempotent preheat: starts background model load if idle."""
+    state = request.app.state
+    if state.model_status == ModelStatus.IDLE:
+        state.warmup_task = schedule_warmup(request.app)
+    return HealthResponse(**status_payload(request.app))
 
 
 def _process_multipart_chunks(
@@ -416,6 +462,14 @@ async def predict(
     original_filename: str = Form(""),
     sample_rate: int = Form(32_000),
 ) -> PredictResponse:
+    try:
+        await ensure_models_loaded(request.app)
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={"message": str(exc), **status_payload(request.app)},
+        ) from exc
+
     settings: Settings = request.app.state.settings
     predictor: BirdChunkPredictor = request.app.state.predictor
     taxonomy: dict[str, dict[str, str]] = request.app.state.taxonomy

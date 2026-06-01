@@ -1,0 +1,16 @@
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+data/
+notebooks/
+scripts/
+*.ipynb
+.git/
+.gitignore
+DEPLOY_HF.md
+README.md
+*.md
+!models/**

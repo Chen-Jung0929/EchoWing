@@ -37,6 +37,11 @@ class Settings(BaseSettings):
     response_top_k: int = 5
     confidence_threshold: float = 0.5
 
+    # Skip dummy inference at startup (saves a few seconds on HF / demo deploy).
+    skip_preflight: bool = False
+    # Start loading Perch/ONNX in background when the process starts.
+    eager_warmup: bool = True
+
 
 @lru_cache
 def get_settings() -> Settings:

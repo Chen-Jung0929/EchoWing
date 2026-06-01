@@ -86,7 +86,8 @@ class BirdChunkPredictor:
             raise ValueError(
                 f"baseline length {self.baseline.shape[0]} != num labels {len(self.labels)}"
             )
-        self._preflight()
+        if not self.settings.skip_preflight:
+            self._preflight()
 
     def _preflight(self) -> None:
         cs = chunk_samples(self.settings)
