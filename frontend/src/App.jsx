@@ -24,7 +24,8 @@ import KiwiAnimation from './features/loading/KiwiAnimation';
 const USE_MOCK_FALLBACK = false;
 const MOCK_RESULT_URL = '/mock_data/perch_result.json';
 const MOCK_LOADING_DURATION_MS = 6000;
-const LOADING_DURATION_MS = 3000;
+const LOADING_DURATION_MS = 6000;
+const MIN_SERVER_WAKING_HINT_MS = 3000;
 
 
 function wait(ms) {
@@ -187,8 +188,11 @@ export default function App() {
       return;
     }
 
+    const remoteApi = isRemoteApiBase();
+    const serverWakingStartedAt = remoteApi ? Date.now() : null;
+
     setViewState('loading');
-    setLoadingHint(isRemoteApiBase() ? dict.serverWakingText : '');
+    setLoadingHint(remoteApi ? dict.serverWakingText : '');
     setErrorMessage('');
     setPredictionResult(null);
     setSpectrogramByIndex({});
@@ -197,7 +201,7 @@ export default function App() {
       const [, result] = await Promise.all([
         wait(LOADING_DURATION_MS),
         (async () => {
-          if (isRemoteApiBase()) {
+          if (remoteApi) {
             await waitForBackendReady({
               onTick: (payload) => {
                 if (!payload.ready) {
@@ -205,6 +209,10 @@ export default function App() {
                 }
               },
             });
+            const wakingElapsed = Date.now() - serverWakingStartedAt;
+            if (wakingElapsed < MIN_SERVER_WAKING_HINT_MS) {
+              await wait(MIN_SERVER_WAKING_HINT_MS - wakingElapsed);
+            }
           }
           setLoadingHint('');
           const chunks = await processAudio(selectedFile);

@@ -33,6 +33,10 @@ export default function KiwiAnimation() {
 
   const START_ANGLE_RAD = Math.PI + Math.PI / 36;
 
+  const ORBIT_PERIOD_MS = 10_000;
+  const PROGRESS_TICK_MS = 30;
+  const PROGRESS_STEP = PROGRESS_TICK_MS / ORBIT_PERIOD_MS;
+
   useEffect(() => {
     const interval = setInterval(() => {
       setFrame((prev) => (prev === 1 ? 2 : 1));
@@ -44,10 +48,10 @@ export default function KiwiAnimation() {
   useEffect(() => {
     const interval = setInterval(() => {
       setProgress01((prev) => {
-        const next = prev + 0.005;
+        const next = prev + PROGRESS_STEP;
         return next >= 1 ? 0 : next;
       });
-    }, 30);
+    }, PROGRESS_TICK_MS);
 
     return () => clearInterval(interval);
   }, []);
