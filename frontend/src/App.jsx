@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAudioProcessor } from './hooks/useAudioProcessor';
 import {
   analyzeAudioChunks,
+  analyzeSingleAudioChunk,
   isRemoteApiBase,
   waitForBackendReady,
 } from './services/api';
@@ -198,45 +199,64 @@ export default function App() {
     setSpectrogramByIndex({});
 
     try {
-      const [, result] = await Promise.all([
-        wait(LOADING_DURATION_MS),
-        (async () => {
-          if (remoteApi) {
-            await waitForBackendReady({
-              onTick: (payload) => {
-                if (!payload.ready) {
-                  setLoadingHint(dict.serverWakingText);
-                }
-              },
-            });
-            const wakingElapsed = Date.now() - serverWakingStartedAt;
-            if (wakingElapsed < MIN_SERVER_WAKING_HINT_MS) {
-              await wait(MIN_SERVER_WAKING_HINT_MS - wakingElapsed);
+      if (remoteApi) {
+        await waitForBackendReady({
+          onTick: (payload) => {
+            if (!payload.ready) {
+              setLoadingHint(dict.serverWakingText);
             }
-          }
-          setLoadingHint('');
-          const chunks = await processAudio(selectedFile);
-          const result = await analyzeAudioChunks(chunks, {
-            name: selectedFile.name,
-          });
-          setSpectrogramByIndex(buildSpectrogramCache(result.chunks));
-          return result;
-        })(),
-      ]);
-      setPredictionResult({
-        ...result,
+          },
+        });
+        const wakingElapsed = Date.now() - serverWakingStartedAt;
+        if (wakingElapsed < MIN_SERVER_WAKING_HINT_MS) {
+          await wait(MIN_SERVER_WAKING_HINT_MS - wakingElapsed);
+        }
+      }
+      setLoadingHint('');
+      
+      const chunks = await processAudio(selectedFile);
+      
+      const baseResult = {
+        chunks: [],
+        original_filename: selectedFile.name,
         processed_at: new Date().toISOString(),
-      });
-      setViewState('result');
+        confidence_threshold: 0.8,
+        warnings: []
+      };
+      
+      setPredictionResult(baseResult);
+      
+      for (let i = 0; i < chunks.length; i++) {
+        const singleResult = await analyzeSingleAudioChunk(chunks[i], i, {
+          name: selectedFile.name,
+        });
+        
+        const newChunkPrediction = singleResult.chunks[0];
+        if (!newChunkPrediction) continue;
+        
+        setPredictionResult(prev => ({
+          ...prev,
+          chunks: [...prev.chunks, newChunkPrediction],
+          confidence_threshold: singleResult.confidence_threshold ?? prev.confidence_threshold,
+          warnings: [...(prev.warnings || []), ...(singleResult.warnings || [])]
+        }));
+        
+        setSpectrogramByIndex(prev => ({
+          ...prev,
+          ...buildSpectrogramCache([newChunkPrediction])
+        }));
+        
+        if (i === 0) {
+          setViewState('result');
+        }
+      }
     } catch (backendError) {
       console.error('Backend prediction failed:', backendError);
 
       if (USE_MOCK_FALLBACK) {
         try {
-          const [mockResult] = await Promise.all([
-            loadMockPredictionResult(selectedFile),
-            wait(MOCK_LOADING_DURATION_MS),
-          ]);
+          const mockResult = await loadMockPredictionResult(selectedFile);
+          await wait(1000);
 
           setPredictionResult({
             ...mockResult,
