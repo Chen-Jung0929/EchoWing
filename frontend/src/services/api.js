@@ -124,3 +124,43 @@ export const analyzeAudioChunks = async (chunks, metadata, opts = {}) => {
     throw error;
   }
 };
+
+/**
+ * 將單一音訊區塊傳送至後端進行推論
+ * @param {Blob} chunkBlob
+ * @param {number} index
+ * @param {Object} metadata
+ * @param {{ signal?: AbortSignal }} [opts]
+ */
+export const analyzeSingleAudioChunk = async (chunkBlob, index, metadata, opts = {}) => {
+  const { signal } = opts;
+  try {
+    const formData = new FormData();
+    formData.append('audio_chunks', chunkBlob, `chunk_${index}.wav`);
+    formData.append('original_filename', metadata.name);
+    formData.append('sample_rate', 32000);
+
+    const response = await fetch(`${API_BASE_URL}/predict`, {
+      method: 'POST',
+      body: formData,
+      signal,
+    });
+
+    const errorData = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const msg =
+        parseErrorBody(errorData) ||
+        (response.status === 503
+          ? '分析伺服器尚未就緒，請稍候再試'
+          : `伺服器回應錯誤：狀態碼 ${response.status}`);
+      throw new Error(msg);
+    }
+
+    return errorData;
+  } catch (error) {
+    if (error?.name === 'AbortError') throw error;
+    console.error(`[API Error] 第 ${index} 塊音訊分析請求失敗:`, error);
+    throw error;
+  }
+};
