@@ -163,12 +163,46 @@ export const analyzeAudioFile = async (file, metadata, modelSelection = 'perch',
  * 讀取後端的 SSE 串流以接收 1 秒滑移的分析結果
  * @param {Blob} file
  * @param {Object} metadata
- * @param {string} modelSelection
- * @param {Function} onChunk - 收到每個串流資料時的回呼函數
+ * @param {string | {
+ *   modelSelection?: string,
+ *   onChunk: (data: object) => void,
+ *   signal?: AbortSignal,
+ * }} modelOrOptions - 模型名稱，或 options 物件（建議）
+ * @param {(data: object) => void} [onChunk]
  * @param {{ signal?: AbortSignal }} [opts]
  */
-export const analyzeAudioStream = async (file, metadata, modelSelection = 'perch', onChunk, opts = {}) => {
-  const { signal } = opts;
+export const analyzeAudioStream = async (
+  file,
+  metadata,
+  modelOrOptions = 'perch',
+  onChunk,
+  opts = {}
+) => {
+  let modelSelection = 'perch';
+  let chunkHandler = onChunk;
+  let signal;
+
+  if (
+    modelOrOptions &&
+    typeof modelOrOptions === 'object' &&
+    typeof modelOrOptions.onChunk === 'function'
+  ) {
+    modelSelection = modelOrOptions.modelSelection ?? 'perch';
+    chunkHandler = modelOrOptions.onChunk;
+    signal = modelOrOptions.signal;
+  } else if (typeof modelOrOptions === 'function') {
+    chunkHandler = modelOrOptions;
+    signal = onChunk?.signal ?? opts?.signal;
+  } else {
+    modelSelection = modelOrOptions ?? 'perch';
+    chunkHandler = onChunk;
+    signal = opts?.signal;
+  }
+
+  if (typeof chunkHandler !== 'function') {
+    throw new Error('analyzeAudioStream: onChunk callback is required');
+  }
+
   try {
     const formData = new FormData();
     formData.append('audio_chunks', file, file.name);
@@ -210,7 +244,7 @@ export const analyzeAudioStream = async (file, metadata, modelSelection = 'perch
           try {
             const data = JSON.parse(dataStr);
             if (data.event === 'done') return;
-            onChunk(data);
+            chunkHandler(data);
           } catch (e) {
             console.error('JSON Parse error in stream:', e, dataStr);
           }

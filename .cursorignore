@@ -1,0 +1,7 @@
+﻿# 模型權重與二進位產物（不適合送進 AI，也避免索引耗 CPU/RAM）
+**/*.pt
+**/*.tflite
+**/*.onnx
+**/*.pb
+**/variables.data-*
+**/variables.index

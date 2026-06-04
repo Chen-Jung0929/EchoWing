@@ -4,6 +4,23 @@ import torch
 
 logger = logging.getLogger(__name__)
 
+
+def _waveform_1ch(waveform: torch.Tensor) -> torch.Tensor:
+    """Normalize input to (1, S) for masking."""
+    w = waveform
+    while w.ndim > 2:
+        w = w.squeeze(0)
+    if w.ndim == 1:
+        w = w.unsqueeze(0)
+    return w
+
+
+def _batch_n1s(waveform: torch.Tensor) -> torch.Tensor:
+    """Normalize input to (N, 1, S) for predict_waveform_batch."""
+    w = _waveform_1ch(waveform)
+    return w.unsqueeze(0)
+
+
 def generate_occlusion_heatmap(
     waveform: torch.Tensor,
     predictor,
@@ -22,11 +39,16 @@ def generate_occlusion_heatmap(
     target_class_index: The index of the species we are explaining
     """
     try:
+        waveform = _waveform_1ch(waveform)
+
         # 1. Get baseline probability for the target class on the unmasked audio
-        # Reshape to (1, 1, S) which the predictor expects
-        batch_input = waveform.unsqueeze(0)
+        batch_input = _batch_n1s(waveform)
         base_probs, _ = predictor.predict_waveform_batch(batch_input)
-        base_prob = base_probs[0, target_class_index]
+        probs_row = np.asarray(base_probs[0], dtype=np.float32).ravel()
+        if probs_row.size == 0:
+            return []
+        target_class_index = int(target_class_index) % probs_row.size
+        base_prob = float(probs_row[target_class_index])
         
         # If the base prob is very low, heatmap might be noisy, but we'll compute it anyway
         if base_prob < 0.01:
@@ -54,19 +76,23 @@ def generate_occlusion_heatmap(
         if not masked_waveforms:
             return []
             
-        # Batch inference on all masked waveforms
-        # Stack to (N, 1, S)
-        batch_masked = torch.stack(masked_waveforms, dim=0).unsqueeze(1)
+        # Batch inference on all masked waveforms -> (N, 1, S)
+        batch_masked = torch.stack(masked_waveforms, dim=0)
         masked_probs, _ = predictor.predict_waveform_batch(batch_masked)
-        
+        masked_probs = np.asarray(masked_probs, dtype=np.float32)
+        if masked_probs.ndim == 1:
+            masked_probs = masked_probs.reshape(1, -1)
+
         # 3. Calculate importance
         # Importance = Base_Prob - Masked_Prob
         # A positive importance means masking this segment caused a drop in confidence,
         # hence this segment is important for the prediction.
         heatmap = np.zeros(len(positions), dtype=float)
-        
+
         for i in range(len(positions)):
-            masked_prob = masked_probs[i, target_class_index]
+            row = np.asarray(masked_probs[i], dtype=np.float32).ravel()
+            idx = target_class_index if target_class_index < row.size else row.size - 1
+            masked_prob = float(row[idx]) if row.size else 0.0
             drop = base_prob - masked_prob
             heatmap[i] = float(drop)
             

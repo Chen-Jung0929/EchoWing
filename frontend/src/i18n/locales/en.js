@@ -2,7 +2,13 @@
 const en = {
   title: 'EchoWing',
   subtitle: 'Bird Sound Recognition',
-  uploadBtn: 'Upload Audio/Video',
+  uploadBtn: 'Upload audio or video',
+  uploadFormatsHint:
+    'WAV, MP3, FLAC, OGG, M4A, AAC, WEBM; video files use their audio track (max 30 s, 20 MB).',
+  fileTypeUnsupported:
+    'Unsupported file type. Use WAV, MP3, FLAC, OGG, M4A, AAC, WEBM, or a common video format.',
+  fileTooLarge: 'File too large (max 20 MB).',
+  fileTooLong: 'Audio too long (max 30 seconds).',
   orDivider: 'or',
   startRecording: 'Record',
   stopRecording: 'Stop',
@@ -62,6 +68,10 @@ const en = {
   attentionWeights: 'Attention Weights',
   spectrogramTitle: 'Spectrogram',
   spectrogramHint: 'Mel frequency vs time; computed on the server and cached in the browser',
+  spectrogramXaiHint:
+    'Time vs Mel frequency; orange spikes on the semi-transparent strip below show XAI time importance (taller = more influential)',
+  xaiGenerating: 'Generating XAI…',
+  xaiGeneratingHint: 'Computing explainability heatmaps; save and download unlock when done',
   attentionBinsLabel: 'time windows',
   collapseAttention: 'Collapse attention weights',
   expandAttention: 'Expand attention weights',
@@ -75,8 +85,8 @@ const en = {
   className: 'Class Name',
   backendError: 'Backend Error',
   backendResult: 'Backend Inference Result',
-  chunksCount: 'Audio chunks',
-  chunkLabel: 'Chunk',
+  chunksCount: 'Analysis windows',
+  chunkLabel: 'Win',
   topPredictions: 'Top-K predictions',
   warnings: 'Warnings',
   classLabels: 'Total classes',

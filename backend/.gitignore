@@ -4,21 +4,51 @@ data/raw/*
 data/processed/*
 !data/processed/.gitkeep
 
-# 虛擬環境（根目錄 .gitignore 亦涵蓋）
+# 虛擬環境
 venv/
 .venv/
 
-# 環境設定
+# 環境設定（勿提交密鑰）
 .env
+.env.*
+!.env.example
 
-# 大型模型權重 — HF 部署請用 Git LFS（見 .gitattributes、DEPLOY_HF.md）
+# 筆記本與實驗輸出
+notebooks/
+.ipynb_checkpoints/
+
+# 快取
+.cache/
+.hf_cache/
+**/.keras/
+
+# 大型模型 — HF 部署請用 Git LFS（見 .gitattributes、DEPLOY_HF.md）
 models/*
 !models/.gitkeep
-!models/pseudo_best_model.pt
-!models/perch_v2_cpu_savedmodel/
-!models/perch_v2_cpu_savedmodel/**
-!models/taxonomy.csv
-!models/taxonomy_processed.csv
-!models/species_info_completed_comma.csv
+
+# Perch（SavedModel + 物種表；權重可走 LFS）
+!models/perch/
+!models/perch/**
+
+# BirdNET：目錄結構 + 中文標籤 + 模型檔（tflite 需自行下載）
+!models/birdnet/
+!models/birdnet/.gitkeep
+!models/birdnet/labels/zh.txt
+models/birdnet/labels/*
+!models/birdnet/labels/zh.txt
+models/birdnet/*.tflite
+models/birdnet/meta-model.tflite
+
+# SILIC：taxonomy 可版控；權重與原始 soundclass 不納入
+!models/silic/
+!models/silic/.gitkeep
+!models/silic/silic_taxonomy.csv
+models/silic/*.pt
+models/silic/soundclass.csv
+
+# ONNX（根目錄，可走 LFS）
 !models/val_line.json
 !models/resnet18_v3_int8.onnx
+
+# 舊版／備用 taxonomy（非 Perch 推論主路徑）
+models/perch/perch_taxonomy.csv

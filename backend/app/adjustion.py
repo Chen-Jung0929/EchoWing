@@ -67,3 +67,31 @@ def load_taxonomy_map(taxonomy_csv_path: Path) -> dict[str, dict[str, str]]:
         }
 
     return mapping_dict
+
+
+def load_silic_taxonomy_map(taxonomy_csv_path: Path) -> dict[str, dict[str, str]]:
+    """SILIC labels use numeric primary_label keys and silic_taxonomy.csv metadata."""
+    mapping_dict: dict[str, dict[str, str]] = {}
+    text = _decode_csv_text(taxonomy_csv_path)
+    reader = csv.DictReader(io.StringIO(text))
+
+    for row in reader:
+        primary_label = _row_field(row, "primary_label")
+        if not primary_label:
+            continue
+
+        species_name = _row_field(row, "species_name")
+        eng_common = _row_field(row, "common_name_en") or species_name
+        zh_common = _normalize_zh_common(_row_field(row, "common_name_zh")) or species_name
+        sci_name = _row_field(row, "scientific_name") or species_name
+
+        mapping_dict[primary_label] = {
+            "sci_name": sci_name,
+            "com_name_en": eng_common,
+            "com_name_zh": zh_common,
+            "zh_wiki_url": "",
+            "en_wiki_url": "",
+            "class": _row_field(row, "sound_class"),
+        }
+
+    return mapping_dict

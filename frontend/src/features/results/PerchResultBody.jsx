@@ -1,6 +1,7 @@
+import { DEFAULT_CONFIDENCE_THRESHOLD } from '../../config/confidenceThreshold';
 import ChunkVisualizerSection from '../../utils/ChunkVisualizerSection';
-import TopClassesSegmentSection from '../../utils/TopClassesSegmentSection';
 import SpeciesResultsSection from '../../utils/SpeciesResultsSection';
+import { modelWindowSec } from '../../utils/aggregateByVote';
 import { getLocalizedText } from '../../i18n/getLocalizedText';
 
 export default function PerchResultBody({
@@ -9,20 +10,17 @@ export default function PerchResultBody({
   lang,
   isSummary = false,
   backendError,
-  confidenceThreshold = 0.8,
+  confidenceThreshold = DEFAULT_CONFIDENCE_THRESHOLD,
   spectrogramByIndex = {},
   resultChunks = [],
+  totalDurationSec = 0,
+  xaiPending = false,
 }) {
+  const windowSec = modelWindowSec(resultChunks?.[0]?.model_name ?? chunk?.model_name);
+
   return (
     <>
       <div className="flex flex-col gap-6">
-        <TopClassesSegmentSection
-          items={chunk.predictions?.top_classes}
-          getLocalizedText={getLocalizedText}
-          lang={lang}
-          dict={dict}
-        />
-
         <section className="bg-[var(--c-bg)]/72 rounded-2xl p-6">
           <h3 className="text-xl font-black text-[var(--c-text)] mb-4">
             {dict.topSpecies}
@@ -35,6 +33,7 @@ export default function PerchResultBody({
             isSummary={isSummary}
             getLocalizedText={getLocalizedText}
             previewCount={5}
+            windowSec={windowSec}
           />
         </section>
       </div>
@@ -46,6 +45,8 @@ export default function PerchResultBody({
         spectrogramCache={spectrogramByIndex}
         dict={dict}
         lang={lang}
+        totalDurationSec={totalDurationSec > 0 ? totalDurationSec : 0}
+        xaiPending={xaiPending}
       />
 
       <section className="mt-6 bg-[var(--c-bg)]/72 rounded-2xl p-6">

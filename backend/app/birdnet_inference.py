@@ -1,11 +1,16 @@
 import logging
+
 import numpy as np
 import torch
-import pandas as pd
 
 from app.config import Settings
 
 logger = logging.getLogger(__name__)
+
+# BirdNET v2.4 audio-model.tflite: 3 s @ 48 kHz mono waveform (144000 samples).
+BIRDNET_SAMPLE_RATE = 48_000
+BIRDNET_CHUNK_SAMPLES = 144_000
+
 
 def _import_tflite():
     try:
@@ -15,14 +20,25 @@ def _import_tflite():
         import tensorflow as tf
         return tf.lite
 
+def _resample_waveform(wave: np.ndarray, src_sr: int, dst_sr: int) -> np.ndarray:
+    """Linear resample mono float32 waveform."""
+    if src_sr == dst_sr:
+        return wave.astype(np.float32, copy=False)
+    n_out = max(1, int(round(len(wave) * dst_sr / src_sr)))
+    x_src = np.arange(len(wave), dtype=np.float64)
+    x_dst = np.linspace(0, len(wave) - 1, num=n_out, dtype=np.float64)
+    return np.interp(x_dst, x_src, wave).astype(np.float32)
+
+
+def _load_label_lines(path) -> list[str]:
+    with open(path, encoding="utf-8") as f:
+        return [line.strip() for line in f if line.strip()]
+
+
 class BirdNetPredictor:
-    """Wrapper for BirdNET-Analyzer TFLite model."""
+    """BirdNET v2.4 acoustic TFLite (audio-model.tflite)."""
 
     uses_baseline = False
-    
-    # BirdNET expects 3-second chunks at 48kHz by default, but we can resample or feed 32kHz depending on the specific model.
-    # The standard BirdNET uses 48kHz. If our global setting is 32kHz, we either resample here or require the frontend to send native.
-    # We'll assume the model expects 48kHz, so we'll resample on the fly if needed.
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -43,10 +59,17 @@ class BirdNetPredictor:
             self.interpreter = None
             
         if self.labels_path.is_file():
-            with open(self.labels_path, 'r', encoding='utf-8') as f:
-                self.labels = [line.strip() for line in f.readlines()]
+            self.labels = _load_label_lines(self.labels_path)
         else:
             self.labels = [f"BirdNET_Class_{i}" for i in range(6522)]
+        if self.interpreter is not None:
+            out_size = self.output_details[0]["shape"][-1]
+            if len(self.labels) != out_size:
+                logger.warning(
+                    "BirdNET label count %s != model output %s",
+                    len(self.labels),
+                    out_size,
+                )
             
         self.baseline = np.zeros(len(self.labels), dtype=np.float32)
 
@@ -60,26 +83,26 @@ class BirdNetPredictor:
             
         waveforms = chunks.squeeze(1).detach().cpu().numpy().astype(np.float32, copy=False)
         n = waveforms.shape[0]
-        
-        # BirdNET expects specific input shape (usually 144000 samples for 3s @ 48kHz).
-        # We need to adapt the input to the exact model signature.
-        input_shape = self.input_details[0]['shape']
-        expected_samples = input_shape[1] if len(input_shape) > 1 else input_shape[0]
-        
+        src_sr = self.settings.sample_rate
+        input_shape = tuple(self.input_details[0]["shape"])
+        expected_samples = int(input_shape[-1])
+
         probs_parts = []
         for i in range(n):
-            wave = waveforms[i]
-            # Pad or truncate to expected samples
+            wave = _resample_waveform(waveforms[i], src_sr, BIRDNET_SAMPLE_RATE)
             if len(wave) < expected_samples:
                 wave = np.pad(wave, (0, expected_samples - len(wave)))
             elif len(wave) > expected_samples:
                 wave = wave[:expected_samples]
-                
+
             input_tensor = wave.reshape(input_shape).astype(np.float32)
-            self.interpreter.set_tensor(self.input_details[0]['index'], input_tensor)
+            self.interpreter.set_tensor(self.input_details[0]["index"], input_tensor)
             self.interpreter.invoke()
-            probs = self.interpreter.get_tensor(self.output_details[0]['index'])[0]
-            probs_parts.append(probs)
+            logits = self.interpreter.get_tensor(self.output_details[0]["index"])[0]
+            # v2.4 TFLite may return logits; apply sigmoid if not already probabilities.
+            if logits.min() < 0.0 or logits.max() > 1.0:
+                logits = 1.0 / (1.0 + np.exp(-logits))
+            probs_parts.append(logits.astype(np.float32, copy=False))
             
         out = np.stack(probs_parts, axis=0)
         return np.clip(np.nan_to_num(out, nan=0.0, posinf=1.0, neginf=0.0), 0.0, 1.0).astype(np.float32, copy=False), None

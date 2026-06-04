@@ -2,14 +2,14 @@
 
 你好！這份文件是為了協助你（電機系的同學或 AI 助手）接手處理 **EchoWing 多模型生態聲學監測網站** 的後端與模型部署任務。
 
-我們近期對系統架構進行了大規模升級，導入了 **Server-Sent Events (SSE) 串流推論**、**多模型混合 (Ensemble)** 以及 **多軌道連續型 XAI 熱力圖**。前端的部分（Vercel）已經全部準備就緒，目前的任務是**成功將後端架設在 Hugging Face Spaces 上，並確保所有模型權重載入正常**。
+我們近期對系統架構進行了大規模升級，導入了 **Server-Sent Events (SSE) 串流推論** 與 **Occlusion XAI 時間重要性視覺化**。前端的部分（Vercel）已經全部準備就緒，目前的任務是**成功將後端架設在 Hugging Face Spaces 上，並確保所有模型權重載入正常**。
 
 ---
 
 ## 1. 架構異動概述
-- **串流 API (`/api/stream-predict`)**：現在前端上傳音檔後，會立刻接收後端以 1 秒滑移步伐 (1s stride) 吐出的 `ChunkPrediction` JSON 串流。
-- **多模型支援**：除了原本的 Perch 模型，現在加入了 `BirdNET` 與 `SILIC`。當使用者在前端選擇 "Ensemble" 時，後端會使用 `asyncio.gather` 平行執行這三個模型。
-- **XAI**：我們使用了遮蔽敏感度 (Occlusion Sensitivity) 演算法。
+- **串流 API (`/api/stream-predict`)**：現在前端上傳音檔後，會立刻接收後端吐出的 `ChunkPrediction` JSON 串流；`init` 事件會帶入 `total_duration_sec` 供總覽頻譜對齊真實音訊長度。
+- **單模型推論**：使用者在前端一次只選擇 **Perch**、**BirdNET** 或 **SILIC** 其中之一（已移除 Ensemble 混合模式）。
+- **XAI**：使用遮蔽敏感度 (Occlusion Sensitivity) 演算法；前端以灰白尖峰疊在頻譜圖底部，避免與 Mel 色階混淆。
 
 ---
 
@@ -17,7 +17,7 @@
 
 ### 任務 A：確認模型權重檔案 (Model Weights)
 這是最容易出錯的地方！由於加入了新模型，伺服器啟動時需要載入模型權重。
-請打開 `backend/app/config.py`，查看以下模型的預設路徑與載入邏輯：
+請打開 `backend/app/config.py`，查看以下模型的預設路徑與載入邏輯（Perch 檔案在 `backend/models/perch/`，ONNX 在 `backend/models/` 根目錄）：
 
 1. **Perch**：原本可能是自動從 Kaggle / TensorFlow Hub 下載，請確認伺服器有網路權限，或直接將權重放入指定資料夾。
 2. **BirdNET**：後端現在會嘗試尋找 `.tflite` 模型權重（例如 `birdnet_v2.4_tflite.tflite`）。
@@ -41,15 +41,15 @@
 4. 如果你看到 `Loaded perch`、`Loaded birdnet`，就代表成功了！
 5. **常見錯誤**：
    - `FileNotFoundError`：你忘記上傳模型權重，或是路徑放錯了。
-   - `OOM (Out of Memory)`：三個模型同時載入如果超過 Free Tier (16GB RAM) 的限制，你可能需要幫他們升級 Space 規格，或者在 `config.py` 中將不必要的模型設為延遲載入。
+   - `OOM (Out of Memory)`：同時載入多個模型若超過 Free Tier (16GB RAM) 的限制，可在 `config.py` 中將不必要的模型設為延遲載入，或升級 Space 規格。
 
 ---
 
 ## 3. 測試指南
 當 Hugging Face 顯示 `Running` 且沒有錯誤後，請打開前端 Vercel 的網址：
 1. 點擊上傳按鈕，隨意上傳一段 30 秒以內的鳥叫聲。
-2. 模型下拉選單選擇 `Ensemble`。
-3. 送出後，你應該會看到頻譜圖瞬間出現，接著底部會出現紅色(Perch)、藍色(BirdNET)、綠色(SILIC) 的多軌彩色進度條跟著時間推移長出來！
+2. 模型下拉選單選擇 **Perch**、**BirdNET** 或 **SILIC** 其中之一。
+3. 送出後，應看到頻譜圖由左至右連續顯示至音訊結束（尾端無空白）；若信心達門檻，底部會出現**灰白尖峰** XAI 時間重要性條。
 4. 恭喜你完成任務！
 
 祝開發順利！

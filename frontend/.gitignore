@@ -13,11 +13,13 @@ dist/
 dist-ssr/
 *.local
 
-# Environment
+# Environment（可版控 .env.production；本機覆寫用 .local）
 .env
 .env.*
 !.env.example
 !.env.production
+.env.production.local
+.env.local
 
 # Editor directories and files
 .vscode/*

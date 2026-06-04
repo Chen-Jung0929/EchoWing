@@ -55,6 +55,23 @@ DISCLAIMER = ZhAndEn(
 )
 
 
+def _resolve_model(model_selection: str, predictors: dict) -> str:
+    """Single-model inference only (no ensemble)."""
+    if model_selection in predictors:
+        return model_selection
+    return "perch"
+
+
+def _taxonomy_for_model(
+    model_name: str,
+    taxonomy_by_model: dict[str, dict[str, dict[str, str]]] | None,
+    default_taxonomy: dict[str, dict[str, str]],
+) -> dict[str, dict[str, str]]:
+    if taxonomy_by_model and model_name in taxonomy_by_model:
+        return taxonomy_by_model[model_name]
+    return default_taxonomy
+
+
 def filename_sort_key(filename: str | None, upload_order: int) -> tuple[int, int, int]:
     """Sort by chunk index when present; otherwise stable behind indexed uploads."""
     name = filename or ""
@@ -64,8 +81,10 @@ def filename_sort_key(filename: str | None, upload_order: int) -> tuple[int, int
     return (1, upload_order, 0)
 
 
-def _make_analysis_id(chunk_index: int) -> str:
+def _make_analysis_id(chunk_index: int, model_name: str | None = None) -> str:
     day = datetime.now(timezone.utc).strftime("%Y%m%d")
+    if model_name:
+        return f"req_{day}_{model_name}_chunk_{chunk_index:03d}"
     return f"req_{day}_chunk_{chunk_index:03d}"
 
 
@@ -226,6 +245,7 @@ def _chunk_from_probs(
     attention_row: np.ndarray | None,
     confidence_threshold: float,
     spectrogram: SpectrogramPayload | None = None,
+    model_name: str | None = None,
 ) -> ChunkPrediction:
     top_species, reference_species, meets_threshold = _build_top_species(
         probs, labels, taxonomy, top_k, threshold=confidence_threshold
@@ -242,7 +262,7 @@ def _chunk_from_probs(
     )
     return ChunkPrediction(
         index=chunk_index,
-        analysis_id=_make_analysis_id(chunk_index),
+        analysis_id=_make_analysis_id(chunk_index, model_name),
         predictions=predictions,
         decision_support=_build_decision_support(
             top_species,
@@ -260,6 +280,7 @@ async def lifespan(app: FastAPI):
     app.state.settings = settings
     app.state.predictors = {}
     app.state.taxonomy = None
+    app.state.taxonomy_by_model = None
     app.state.model_status = ModelStatus.IDLE
     app.state.load_error = None
     app.state.model_load_lock = asyncio.Lock()
@@ -369,6 +390,7 @@ def _process_audio(
     claimed_sample_rate: int,
     warnings: list[str],
     model_selection: str,
+    taxonomy_by_model: dict[str, dict[str, dict[str, str]]] | None,
 ) -> PredictResponse:
     # 1. Stitch all uploaded blobs into a single continuous waveform
     by_index = sorted(blobs, key=lambda x: x[0])
@@ -379,86 +401,77 @@ def _process_audio(
     
     for idx, raw, _fn in by_index:
         try:
-            w = load_waveform_full(raw, settings, device, format_hint="wav")
-            waveforms.append(w.squeeze(0)) # shape (1, S)
+            w = load_waveform_full(
+                raw, settings, device, filename=original_filename or _fn
+            )
+            waveforms.append(w)  # shape (1, S)
         except Exception as exc:
             logger.warning("chunk %s decode failed: %s", idx, exc)
 
     if not waveforms:
         return PredictResponse(chunks=[], original_filename=original_filename, warnings=warnings)
         
-    full_waveform = torch.cat(waveforms, dim=1) # (1, Total_S)
+    full_waveform = torch.cat(waveforms, dim=1)  # (1, Total_S)
     total_samples = full_waveform.shape[1]
     
-    # Determine which models to run
-    models_to_run = []
-    if model_selection == "ensemble":
-        models_to_run = list(predictors.keys())
-    elif model_selection in predictors:
-        models_to_run = [model_selection]
-    else:
-        models_to_run = ["perch"]
-        
+    model_name = _resolve_model(model_selection, predictors)
+    predictor = predictors.get(model_name)
+    if not predictor:
+        return PredictResponse(chunks=[], original_filename=original_filename, warnings=warnings)
+
+    labels = predictor.labels
+    chunk_sec = 3 if model_name == "birdnet" else 5
+    chunk_samples = chunk_sec * settings.sample_rate
+
     chunks_out: list[ChunkPrediction] = []
-    chunk_index_counter = 0
-    
-    for model_name in models_to_run:
-        predictor = predictors.get(model_name)
-        if not predictor:
-            continue
-            
-        labels = predictor.labels
-        
-        # Determine chunk size (default 5s for perch, 3s for birdnet)
-        chunk_sec = 3 if model_name == "birdnet" else 5
-        chunk_samples = chunk_sec * settings.sample_rate
-        
-        # Slice full waveform into chunks
-        for start in range(0, total_samples, chunk_samples):
-            end = start + chunk_samples
-            chunk_wave = full_waveform[:, start:end]
-            
-            # Pad if too short
-            if chunk_wave.shape[1] < chunk_samples:
-                chunk_wave = torch.nn.functional.pad(chunk_wave, (0, chunk_samples - chunk_wave.shape[1]))
-                
-            batch_wave = chunk_wave.unsqueeze(0) # (1, 1, S)
-            
-            probs_all, attn_all = predictor.predict_waveform_batch(batch_wave)
-            probs = probs_all[0]
-            
-            if getattr(predictor, "uses_baseline", False) and hasattr(predictor, "baseline"):
-                probs = np.clip(probs - predictor.baseline, 0.0, 1.0)
-            
-            # Calculate XAI if enabled and confidence is high enough
-            xai_heatmap = None
-            meets_threshold = bool(np.max(probs) >= settings.confidence_threshold)
-            
-            if meets_threshold and settings.enable_xai:
-                target_idx = int(np.argmax(probs))
-                xai_heatmap = generate_occlusion_heatmap(
-                    chunk_wave, predictor, target_idx, 
-                    sample_rate=settings.sample_rate, 
-                    window_sec=settings.xai_window_sec
-                )
-                
-            spectrogram = compute_spectrogram_payload(chunk_wave, settings, device)
-            
-            cp = _chunk_from_probs(
-                chunk_index=chunk_index_counter,
-                probs=probs,
-                labels=labels,
-                taxonomy=taxonomy,
-                top_k=settings.response_top_k,
-                attention_row=attn_all[0] if attn_all is not None else None,
-                confidence_threshold=settings.confidence_threshold,
-                spectrogram=spectrogram,
+
+    for start in range(0, total_samples, chunk_samples):
+        end = start + chunk_samples
+        chunk_wave = full_waveform[:, start:end]
+
+        if chunk_wave.shape[1] < chunk_samples:
+            chunk_wave = torch.nn.functional.pad(chunk_wave, (0, chunk_samples - chunk_wave.shape[1]))
+
+        batch_wave = chunk_wave.unsqueeze(0)
+
+        probs_all, attn_all = predictor.predict_waveform_batch(batch_wave)
+        probs = probs_all[0]
+
+        if getattr(predictor, "uses_baseline", False) and hasattr(predictor, "baseline"):
+            probs = np.clip(probs - predictor.baseline, 0.0, 1.0)
+
+        xai_heatmap = None
+        meets_threshold = bool(np.max(probs) >= settings.confidence_threshold)
+
+        if meets_threshold and settings.enable_xai:
+            target_idx = int(np.argmax(probs))
+            xai_heatmap = generate_occlusion_heatmap(
+                chunk_wave,
+                predictor,
+                target_idx,
+                sample_rate=settings.sample_rate,
+                window_sec=settings.xai_window_sec,
             )
-            cp.model_name = model_name
-            if cp.predictions:
-                cp.predictions.xai_heatmap = xai_heatmap
-            chunks_out.append(cp)
-            chunk_index_counter += 1
+
+        spectrogram = compute_spectrogram_payload(chunk_wave, settings, device)
+
+        model_taxonomy = _taxonomy_for_model(model_name, taxonomy_by_model, taxonomy)
+        start_sec = start // settings.sample_rate
+        cp = _chunk_from_probs(
+            chunk_index=start_sec,
+            probs=probs,
+            labels=labels,
+            taxonomy=model_taxonomy,
+            top_k=settings.response_top_k,
+            attention_row=attn_all[0] if attn_all is not None else None,
+            confidence_threshold=settings.confidence_threshold,
+            spectrogram=spectrogram,
+            model_name=model_name,
+        )
+        cp.model_name = model_name
+        if cp.predictions:
+            cp.predictions.xai_heatmap = xai_heatmap
+        chunks_out.append(cp)
 
     if claimed_sample_rate != settings.sample_rate:
         warnings.append(f"sample_rate was {claimed_sample_rate}, server uses {settings.sample_rate}")
@@ -481,6 +494,7 @@ async def _stream_process_audio(
     original_filename: str,
     claimed_sample_rate: int,
     model_selection: str,
+    taxonomy_by_model: dict[str, dict[str, dict[str, str]]] | None,
 ):
     by_index = sorted(blobs, key=lambda x: x[0])
     waveforms = []
@@ -488,109 +502,131 @@ async def _stream_process_audio(
     
     for idx, raw, _fn in by_index:
         try:
-            w = await run_in_threadpool(load_waveform_full, raw, settings, device, format_hint="wav")
-            waveforms.append(w.squeeze(0))
+            w = await run_in_threadpool(
+                load_waveform_full,
+                raw,
+                settings,
+                device,
+                filename=original_filename or _fn,
+            )
+            waveforms.append(w)  # shape (1, S)
         except Exception as exc:
             logger.warning("chunk decode failed: %s", exc)
+            err_msg = str(exc).strip() or "Audio decode failed"
+            yield f"data: {json.dumps({'error': err_msg}, ensure_ascii=False)}\n\n"
+            return
 
     if not waveforms:
-        yield f"data: {json.dumps({'error': 'No audio data decoded'})}\n\n"
+        yield f"data: {json.dumps({'error': 'No audio data decoded'}, ensure_ascii=False)}\n\n"
         return
         
-    full_waveform = torch.cat(waveforms, dim=1)
+    full_waveform = torch.cat(waveforms, dim=1)  # (1, Total_S)
     total_samples = full_waveform.shape[1]
     
-    models_to_run = []
-    if model_selection == "ensemble":
-        models_to_run = list(predictors.keys())
-    elif model_selection in predictors:
-        models_to_run = [model_selection]
-    else:
-        models_to_run = ["perch"]
-        
-    stride_samples = settings.sample_rate  # 1 second stride
-    
-    # Pre-calculate chunk logic
-    # Find max window needed
-    max_chunk_sec = 5
-    max_chunk_samples = max_chunk_sec * settings.sample_rate
-    
-    # We yield an initialization event
+    model_name = _resolve_model(model_selection, predictors)
+    predictor = predictors.get(model_name)
+    if not predictor:
+        yield f"data: {json.dumps({'error': f'Model not available: {model_name}'})}\n\n"
+        return
+
+    chunk_sec = 3 if model_name == "birdnet" else 5
+    stride_samples = chunk_sec * settings.sample_rate
+
     init_event = {
         "event": "init",
         "original_filename": original_filename,
         "sample_rate": settings.sample_rate,
-        "models": models_to_run,
-        "total_duration_sec": total_samples / settings.sample_rate
+        "model": model_name,
+        "window_sec": chunk_sec,
+        "stride_sec": chunk_sec,
+        "total_duration_sec": total_samples / settings.sample_rate,
+        "confidence_threshold": settings.confidence_threshold,
+        "xai_pending": settings.enable_xai,
     }
     yield f"data: {json.dumps(init_event)}\n\n"
-    await asyncio.sleep(0) # Yield control
-    
-    chunk_index_counter = 0
-    for start in range(0, total_samples, stride_samples):
-        # Allow running beyond the end but pad it
-        
-        async def process_model(model_name):
-            predictor = predictors.get(model_name)
-            if not predictor:
-                return None
-            
-            chunk_sec = 3 if model_name == "birdnet" else 5
-            chunk_samples = chunk_sec * settings.sample_rate
-            
-            end = start + chunk_samples
-            chunk_wave = full_waveform[:, start:end]
-            
-            if chunk_wave.shape[1] < chunk_samples:
-                chunk_wave = torch.nn.functional.pad(chunk_wave, (0, chunk_samples - chunk_wave.shape[1]))
-                
-            batch_wave = chunk_wave.unsqueeze(0)
-            
-            def run_model():
-                probs_all, attn_all = predictor.predict_waveform_batch(batch_wave)
-                probs = probs_all[0]
-                if getattr(predictor, "uses_baseline", False) and hasattr(predictor, "baseline"):
-                    probs = np.clip(probs - predictor.baseline, 0.0, 1.0)
-                
-                xai_heatmap = None
-                meets_threshold = bool(np.max(probs) >= settings.confidence_threshold)
-                if meets_threshold and settings.enable_xai:
-                    xai_heatmap = generate_occlusion_heatmap(
-                        chunk_wave, predictor, int(np.argmax(probs)), 
-                        sample_rate=settings.sample_rate, 
-                        window_sec=settings.xai_window_sec
-                    )
-                spectrogram = compute_spectrogram_payload(chunk_wave, settings, device)
-                return probs, attn_all, meets_threshold, xai_heatmap, spectrogram
-                
-            probs, attn_all, meets_threshold, xai_heatmap, spectrogram = await run_in_threadpool(run_model)
-            
-            cp = _chunk_from_probs(
-                chunk_index=start // settings.sample_rate,  # use second as index
-                probs=probs,
-                labels=predictor.labels,
-                taxonomy=taxonomy,
-                top_k=settings.response_top_k,
-                attention_row=attn_all[0] if attn_all is not None else None,
-                confidence_threshold=settings.confidence_threshold,
-                spectrogram=spectrogram,
-            )
-            cp.model_name = model_name
-            if cp.predictions:
-                cp.predictions.xai_heatmap = xai_heatmap
-            return cp
+    await asyncio.sleep(0)
 
-        # Run all selected models in parallel for this 1s stride
-        tasks = [process_model(m_name) for m_name in models_to_run]
-        results = await asyncio.gather(*tasks)
-        
-        for cp in results:
-            if cp is not None:
-                resp_str = cp.model_dump_json()
-                yield f"data: {resp_str}\n\n"
-            
-        chunk_index_counter += 1
+    chunk_samples = chunk_sec * settings.sample_rate
+    model_taxonomy = _taxonomy_for_model(model_name, taxonomy_by_model, taxonomy)
+    xai_jobs: list[dict] = []
+
+    # Phase 1: inference + spectrogram per window (no XAI yet)
+    for start in range(0, total_samples, stride_samples):
+        end = start + chunk_samples
+        chunk_wave = full_waveform[:, start:end]
+
+        if chunk_wave.shape[1] < chunk_samples:
+            chunk_wave = torch.nn.functional.pad(chunk_wave, (0, chunk_samples - chunk_wave.shape[1]))
+
+        batch_wave = chunk_wave.unsqueeze(0)
+
+        def run_predict_only():
+            probs_all, attn_all = predictor.predict_waveform_batch(batch_wave)
+            probs = probs_all[0]
+            if getattr(predictor, "uses_baseline", False) and hasattr(predictor, "baseline"):
+                probs = np.clip(probs - predictor.baseline, 0.0, 1.0)
+            spectrogram = compute_spectrogram_payload(chunk_wave, settings, device)
+            return probs, attn_all, spectrogram
+
+        probs, attn_all, spectrogram = await run_in_threadpool(run_predict_only)
+
+        start_sec = start // settings.sample_rate
+        cp = _chunk_from_probs(
+            chunk_index=start_sec,
+            probs=probs,
+            labels=predictor.labels,
+            taxonomy=model_taxonomy,
+            top_k=settings.response_top_k,
+            attention_row=attn_all[0] if attn_all is not None else None,
+            confidence_threshold=settings.confidence_threshold,
+            spectrogram=spectrogram,
+            model_name=model_name,
+        )
+        cp.model_name = model_name
+        if cp.predictions:
+            cp.predictions.xai_heatmap = None
+
+        yield f"data: {cp.model_dump_json()}\n\n"
         await asyncio.sleep(0.01)
+
+        meets_threshold = bool(np.max(probs) >= settings.confidence_threshold)
+        if meets_threshold and settings.enable_xai:
+            xai_jobs.append(
+                {
+                    "chunk_wave": chunk_wave,
+                    "target_idx": int(np.argmax(probs)),
+                    "index": start_sec,
+                    "analysis_id": cp.analysis_id,
+                }
+            )
+
+    # Phase 2: XAI per window, then patch heatmaps via xai_update events
+    if settings.enable_xai:
+        for job in xai_jobs:
+            cw = job["chunk_wave"]
+            target_idx = job["target_idx"]
+
+            def run_xai():
+                return generate_occlusion_heatmap(
+                    cw,
+                    predictor,
+                    target_idx,
+                    sample_rate=settings.sample_rate,
+                    window_sec=settings.xai_window_sec,
+                )
+
+            xai_heatmap = await run_in_threadpool(run_xai)
+            update_event = {
+                "event": "xai_update",
+                "index": job["index"],
+                "model_name": model_name,
+                "analysis_id": job["analysis_id"],
+                "xai_heatmap": xai_heatmap,
+            }
+            yield f"data: {json.dumps(update_event)}\n\n"
+            await asyncio.sleep(0.01)
+
+        yield f"data: {json.dumps({'event': 'xai_done'})}\n\n"
 
 
 @app.post("/api/predict", response_model=PredictResponse)
@@ -612,6 +648,7 @@ async def predict(
     settings: Settings = request.app.state.settings
     predictors: dict = getattr(request.app.state, "predictors", {})
     taxonomy: dict[str, dict[str, str]] = request.app.state.taxonomy
+    taxonomy_by_model = getattr(request.app.state, "taxonomy_by_model", None)
     sem: asyncio.Semaphore = request.app.state.prediction_sem
 
     cl = request.headers.get("content-length")
@@ -660,6 +697,7 @@ async def predict(
                 claimed_sample_rate=sample_rate,
                 warnings=warnings,
                 model_selection=model_selection,
+                taxonomy_by_model=taxonomy_by_model,
             )
     except ValueError as e:
         raise HTTPException(status_code=422, detail={"message": str(e)}) from e
@@ -683,6 +721,7 @@ async def stream_predict(
     settings: Settings = request.app.state.settings
     predictors: dict = getattr(request.app.state, "predictors", {})
     taxonomy: dict[str, dict[str, str]] = request.app.state.taxonomy
+    taxonomy_by_model = getattr(request.app.state, "taxonomy_by_model", None)
     sem: asyncio.Semaphore = request.app.state.prediction_sem
 
     if not audio_chunks:
@@ -711,6 +750,7 @@ async def stream_predict(
                 original_filename=original_filename,
                 claimed_sample_rate=sample_rate,
                 model_selection=model_selection,
+                taxonomy_by_model=taxonomy_by_model,
             ):
                 yield chunk
             yield "data: {\"event\": \"done\"}\n\n"

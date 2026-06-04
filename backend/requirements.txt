@@ -5,6 +5,8 @@ numpy>=1.26.0
 torch>=2.1.0
 torchaudio>=2.1.0
 soundfile>=0.12.1
+# MP3/M4A/WEBM/AAC decoding uses system ffmpeg (not torchaudio.load / torchcodec).
+# Windows: choco install ffmpeg  |  macOS: brew install ffmpeg
 pydantic-settings>=2.2.0
 httpx>=0.27.0
 pandas>=2.1.0

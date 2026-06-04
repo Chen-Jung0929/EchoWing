@@ -7,10 +7,10 @@
 - Hugging Face 帳號
 - 本機已安裝 [Git LFS](https://git-lfs.com/)
 - `backend/models/` 內含：
-  - `perch_v2_cpu_savedmodel/`
-  - `pseudo_best_model.pt`
-  - `species_info_completed_comma.csv`
-  - （選用）`taxonomy.csv`、`val_line.json`
+  - `perch/perch_v2_cpu_savedmodel/`
+  - `perch/pseudo_best_model.pt`
+  - `perch/species_info_completed_comma.csv`
+  - （選用）`perch/taxonomy.csv`、`val_line.json`（ONNX）、`resnet18_v3_int8.onnx`
 
 ## 1. 建立 Docker Space
 
@@ -36,8 +36,8 @@ backend
 ```powershell
 cd backend
 git lfs install
-git lfs track "models/perch_v2_cpu_savedmodel/**"
-git lfs track "models/pseudo_best_model.pt"
+git lfs track "models/perch/perch_v2_cpu_savedmodel/**"
+git lfs track "models/perch/pseudo_best_model.pt"
 git add .gitattributes
 git add models/
 git commit -m "Track models for HF Space deploy"

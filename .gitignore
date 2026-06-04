@@ -10,7 +10,7 @@ desktop.ini
 .vscode/*
 !.vscode/extensions.json
 
-# Python
+# Python (repo-wide)
 __pycache__/
 *.py[cod]
 *$py.class
@@ -21,11 +21,57 @@ venv/
 .env
 .env.*
 !.env.example
+!.env.production
 
-# Logs
+# Logs & caches
 *.log
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Jupyter
 .ipynb_checkpoints/
 
+# Node (if installed at repo root)
+node_modules/
+
+# Local test audio / video (keep directory marker)
+wavs/*
+!wavs/.gitkeep
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
+*.aac
+*.webm
+*.mp4
+*.mov
+*.mkv
+
+# Scratch / QC reports
+feedback_box/
+
+# Legacy duplicate checkout (if present locally)
 EchoWing-Backend/
+
+# Frontend local overrides (tracked: frontend/.env.production)
+frontend/.env.production.local
+frontend/.env.local
+
+# Backend local secrets & data
+backend/.env
+backend/.env.*
+!backend/.env.example
+backend/data/raw/*
+!backend/data/raw/.gitkeep
+backend/data/processed/*
+!backend/data/processed/.gitkeep
+
+# Backend notebooks & one-off scripts (optional local only)
+backend/notebooks/
+
+# Hugging Face / TF download caches
+backend/.hf_cache/
+**/.keras/

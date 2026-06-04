@@ -8,7 +8,7 @@ from enum import Enum
 
 from starlette.concurrency import run_in_threadpool
 
-from app.adjustion import load_taxonomy_map
+from app.adjustion import load_silic_taxonomy_map, load_taxonomy_map
 from app.audio_mel import configure_torch_threads
 from app.config import Settings
 from app.inference import (
@@ -47,9 +47,16 @@ def _load_models_sync(settings: Settings):
     except Exception as e:
         logger.warning(f"Failed to load SILIC: {e}")
         
-    # Also load the default taxonomy for fallback/perch
     taxonomy = load_taxonomy_map(settings.taxonomy_csv_path)
-    return predictors, taxonomy
+    taxonomy_by_model: dict[str, dict[str, dict[str, str]]] = {
+        "perch": taxonomy,
+        "birdnet": taxonomy,
+    }
+    if settings.silic_taxonomy_csv_path.is_file():
+        taxonomy_by_model["silic"] = load_silic_taxonomy_map(settings.silic_taxonomy_csv_path)
+    else:
+        taxonomy_by_model["silic"] = {}
+    return predictors, taxonomy, taxonomy_by_model
 
 
 async def ensure_models_loaded(app) -> None:
@@ -82,9 +89,12 @@ async def ensure_models_loaded(app) -> None:
 
         try:
             logger.info("Loading inference models...")
-            predictors, taxonomy = await run_in_threadpool(_load_models_sync, settings)
+            predictors, taxonomy, taxonomy_by_model = await run_in_threadpool(
+                _load_models_sync, settings
+            )
             state.predictors = predictors
             state.taxonomy = taxonomy
+            state.taxonomy_by_model = taxonomy_by_model
             state.model_status = ModelStatus.READY
             logger.info("Models ready.")
         except Exception as exc:

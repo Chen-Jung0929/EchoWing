@@ -16,18 +16,19 @@ class Settings(BaseSettings):
     # Removed strict literal to allow dynamic model routing
     inference_backend: str = "perch" # Default
     
-    # Model Paths
-    perch_savedmodel_path: Path = Path("models/perch_v2_cpu_savedmodel")
-    perch_taxonomy_csv_path: Path = Path("models/perch_taxonomy.csv") # Global taxonomy
-    
-    birdnet_model_path: Path = Path("models/birdnet/BirdNET_GLOBAL_6K_V2.4_Model_FP32.tflite")
-    birdnet_labels_path: Path = Path("models/birdnet/BirdNET_GLOBAL_6K_V2.4_Labels.txt")
-    
+    # Model Paths (layout: models/perch | models/birdnet | models/silic | ONNX at models root)
+    perch_savedmodel_path: Path = Path("models/perch/perch_v2_cpu_savedmodel")
+    perch_pseudo_head_path: Path = Path("models/perch/pseudo_best_model.pt")
+    perch_labels_path: Path = Path("models/perch/perch_v2_cpu_savedmodel/assets/labels.csv")
+    taxonomy_csv_path: Path = Path("models/perch/species_info_completed_comma.csv")
+
+    birdnet_model_path: Path = Path("models/birdnet/audio-model.tflite")
+    birdnet_labels_path: Path = Path("models/birdnet/labels/zh.txt")
+
     silic_model_path: Path = Path("models/silic/silic_best_model.pt")
     silic_taxonomy_csv_path: Path = Path("models/silic/silic_taxonomy.csv")
-    
+
     onnx_model_path: Path = Path("models/resnet18_v3_int8.onnx")
-    taxonomy_csv_path: Path = Path("models/species_info_completed_comma.csv") # Legacy
     class_order_json_path: Path | None = None
     val_line_json_path: Path = Path("models/val_line.json")
 

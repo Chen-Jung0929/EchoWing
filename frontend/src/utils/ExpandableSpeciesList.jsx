@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { MdExpandMore, MdExpandLess } from 'react-icons/md';
 import { formatMessage } from '../i18n';
+import { segmentNumberFromStart } from './aggregateByVote';
 import SpeciesWikiLink from './SpeciesWikiLink';
 
 const DEFAULT_PREVIEW = 5;
@@ -13,6 +14,7 @@ export default function ExpandableSpeciesList({
   getLocalizedText,
   previewCount = DEFAULT_PREVIEW,
   muted = false,
+  windowSec = 5,
 }) {
   const [expanded, setExpanded] = useState(false);
   const all = Array.isArray(species) ? species : [];
@@ -52,7 +54,9 @@ export default function ExpandableSpeciesList({
                     <>
                       {' '}
                       · {dict.appearsInChunks}:{' '}
-                      {s.chunk_indices.map((i) => i + 1).join('、')}
+                      {s.chunk_indices
+                        .map((startSec) => segmentNumberFromStart(startSec, windowSec))
+                        .join('、')}
                     </>
                   )}
                 </p>

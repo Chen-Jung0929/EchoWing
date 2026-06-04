@@ -6,10 +6,15 @@ import ReportGenerator from '../components/ReportGenerator/ReportGenerator';
 import {
   aggregateChunksByVote,
   chunkTimeRangeLabel,
+  displayChunksForModel,
+  modelWindowSec,
+  resolveConfidenceThreshold,
+  segmentNumberFromStart,
 } from './aggregateByVote';
 import { buildFullReportModel } from './buildFullReportModel';
 import { ResultTitleBar } from './ResultTitleActions';
 import { isSurveyMetadataSaved } from './surveyMetadata';
+import { chunkIdentity } from './chunkIdentity';
 
 function formatAnalyzedAt(isoString, lang) {
   if (!isoString) return '—';
@@ -177,7 +182,13 @@ export default function ChunkResultsView({
   resetToLanding,
   spectrogramByIndex = {},
 }) {
-  const chunks = result.chunks ?? [];
+  const allChunks = result.chunks ?? [];
+  const modelName = allChunks[0]?.model_name ?? 'perch';
+  const windowSec = modelWindowSec(modelName);
+  const chunks = useMemo(
+    () => displayChunksForModel(allChunks, modelName),
+    [allChunks, modelName]
+  );
   const tabCount = 1 + chunks.length;
   const [pageIndex, setPageIndex] = useState(0);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
@@ -192,9 +203,10 @@ export default function ChunkResultsView({
   const summary = useMemo(
     () =>
       aggregateChunksByVote(chunks, {
-        confidenceThreshold: result.confidence_threshold ?? 0.8,
+        confidenceThreshold: resolveConfidenceThreshold(result.confidence_threshold),
+        windowSec,
       }),
-    [chunks, result.confidence_threshold]
+    [chunks, result.confidence_threshold, windowSec]
   );
   const okChunks = chunks.filter((c) => !c.error);
 
@@ -212,6 +224,7 @@ export default function ChunkResultsView({
     : null;
 
   const chunkIndices = useMemo(() => chunks.map((c) => c.index), [chunks]);
+  const totalDurationSec = result.stream_meta?.total_duration_sec ?? 0;
 
   const fullReportModel = useMemo(
     () =>
@@ -221,9 +234,21 @@ export default function ChunkResultsView({
         filename,
         spectrogramByIndex,
         surveyMetadata,
-        confidenceThreshold: result.confidence_threshold ?? 0.8,
+        confidenceThreshold: resolveConfidenceThreshold(result.confidence_threshold),
+        modelName,
+        windowSec,
+        totalDurationSec,
       }),
-    [result, chunks, filename, spectrogramByIndex, surveyMetadata]
+    [
+      result,
+      chunks,
+      filename,
+      spectrogramByIndex,
+      surveyMetadata,
+      modelName,
+      windowSec,
+      totalDurationSec,
+    ]
   );
 
   const runPdfDownload = useCallback(async () => {
@@ -291,8 +316,10 @@ export default function ChunkResultsView({
     });
   }, [surveyMetadata, runPdfDownload, dict.downloadModalConfirm]);
 
-  const confidenceThreshold = result.confidence_threshold ?? 0.8;
+  const confidenceThreshold = resolveConfidenceThreshold(result.confidence_threshold);
   const thresholdPct = Math.round(confidenceThreshold * 100);
+  const xaiPending = result.xai_pending === true;
+  const actionsDisabled = xaiPending;
 
   const summaryHoverSpecies = summary?.predictions?.top_species;
   const summaryLowConfidence = summary?.predictions?.meets_confidence_threshold === false;
@@ -333,6 +360,7 @@ export default function ChunkResultsView({
             onSave={handleSaveRequest}
             onDownload={handleDownloadResult}
             surveySaved={saveVersion}
+            actionsDisabled={actionsDisabled}
           />
 
 
@@ -378,6 +406,7 @@ export default function ChunkResultsView({
           aria-label={dict.resultTitle}
         >
           <SegmentTab
+            key="summary"
             label={dict.summaryTabShort}
             ariaLabel={dict.summaryLabel}
             isActive={pageIndex === 0}
@@ -393,8 +422,9 @@ export default function ChunkResultsView({
           />
           {chunks.map((chunk, i) => {
             const page = i + 1;
-            const n = chunk.index + 1;
-            const fullLabel = `${dict.chunkLabel} ${n}`;
+            const segNum = segmentNumberFromStart(chunk.index, windowSec);
+            const timeRange = chunkTimeRangeLabel(chunk.index, windowSec);
+            const fullLabel = `${dict.chunkLabel} ${segNum}`;
             const preds = chunk.predictions;
             const meets = preds?.meets_confidence_threshold ?? (preds?.top_species?.length > 0);
             const hoverSpecies = chunk.error
@@ -404,14 +434,14 @@ export default function ChunkResultsView({
                 : preds?.reference_species;
             return (
               <SegmentTab
-                key={chunk.analysis_id ?? chunk.index}
-                label={String(n)}
-                ariaLabel={`${fullLabel} · ${chunkTimeRangeLabel(chunk.index)}`}
+                key={`segment-${i}-${chunkIdentity(chunk, i)}`}
+                label={String(segNum)}
+                ariaLabel={`${fullLabel} · ${timeRange}`}
                 isActive={pageIndex === page}
                 failed={Boolean(chunk.error)}
                 lowConfidence={!chunk.error && preds && !meets}
                 onClick={() => setPageIndex(page)}
-                hoverTitle={`${fullLabel} · ${chunkTimeRangeLabel(chunk.index)}`}
+                hoverTitle={`${fullLabel} · ${timeRange}`}
                 hoverSpecies={hoverSpecies}
                 hoverIsReference={!chunk.error && preds && !meets}
                 getLocalizedText={getLocalizedText}
@@ -439,6 +469,8 @@ export default function ChunkResultsView({
                 confidenceThreshold,
                 spectrogramByIndex,
                 resultChunks: chunks,
+                totalDurationSec,
+                xaiPending,
               })}
             </div>
           ) : (
@@ -455,6 +487,8 @@ export default function ChunkResultsView({
             confidenceThreshold,
             spectrogramByIndex,
             resultChunks: chunks,
+            totalDurationSec,
+            xaiPending,
           })
         )}
       </div>

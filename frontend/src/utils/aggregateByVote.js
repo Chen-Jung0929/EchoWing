@@ -1,6 +1,13 @@
 /** @typedef {{ zh: string, en: string }} LocalizedName */
 /** @typedef {{ species_id: string, name: LocalizedName, probability: number, wiki_url_zh?: string | null, wiki_url_en?: string | null, scientific_name?: string }} TopSpecies */
 /** @typedef {{ class_name: LocalizedName, probability: number }} TopClass */
+import {
+  DEFAULT_CONFIDENCE_THRESHOLD,
+  resolveConfidenceThreshold,
+} from '../config/confidenceThreshold';
+
+export { DEFAULT_CONFIDENCE_THRESHOLD, resolveConfidenceThreshold };
+
 /** @typedef {{ top_species?: TopSpecies[], top_classes?: TopClass[], attention_weights?: number[] }} Predictions */
 /** @typedef {{ index: number, predictions?: Predictions, decision_support?: object, error?: string | null }} ChunkEntry */
 
@@ -10,12 +17,13 @@ const DISCLAIMER = {
 };
 
 /**
- * 投票聚合：僅統計各片段通過信心門檻的 top_species / top_classes。
+ * 投票聚合：僅統計各片段通過信心門檻的 top_species。
  * @param {ChunkEntry[]} chunks
  * @param {{ confidenceThreshold?: number }} [options]
  */
 export function aggregateChunksByVote(chunks, options = {}) {
-  const confidenceThreshold = options.confidenceThreshold ?? 0.8;
+  const confidenceThreshold = options.confidenceThreshold ?? DEFAULT_CONFIDENCE_THRESHOLD;
+  const windowSec = options.windowSec ?? modelWindowSec(chunks?.[0]?.model_name);
   const validChunks = (chunks ?? []).filter((c) => !c.error && c.predictions);
   if (validChunks.length === 0) return null;
 
@@ -61,39 +69,6 @@ export function aggregateChunksByVote(chunks, options = {}) {
       chunk_indices: [...e.chunkIndices].sort((a, b) => a - b),
     }));
 
-  const classMap = new Map();
-  for (const chunk of validChunks) {
-    const seen = new Set();
-    for (const item of chunk.predictions.top_classes ?? []) {
-      const key = item.class_name?.zh ?? item.class_name?.en ?? JSON.stringify(item.class_name);
-      if (seen.has(key)) continue;
-      seen.add(key);
-
-      let entry = classMap.get(key);
-      if (!entry) {
-        entry = {
-          class_name: item.class_name,
-          voteCount: 0,
-          chunkIndices: [],
-          maxProb: 0,
-        };
-        classMap.set(key, entry);
-      }
-      entry.voteCount += 1;
-      entry.chunkIndices.push(chunk.index);
-      entry.maxProb = Math.max(entry.maxProb, item.probability);
-    }
-  }
-
-  const top_classes = [...classMap.values()]
-    .sort((a, b) => b.voteCount - a.voteCount || b.maxProb - a.maxProb)
-    .map((e) => ({
-      class_name: e.class_name,
-      probability: e.voteCount / n,
-      vote_count: e.voteCount,
-      chunk_indices: [...e.chunkIndices].sort((a, b) => a - b),
-    }));
-
   const attention_weights = validChunks.flatMap(
     (c) => c.predictions.attention_weights ?? []
   );
@@ -102,7 +77,7 @@ export function aggregateChunksByVote(chunks, options = {}) {
     validChunkCount: n,
     predictions: {
       top_species,
-      top_classes,
+      top_classes: [],
       attention_weights: attention_weights.length > 0 ? attention_weights : null,
       meets_confidence_threshold: top_species.length > 0,
       reference_species: [],
@@ -110,12 +85,18 @@ export function aggregateChunksByVote(chunks, options = {}) {
     decision_support: buildSummaryDecisionSupport(
       top_species,
       n,
-      confidenceThreshold
+      confidenceThreshold,
+      windowSec
     ),
   };
 }
 
-function buildSummaryDecisionSupport(topSpecies, validCount, threshold = 0.8) {
+function buildSummaryDecisionSupport(
+  topSpecies,
+  validCount,
+  threshold = DEFAULT_CONFIDENCE_THRESHOLD,
+  windowSec = 5
+) {
   const thresholdPct = Math.round(threshold * 100);
 
   if (!topSpecies.length) {
@@ -139,13 +120,15 @@ function buildSummaryDecisionSupport(topSpecies, validCount, threshold = 0.8) {
   const nameEn = top.name?.en ?? top.species_id;
   const chunkHint =
     top.chunk_indices?.length > 0
-      ? top.chunk_indices.map((i) => i + 1).join('、')
+      ? top.chunk_indices
+          .map((sec) => segmentNumberFromStart(sec, windowSec))
+          .join('、')
       : '—';
 
   return {
     risk_analysis: {
-      zh: `投票彙整：${nameZh} 在 ${votes}/${validCount} 個片段的 Top 預測中出現（整體得票率 ${pct}%）。主要出現在片段 ${chunkHint}。`,
-      en: `Vote aggregate: ${nameEn} appeared in the top predictions of ${votes}/${validCount} segment(s) (overall vote share ${pct}%). Most prominent in segment(s) ${chunkHint}.`,
+      zh: `投票彙整：${nameZh} 在 ${votes}/${validCount} 個分析窗的 Top 預測中出現（整體得票率 ${pct}%）。主要出現在窗 ${chunkHint}。`,
+      en: `Vote aggregate: ${nameEn} appeared in the top predictions of ${votes}/${validCount} window(s) (overall vote share ${pct}%). Most prominent in window(s) ${chunkHint}.`,
     },
     action_recommendation: {
       zh: '建議以總覽結果為整段錄音的參考；若各片段差異大，請點選時間軸查看分段詳情。',
@@ -155,10 +138,53 @@ function buildSummaryDecisionSupport(topSpecies, validCount, threshold = 0.8) {
   };
 }
 
+/** @deprecated use modelWindowSec */
 export const CHUNK_DURATION_SEC = 5;
 
-export function chunkTimeRangeLabel(chunkIndex) {
-  const start = chunkIndex * CHUNK_DURATION_SEC;
-  const end = (chunkIndex + 1) * CHUNK_DURATION_SEC;
+/** Per-model analysis window length (seconds). */
+export function modelWindowSec(modelName = 'perch') {
+  if (modelName === 'birdnet') return 3;
+  return 5;
+}
+
+/**
+ * Human-readable non-overlapping window on the timeline.
+ * @param {number} startSec - window start in seconds (chunk.index from API)
+ * @param {number} [windowSec]
+ */
+export function chunkTimeRangeLabel(startSec, windowSec = CHUNK_DURATION_SEC) {
+  const start = Math.max(0, Number(startSec) || 0);
+  const end = start + windowSec;
   return `${start}–${end}s`;
+}
+
+/**
+ * Keep non-overlapping windows only (0, 5, 10… or 0, 3, 6…), sorted by start time.
+ * @param {ChunkEntry[]} chunks
+ * @param {string} [modelName]
+ */
+export function displayChunksForModel(chunks, modelName) {
+  const model = modelName ?? chunks?.[0]?.model_name ?? 'perch';
+  const windowSec = modelWindowSec(model);
+  const seen = new Set();
+  const out = [];
+
+  for (const chunk of chunks ?? []) {
+    const start = chunk?.index ?? 0;
+    const chunkModel = chunk?.model_name ?? model;
+    if (chunkModel !== model) continue;
+    if (!chunk.error && start % windowSec !== 0) continue;
+    const key = start;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(chunk);
+  }
+
+  return out.sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
+}
+
+/** 1-based segment number for UI tabs (segment 1 = 0–5s when window is 5s). */
+export function segmentNumberFromStart(startSec, windowSec = CHUNK_DURATION_SEC) {
+  const start = Math.max(0, Number(startSec) || 0);
+  return Math.floor(start / windowSec) + 1;
 }

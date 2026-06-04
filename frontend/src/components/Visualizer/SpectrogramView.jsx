@@ -2,9 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   computeSpectrogramCanvasSize,
   drawSpectrogramPayload,
+  drawXaiStripBelow,
   estimateSpectrogramDurationSec,
+  resampleHeatmapToFrames,
   PX_PER_TIME_FRAME,
   SPECTROGRAM_CANVAS_HEIGHT,
+  XAI_STRIP_CANVAS_HEIGHT,
 } from '../../utils/spectrogramCache';
 
 const COMPACT_MAX_WIDTH = 680;
@@ -17,15 +20,33 @@ export default function SpectrogramView({
   dict,
   lang = 'zh',
   compact = false,
-  heatmapsByModel = null,
+  xaiHeatmap = null,
+  xaiGenerating = false,
 }) {
   const canvasRef = useRef(null);
+  const xaiCanvasRef = useRef(null);
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(0);
 
   const isSummary = variant === 'summary';
   const displayHeight = compact ? '10rem' : '11rem';
   const canvasHeight = compact ? 180 : SPECTROGRAM_CANVAS_HEIGHT;
+  const xaiStripDisplayPx = compact ? 28 : 36;
+  const xaiStripCanvasH = compact ? 32 : XAI_STRIP_CANVAS_HEIGHT;
+
+  const alignedXai = useMemo(() => {
+    if (!xaiHeatmap?.length || !spectrogram?.time_frames) return null;
+    return resampleHeatmapToFrames(xaiHeatmap, spectrogram.time_frames);
+  }, [xaiHeatmap, spectrogram?.time_frames]);
+
+  const hasXai = Boolean(alignedXai?.length) && !xaiGenerating;
+  const generatingLabel =
+    dict?.xaiGenerating ?? (lang === 'zh' ? 'XAI生成中...' : 'Generating XAI…');
+  const generatingHint =
+    dict?.xaiGeneratingHint ??
+    (lang === 'zh'
+      ? '可解釋性熱圖計算中，完成後可儲存或下載報告'
+      : 'Computing explainability heatmaps; save and download unlock when done');
 
   useEffect(() => {
     if (!isSummary || compact) return;
@@ -78,6 +99,14 @@ export default function SpectrogramView({
     drawSpectrogramPayload(ctx, spectrogram, canvas.width, canvas.height);
   }, [spectrogram, canvasSize.width, canvasSize.height]);
 
+  useEffect(() => {
+    if (!hasXai || !xaiCanvasRef.current) return;
+    const canvas = xaiCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx || !alignedXai) return;
+    drawXaiStripBelow(ctx, alignedXai, canvas.width, canvas.height);
+  }, [hasXai, alignedXai, canvasSize.width, xaiStripCanvasH]);
+
   if (!spectrogram) {
     return (
       <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
@@ -88,10 +117,11 @@ export default function SpectrogramView({
 
   const title = dict?.spectrogramTitle ?? (lang === 'zh' ? '音訊頻譜圖' : 'Spectrogram');
   const hint =
+    dict?.spectrogramXaiHint ??
     dict?.spectrogramHint ??
     (lang === 'zh'
-      ? '橫軸為時間、縱軸為頻率（Mel）；底部色彩軌道表示各模型關注時間點 (紅:Perch, 藍:BirdNET, 綠:SILIC)'
-      : 'Time vs Mel frequency; Colored bottom tracks indicate model attention (Red:Perch, Blue:BirdNET, Green:SILIC)');
+      ? '橫軸為時間、縱軸為 Mel 頻率；頻譜下方半透明區塊內白色尖峰為 XAI 時間重要性（越高越關鍵）'
+      : 'Time vs Mel frequency; white spikes on the semi-transparent strip below show XAI time importance (taller = more important)');
   const durationSec = estimateSpectrogramDurationSec(spectrogram).toFixed(1);
 
   const meta =
@@ -100,8 +130,8 @@ export default function SpectrogramView({
         ? `總覽 · ${segmentCount ?? 1} 段 · ${durationSec}s · ${spectrogram.time_frames}×${spectrogram.freq_bins}`
         : `Overview · ${segmentCount ?? 1} segments · ${durationSec}s · ${spectrogram.time_frames}×${spectrogram.freq_bins}`
       : lang === 'zh'
-        ? `片段 ${chunkIndex + 1} · ${durationSec}s · ${spectrogram.time_frames}×${spectrogram.freq_bins}`
-        : `Segment ${chunkIndex + 1} · ${durationSec}s · ${spectrogram.time_frames}×${spectrogram.freq_bins}`;
+        ? `分析窗 ${chunkIndex + 1} · ${durationSec}s · ${spectrogram.time_frames}×${spectrogram.freq_bins}`
+        : `Window ${chunkIndex + 1} · ${durationSec}s · ${spectrogram.time_frames}×${spectrogram.freq_bins}`;
 
   const shellStyle = compact
     ? { background: '#ffffff', padding: '1rem', borderRadius: '0.5rem' }
@@ -112,24 +142,28 @@ export default function SpectrogramView({
         marginTop: '1.5rem',
       };
 
-  const canvasStyle = isSummary
-    ? {
-        width: '100%',
-        height: displayHeight,
-        border: '1px solid rgba(57, 77, 101, 0.15)',
-        borderRadius: '0.75rem',
-        background: '#f8fafc',
-        display: 'block',
-      }
-    : {
-        width: `${canvasSize.width}px`,
-        maxWidth: '100%',
-        height: displayHeight,
-        border: '1px solid rgba(57, 77, 101, 0.15)',
-        borderRadius: '0.75rem',
-        background: '#f8fafc',
-        display: 'block',
-      };
+  const plotWrapStyle = {
+    width: isSummary ? '100%' : `${canvasSize.width}px`,
+    maxWidth: '100%',
+    margin: isSummary ? undefined : '0 auto',
+    border: '1px solid rgba(57, 77, 101, 0.15)',
+    borderRadius: '0.75rem',
+    overflow: 'hidden',
+    background: '#f8fafc',
+  };
+
+  const specCanvasStyle = {
+    width: '100%',
+    height: displayHeight,
+    display: 'block',
+    verticalAlign: 'top',
+  };
+
+  const xaiCanvasStyle = {
+    width: '100%',
+    height: `${xaiStripDisplayPx}px`,
+    display: 'block',
+  };
 
   const canvasWrapStyle = isSummary
     ? { width: '100%', borderRadius: '0.75rem' }
@@ -167,52 +201,57 @@ export default function SpectrogramView({
         </span>
       </div>
 
-      <div ref={isSummary && !compact ? containerRef : undefined} style={{...canvasWrapStyle, position: 'relative'}}>
-        <canvas
-          ref={canvasRef}
-          width={canvasSize.width}
-          height={canvasSize.height}
-          style={canvasStyle}
-        />
-        {heatmapsByModel && Object.keys(heatmapsByModel).length > 0 && (
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            left: 0,
-            width: '100%',
-            height: '24px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
-            pointerEvents: 'none',
-            borderRadius: '0 0 0.75rem 0.75rem',
-            overflow: 'hidden',
-          }}>
-            {Object.entries(heatmapsByModel).map(([mName, hmArray]) => {
-              let rgb = '239, 68, 68'; // red (perch)
-              if (mName === 'birdnet') rgb = '59, 130, 246'; // blue
-              if (mName === 'silic') rgb = '34, 197, 94'; // green
-              
-              return (
-                <div key={mName} style={{ display: 'flex', flex: 1, minHeight: '6px' }}>
-                  {hmArray.map((weight, index) => (
-                    <div 
-                      key={index} 
-                      style={{
-                        flex: 1,
-                        backgroundColor: `rgba(${rgb}, ${Math.max(0, Math.min(1, weight * 0.9))})`,
-                      }}
-                    />
-                  ))}
-                </div>
-              );
-            })}
-          </div>
-        )}
+      <div ref={isSummary && !compact ? containerRef : undefined} style={canvasWrapStyle}>
+        <div style={{ ...plotWrapStyle, position: 'relative' }}>
+          <canvas
+            ref={canvasRef}
+            width={canvasSize.width}
+            height={canvasSize.height}
+            style={specCanvasStyle}
+          />
+          {hasXai ? (
+            <canvas
+              ref={xaiCanvasRef}
+              width={canvasSize.width}
+              height={xaiStripCanvasH}
+              style={xaiCanvasStyle}
+              aria-hidden
+            />
+          ) : null}
+          {xaiGenerating ? (
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(248, 250, 252, 0.72)',
+                pointerEvents: 'none',
+              }}
+              role="status"
+              aria-live="polite"
+            >
+              <span
+                style={{
+                  fontSize: '0.9375rem',
+                  fontWeight: 800,
+                  color: '#394d65',
+                  padding: '0.5rem 1rem',
+                  borderRadius: '0.5rem',
+                  background: 'rgba(255,255,255,0.9)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                }}
+              >
+                {generatingLabel}
+              </span>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.75rem', textAlign: 'right' }}>
-        {hint}
+        {xaiGenerating ? generatingHint : hint}
       </p>
     </div>
   );

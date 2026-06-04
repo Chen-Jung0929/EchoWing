@@ -64,11 +64,131 @@ export function concatSpectrogramPayloads(spectrograms) {
  * @param {Map<number, SpectrogramPayload> | Record<number, SpectrogramPayload>} cache
  */
 export function collectSpectrogramsFromChunks(chunks, cache) {
-  return (chunks ?? [])
-    .filter((c) => !c.error)
-    .sort((a, b) => a.index - b.index)
-    .map((c) => getSpectrogramFromCache(cache, c.index))
-    .filter(Boolean);
+  const seen = new Set();
+  /** @type {SpectrogramPayload[]} */
+  const out = [];
+  for (const c of (chunks ?? []).filter((ch) => !ch.error).sort((a, b) => a.index - b.index)) {
+    const idx = c.index ?? 0;
+    if (seen.has(idx)) continue;
+    seen.add(idx);
+    const spec = getSpectrogramFromCache(cache, idx);
+    if (spec) out.push(spec);
+  }
+  return out;
+}
+
+/**
+ * Trim trailing padded frames so the stitched spectrogram matches real audio length.
+ * @param {SpectrogramPayload} spec
+ * @param {number} durationSec
+ */
+export function trimSpectrogramToDuration(spec, durationSec) {
+  if (!spec?.values?.length || !(durationSec > 0)) return spec;
+  const estimated = estimateSpectrogramDurationSec(spec);
+  if (estimated <= durationSec + 0.02) return spec;
+  const keepFrames = Math.max(
+    1,
+    Math.min(spec.time_frames, Math.round((durationSec / estimated) * spec.time_frames))
+  );
+  return {
+    ...spec,
+    time_frames: keepFrames,
+    values: spec.values.slice(0, keepFrames),
+  };
+}
+
+/**
+ * @param {number[]} heatmap
+ * @param {number} targetFrames
+ */
+export function resampleHeatmapToFrames(heatmap, targetFrames) {
+  if (!heatmap?.length || !targetFrames) return [];
+  if (heatmap.length === targetFrames) return heatmap;
+  const out = [];
+  for (let t = 0; t < targetFrames; t++) {
+    const src = (t / targetFrames) * heatmap.length;
+    const i0 = Math.floor(src);
+    const i1 = Math.min(heatmap.length - 1, i0 + 1);
+    const f = src - i0;
+    out.push(heatmap[i0] * (1 - f) + heatmap[i1] * f);
+  }
+  return out;
+}
+
+/**
+ * Stitch per-chunk XAI heatmaps onto one timeline aligned to spectrogram frames.
+ * @param {Array<{ index?: number, predictions?: { xai_heatmap?: number[] } }>} chunks
+ * @param {number} targetFrames
+ * @param {number} totalDurationSec
+ * @param {number} windowSec analysis window length in seconds
+ */
+export function stitchXaiHeatmap(chunks, targetFrames, totalDurationSec, windowSec = 5) {
+  const list = (chunks ?? [])
+    .filter((c) => !c.error && c.predictions?.xai_heatmap?.length)
+    .sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
+  if (!list.length || !(totalDurationSec > 0) || !targetFrames) return null;
+
+  const accum = new Float32Array(targetFrames);
+  const counts = new Uint16Array(targetFrames);
+
+  for (const c of list) {
+    const hm = c.predictions.xai_heatmap;
+    const chunkStart = c.index ?? 0;
+    const chunkDur = Math.min(windowSec, Math.max(0.001, totalDurationSec - chunkStart));
+    for (let i = 0; i < hm.length; i++) {
+      const timeSec = chunkStart + ((i + 0.5) / hm.length) * chunkDur;
+      if (timeSec > totalDurationSec) break;
+      const frame = Math.min(
+        targetFrames - 1,
+        Math.floor((timeSec / totalDurationSec) * targetFrames)
+      );
+      accum[frame] += hm[i];
+      counts[frame] += 1;
+    }
+  }
+
+  if (!counts.some((n) => n > 0)) return null;
+
+  return Array.from(accum, (v, i) => (counts[i] > 0 ? v / counts[i] : 0));
+}
+
+/** XAI 時間重要性條：canvas 像素高度（繪製解析度） */
+export const XAI_STRIP_CANVAS_HEIGHT = 40;
+
+/**
+ * 在頻譜圖正下方獨立區塊：半透明底 + 白色尖峰（由頂部 y=0 往下長）。
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number[]} heatmap normalized 0..1
+ * @param {number} width
+ * @param {number} height
+ */
+export function drawXaiStripBelow(ctx, heatmap, width, height) {
+  if (!heatmap?.length || !width || !height) return;
+
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.2)';
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, 0.5);
+  ctx.lineTo(width, 0.5);
+  ctx.stroke();
+
+  const n = heatmap.length;
+  const max = Math.max(...heatmap, 1e-6);
+  const cellW = width / n;
+  const maxBarH = height - 2;
+
+  for (let i = 0; i < n; i++) {
+    const t = heatmap[i] / max;
+    if (t < 0.03) continue;
+    const barH = Math.max(1, t * maxBarH);
+    const alpha = 0.6 + t * 0.4;
+    ctx.fillStyle = `rgba(255, 94, 0, ${alpha})`;
+    ctx.fillRect(i * cellW + 0.5, 1, Math.max(1, cellW - 1), barH);
+  }
 }
 
 /**

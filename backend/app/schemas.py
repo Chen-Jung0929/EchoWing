@@ -73,7 +73,7 @@ class PredictResponse(BaseModel):
     chunks: list[ChunkPrediction]
     original_filename: str = ""
     warnings: list[str] = Field(default_factory=list)
-    confidence_threshold: float = 0.8
+    confidence_threshold: float = 0.5
 
 
 class ErrorBody(BaseModel):

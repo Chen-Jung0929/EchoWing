@@ -1,11 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { useAudioProcessor } from './hooks/useAudioProcessor';
 import {
   isRemoteApiBase,
   waitForBackendReady,
   analyzeAudioStream,
 } from './services/api';
+import {
+  DEFAULT_CONFIDENCE_THRESHOLD,
+  resolveConfidenceThreshold,
+} from './config/confidenceThreshold';
 import { buildSpectrogramCache } from './utils/spectrogramCache';
+import { mergeChunkXai, upsertChunk } from './utils/chunkIdentity';
 import ResultPanel from './features/results/ResultPanel';
 import {
   MdClose,
@@ -17,6 +21,7 @@ import {
 } from 'react-icons/md';
 import AudioRecorder from './components/AudioRecorder/AudioRecorder';
 import { getDict } from './i18n';
+import { isSupportedMediaFile, MEDIA_FILE_ACCEPT } from './utils/supportedMedia';
 import DayHeroScene from './features/hero/DayHeroScene';
 import NightHeroScene from './features/hero/NightHeroScene';
 import KiwiAnimation from './features/loading/KiwiAnimation';
@@ -77,6 +82,9 @@ export default function App() {
   const [selectedModel, setSelectedModel] = useState('perch');
   const [isProcessing, setIsProcessing] = useState(false);
 
+  const fileRef = useRef(null);
+  const abortControllerRef = useRef(null);
+
   const dict = getDict(lang);
 
   // --- 寫入 html.light / html.dark ---
@@ -129,6 +137,8 @@ export default function App() {
   const showHeroScene = viewState === 'landing';
 
   const resetToLanding = () => {
+    abortControllerRef.current?.abort();
+    abortControllerRef.current = null;
     setViewState('landing');
     setPredictionResult(null);
     setSpectrogramByIndex({});
@@ -140,6 +150,12 @@ export default function App() {
 
     if (!file) return;
 
+    if (!isSupportedMediaFile(file)) {
+      setErrorMessage(dict.fileTypeUnsupported);
+      event.target.value = '';
+      return;
+    }
+
     setSelectedFile(file);
     setIsRecordedFile(false);
     setRecorderError('');
@@ -148,7 +164,12 @@ export default function App() {
     setErrorMessage('');
   };
 
-  const fileRef = useRef(null);
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
+
   // 清除選擇的檔案
   const handleFileClear = () => {
     fileRef.current.value = '';
@@ -216,15 +237,25 @@ export default function App() {
     setPredictionResult(null);
     setSpectrogramByIndex({});
 
+    abortControllerRef.current?.abort();
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+    const { signal } = abortController;
+
     try {
+      let serverConfidenceThreshold = DEFAULT_CONFIDENCE_THRESHOLD;
       if (remoteApi) {
-        await waitForBackendReady({
+        const readyPayload = await waitForBackendReady({
+          signal,
           onTick: (payload) => {
             if (!payload.ready) {
               setLoadingHint(dict.serverWakingText);
             }
           },
         });
+        serverConfidenceThreshold = resolveConfidenceThreshold(
+          readyPayload.confidence_threshold
+        );
         const wakingElapsed = Date.now() - serverWakingStartedAt;
         if (wakingElapsed < MIN_SERVER_WAKING_HINT_MS) {
           await wait(MIN_SERVER_WAKING_HINT_MS - wakingElapsed);
@@ -237,50 +268,87 @@ export default function App() {
         chunks: [],
         original_filename: selectedFile.name,
         processed_at: new Date().toISOString(),
-        confidence_threshold: 0.8,
-        warnings: []
+        confidence_threshold: serverConfidenceThreshold,
+        warnings: [],
+        xai_pending: false,
       };
       setPredictionResult(baseResult);
       
       let receivedAnyChunk = false;
       
-      await analyzeAudioStream(
-        selectedFile, 
-        { name: selectedFile.name }, 
-        selectedModel,
-        (chunkData) => {
+      await analyzeAudioStream(selectedFile, { name: selectedFile.name }, {
+        modelSelection: selectedModel,
+        signal,
+        onChunk: (chunkData) => {
           if (chunkData.event === 'init') {
-            // Initial event, we could set duration or something if needed
+            setPredictionResult((prev) => ({
+              ...prev,
+              stream_meta: {
+                total_duration_sec: chunkData.total_duration_sec,
+                model: chunkData.model,
+                window_sec: chunkData.window_sec,
+              },
+              confidence_threshold: resolveConfidenceThreshold(
+                chunkData.confidence_threshold ?? prev.confidence_threshold
+              ),
+              xai_pending: Boolean(chunkData.xai_pending),
+            }));
             return;
           }
-          
+
+          if (chunkData.event === 'xai_update') {
+            setPredictionResult((prev) => ({
+              ...prev,
+              chunks: mergeChunkXai(prev.chunks, chunkData),
+            }));
+            return;
+          }
+
+          if (chunkData.event === 'xai_done') {
+            setPredictionResult((prev) => ({
+              ...prev,
+              xai_pending: false,
+            }));
+            return;
+          }
+
+          if (chunkData.error) {
+            setErrorMessage(chunkData.error);
+            setViewState('error');
+            return;
+          }
+
           if (!receivedAnyChunk) {
             setViewState('result');
             receivedAnyChunk = true;
           }
-          
-          setPredictionResult(prev => {
-            // If the chunk belongs to an index we already have, maybe it's from another model in ensemble?
-            // Since they are flat in chunks, we just append them.
-            return {
-              ...prev,
-              chunks: [...(prev.chunks || []), chunkData],
-              confidence_threshold: chunkData.predictions?.confidence_threshold ?? prev.confidence_threshold,
-            };
-          });
-          
+
+          setPredictionResult((prev) => ({
+            ...prev,
+            chunks: upsertChunk(prev.chunks, chunkData),
+            confidence_threshold: resolveConfidenceThreshold(
+              chunkData.confidence_threshold ?? prev.confidence_threshold
+            ),
+          }));
+
           if (chunkData.spectrogram) {
-            setSpectrogramByIndex(prev => ({
+            setSpectrogramByIndex((prev) => ({
               ...prev,
-              ...buildSpectrogramCache([chunkData])
+              ...buildSpectrogramCache([chunkData]),
             }));
           }
         },
-        { signal: abortControllerRef.current.signal }
+      });
+
+      setPredictionResult((prev) =>
+        prev?.xai_pending ? { ...prev, xai_pending: false } : prev
       );
       
       
     } catch (backendError) {
+      if (backendError?.name === 'AbortError') {
+        return;
+      }
       console.error('Backend prediction failed:', backendError);
 
       if (USE_MOCK_FALLBACK) {
@@ -290,6 +358,9 @@ export default function App() {
 
           setPredictionResult({
             ...mockResult,
+            confidence_threshold: resolveConfidenceThreshold(
+              mockResult.confidence_threshold
+            ),
             processed_at: new Date().toISOString(),
             backend_error:
               backendError instanceof Error
@@ -448,7 +519,7 @@ export default function App() {
                       <span className="px-1 text-center leading-tight">{dict.uploadBtn}</span>
                       <input
                         type="file"
-                        accept="audio/*,video/*"
+                        accept={MEDIA_FILE_ACCEPT}
                         onChange={handleFileChange}
                         className="hidden"
                         ref={fileRef}
@@ -464,7 +535,8 @@ export default function App() {
                     </div>
                   </div>
 
-                  <p className="text-center text-xs text-[var(--c-text)]/55">{dict.recordMaxHint}</p>
+                  <p className="text-center text-xs text-[var(--c-text)]/55">{dict.uploadFormatsHint}</p>
+                  <p className="text-center text-xs text-[var(--c-text)]/45">{dict.recordMaxHint}</p>
 
                   {recorderError ? (
                     <p className="text-center text-sm font-bold text-red-500" role="alert">
@@ -517,7 +589,6 @@ export default function App() {
                      <option value="perch">Perch (Google)</option>
                      <option value="birdnet">BirdNET (Cornell)</option>
                      <option value="silic">SILIC (Academia Sinica)</option>
-                     <option value="ensemble">Ensemble (All Models)</option>
                    </select>
                 </div>
 

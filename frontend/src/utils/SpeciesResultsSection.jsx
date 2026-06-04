@@ -3,20 +3,24 @@ import { MdExpandMore, MdExpandLess, MdInfoOutline } from 'react-icons/md';
 import { formatMessage } from '../i18n';
 import ExpandableSpeciesList from './ExpandableSpeciesList';
 
-const DEFAULT_THRESHOLD = 0.8;
+import {
+  DEFAULT_CONFIDENCE_THRESHOLD,
+  resolveConfidenceThreshold,
+} from '../config/confidenceThreshold';
 
 function thresholdPercent(threshold) {
-  return Math.round((threshold ?? DEFAULT_THRESHOLD) * 100);
+  return Math.round(resolveConfidenceThreshold(threshold) * 100);
 }
 
 export default function SpeciesResultsSection({
   predictions,
-  confidenceThreshold = DEFAULT_THRESHOLD,
+  confidenceThreshold = DEFAULT_CONFIDENCE_THRESHOLD,
   dict,
   lang,
   isSummary = false,
   getLocalizedText,
   previewCount = 5,
+  windowSec = 5,
 }) {
   const [showReference, setShowReference] = useState(false);
   const topSpecies = predictions?.top_species ?? [];
@@ -34,6 +38,7 @@ export default function SpeciesResultsSection({
         isSummary={isSummary}
         getLocalizedText={getLocalizedText}
         previewCount={previewCount}
+        windowSec={windowSec}
       />
     );
   }
@@ -91,6 +96,7 @@ export default function SpeciesResultsSection({
                 isSummary={isSummary}
                 getLocalizedText={getLocalizedText}
                 previewCount={previewCount}
+                windowSec={windowSec}
                 muted
               />
             </div>

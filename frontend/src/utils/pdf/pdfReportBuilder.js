@@ -12,6 +12,8 @@ import {
 } from './pdfConstants';
 import { applyPdfFont, ensurePdfFonts, pickLocalized } from './pdfFonts';
 import { renderSpectrogramForPdf } from './pdfSpectrogram';
+import { resolveConfidenceThreshold } from '../../config/confidenceThreshold';
+import { segmentNumberFromStart } from '../aggregateByVote';
 import { validatePdfQuality } from './pdfQualityCheck';
 
 const LOGO_SRC = '/logo.png';
@@ -143,7 +145,7 @@ function estimateTableHeight(rowCount, hasHead = true) {
   return (headRows + rowCount) * 6.5 + 4;
 }
 
-function speciesTableBody(speciesRows, lang, isSummary, validChunkCount) {
+function speciesTableBody(speciesRows, lang, isSummary, validChunkCount, windowSec = 5) {
   if (!speciesRows?.length) {
     const msg =
       lang === 'zh'
@@ -156,7 +158,7 @@ function speciesTableBody(speciesRows, lang, isSummary, validChunkCount) {
     const pct = `${Math.round((s.probability ?? 0) * 100)}%`;
     if (isSummary) {
       const segs = (s.chunk_indices ?? [])
-        .map((i) => i + 1)
+        .map((startSec) => segmentNumberFromStart(startSec, windowSec))
         .join(lang === 'zh' ? '、' : ', ');
       const vote =
         s.vote_count != null
@@ -197,13 +199,14 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
     okChunkCount,
     totalChunkCount,
     durationSec,
+    windowSec,
     confidenceThreshold,
     segmentRows,
     segmentReports,
     surveyMetadata,
   } = reportModel;
 
-  const thresholdPct = Math.round((confidenceThreshold ?? 0.8) * 100);
+  const thresholdPct = Math.round(resolveConfidenceThreshold(confidenceThreshold) * 100);
   const reportTitle =
     lang === 'zh' ? '鳥類聲學辨識分析報告' : 'Bird Acoustic Analysis Report';
   const generatedLabel = new Date(generatedAt).toLocaleString(
@@ -297,7 +300,7 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
         lang === 'zh' ? '出現片段' : 'Segments',
       ],
     ],
-    body: speciesTableBody(summarySpecies, lang, true, okChunkCount),
+    body: speciesTableBody(summarySpecies, lang, true, okChunkCount, windowSec),
   });
 
   layout.drawSectionHeading(

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAudioProcessor } from '../../hooks/useAudioProcessor';
+import { MEDIA_FILE_ACCEPT } from '../../utils/supportedMedia';
 
 export default function AudioUploader({ onChunksProcessed }) {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -41,10 +42,13 @@ export default function AudioUploader({ onChunksProcessed }) {
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-center">
       {/* ... 上半部維持原樣（上傳按鈕等） ... */}
       <h3 className="text-lg font-bold text-gray-700 mb-4">上傳音訊或影片</h3>
+      <p className="mb-3 text-center text-xs text-gray-500">
+        支援 WAV、MP3、FLAC、OGG、M4A、AAC、WEBM 與常見影片格式
+      </p>
       
       <input 
         type="file" 
-        accept="audio/*,video/*" 
+        accept={MEDIA_FILE_ACCEPT}
         onChange={handleFileChange}
         className="mb-4 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
       />
@@ -60,7 +64,7 @@ export default function AudioUploader({ onChunksProcessed }) {
       {error && <p className="text-red-500 mt-3 text-sm">{error}</p>}
       
       <p className="text-xs text-gray-400 mt-4 text-center">
-        最高支援60秒音檔
+        最高支援30秒音檔
       </p>
 
     </div>

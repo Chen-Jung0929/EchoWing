@@ -1,9 +1,18 @@
-import { aggregateChunksByVote } from './aggregateByVote';
-import { chunkTimeRangeLabel } from './aggregateByVote';
+import {
+  DEFAULT_CONFIDENCE_THRESHOLD,
+  resolveConfidenceThreshold,
+} from '../config/confidenceThreshold';
+import {
+  aggregateChunksByVote,
+  chunkTimeRangeLabel,
+  modelWindowSec,
+  segmentNumberFromStart,
+} from './aggregateByVote';
 import {
   collectSpectrogramsFromChunks,
   concatSpectrogramPayloads,
   getSpectrogramFromCache,
+  trimSpectrogramToDuration,
 } from './spectrogramCache';
 
 export function buildFullReportModel({
@@ -12,21 +21,32 @@ export function buildFullReportModel({
   filename,
   spectrogramByIndex,
   surveyMetadata,
-  confidenceThreshold = 0.8,
+  confidenceThreshold = DEFAULT_CONFIDENCE_THRESHOLD,
+  modelName = 'perch',
+  windowSec = modelWindowSec(modelName),
+  totalDurationSec = 0,
 }) {
+  const resolvedThreshold = resolveConfidenceThreshold(confidenceThreshold);
   const okChunks = (chunks ?? []).filter((c) => !c.error);
-  const summary = aggregateChunksByVote(chunks, { confidenceThreshold });
+  const summary = aggregateChunksByVote(chunks, {
+    confidenceThreshold: resolvedThreshold,
+    windowSec,
+  });
   const sourceName = filename?.trim() && filename !== '—' ? filename.trim() : 'unknown.wav';
-  const stitchedSpec = concatSpectrogramPayloads(
+  let stitchedSpec = concatSpectrogramPayloads(
     collectSpectrogramsFromChunks(okChunks, spectrogramByIndex)
   );
+  if (stitchedSpec && totalDurationSec > 0) {
+    stitchedSpec = trimSpectrogramToDuration(stitchedSpec, totalDurationSec);
+  }
 
   const segmentRows = (chunks ?? []).map((chunk) => {
-    const timeLabel = chunkTimeRangeLabel(chunk.index);
+    const timeLabel = chunkTimeRangeLabel(chunk.index, windowSec);
+    const segNum = segmentNumberFromStart(chunk.index, windowSec);
     if (chunk.error) {
       return {
         index: chunk.index,
-        segmentLabel: chunk.index + 1,
+        segmentLabel: segNum,
         timeLabel,
         error: chunk.error,
         topSpeciesName: null,
@@ -39,7 +59,7 @@ export function buildFullReportModel({
     const meets = chunk.predictions?.meets_confidence_threshold === true;
     return {
       index: chunk.index,
-      segmentLabel: chunk.index + 1,
+      segmentLabel: segNum,
       timeLabel,
       error: null,
       topSpeciesName: top?.name ?? null,
@@ -51,7 +71,7 @@ export function buildFullReportModel({
 
   const segmentReports = (chunks ?? []).map((chunk) => ({
     index: chunk.index,
-    segmentNum: chunk.index + 1,
+    segmentNum: segmentNumberFromStart(chunk.index, windowSec),
     analysisId: chunk.analysis_id,
     error: chunk.error ?? null,
     predictions: chunk.predictions ?? null,
@@ -59,12 +79,17 @@ export function buildFullReportModel({
     spectrogram: chunk.error
       ? null
       : getSpectrogramFromCache(spectrogramByIndex, chunk.index),
-    timeLabel: chunkTimeRangeLabel(chunk.index),
+    timeLabel: chunkTimeRangeLabel(chunk.index, windowSec),
   }));
+
+  const lastStart = okChunks.length
+    ? Math.max(...okChunks.map((c) => c.index ?? 0))
+    : 0;
+  const durationSec = totalDurationSec > 0 ? totalDurationSec : lastStart + windowSec;
 
   return {
     sourceName,
-    confidenceThreshold,
+    confidenceThreshold: resolvedThreshold,
     analysisId: summary
       ? `summary_${okChunks[0]?.analysis_id ?? 'report'}`
       : chunks[0]?.analysis_id ?? 'report',
@@ -77,7 +102,8 @@ export function buildFullReportModel({
       : null,
     okChunkCount: okChunks.length,
     totalChunkCount: chunks.length,
-    durationSec: okChunks.length * 5,
+    durationSec,
+    windowSec,
     stitchedSpectrogram: stitchedSpec,
     segmentRows,
     segmentReports,

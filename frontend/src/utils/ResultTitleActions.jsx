@@ -95,7 +95,7 @@ function DownloadButton({ ariaLabel, ariaLabelDone, onDownload }) {
   );
 }
 
-export function ResultFloatingActions({ dict, onSave, onDownload, surveySaved }) {
+export function ResultFloatingActions({ dict, onSave, onDownload, surveySaved, actionsDisabled = false }) {
   if (typeof document === 'undefined') return null;
 
   return createPortal(
@@ -107,30 +107,36 @@ export function ResultFloatingActions({ dict, onSave, onDownload, surveySaved })
       <SaveTextButton
         label={dict.saveResult}
         labelDone={dict.saveDone}
-        onSave={onSave}
+        onSave={actionsDisabled ? undefined : onSave}
         saved={surveySaved}
       />
       <DownloadButton
         ariaLabel={dict.downloadResult}
         ariaLabelDone={dict.downloadDone}
-        onDownload={onDownload}
+        onDownload={actionsDisabled ? undefined : onDownload}
       />
     </div>,
     document.body
   );
 }
 
-export function ResultTitleBar({ dict, onSave, onDownload, surveySaved }) {
+export function ResultTitleBar({ dict, onSave, onDownload, surveySaved, actionsDisabled = false }) {
   return (
     <>
       <h2 className="text-center min-w-0 truncate text-2xl font-black tracking-tight text-[var(--c-text)] md:text-3xl">
         {dict.resultTitle}
       </h2>
+      {actionsDisabled ? (
+        <p className="mt-2 text-center text-xs text-[var(--c-text)]/50">
+          {dict.xaiGeneratingHint}
+        </p>
+      ) : null}
       <ResultFloatingActions
         dict={dict}
         onSave={onSave}
         onDownload={onDownload}
         surveySaved={surveySaved}
+        actionsDisabled={actionsDisabled}
       />
     </>
   );

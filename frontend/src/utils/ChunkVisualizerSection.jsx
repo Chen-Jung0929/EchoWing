@@ -1,8 +1,11 @@
 import SpectrogramView from '../components/Visualizer/SpectrogramView';
+import { modelWindowSec, segmentNumberFromStart } from './aggregateByVote';
 import {
   collectSpectrogramsFromChunks,
   concatSpectrogramPayloads,
   getSpectrogramFromCache,
+  stitchXaiHeatmap,
+  trimSpectrogramToDuration,
 } from './spectrogramCache';
 
 export default function ChunkVisualizerSection({
@@ -12,58 +15,37 @@ export default function ChunkVisualizerSection({
   spectrogramCache,
   dict,
   lang,
+  totalDurationSec,
+  xaiPending = false,
 }) {
+  const modelName = resultChunks?.[0]?.model_name ?? chunk?.model_name ?? 'perch';
+  const windowSec = modelWindowSec(modelName);
+
   if (isSummary) {
     const specs = collectSpectrogramsFromChunks(resultChunks, spectrogramCache);
-    const stitched = concatSpectrogramPayloads(specs);
+    let stitched = concatSpectrogramPayloads(specs);
     if (!stitched) return null;
-    
-    // Build a continuous smooth heatmap over the entire 30s by averaging overlapping chunks for each model
-    let heatmapsByModel = null;
-    if (resultChunks && resultChunks.length > 0) {
-      const allHeatmaps = resultChunks
-        .filter(c => c.predictions?.xai_heatmap)
-        .sort((a, b) => a.index - b.index);
-        
-      if (allHeatmaps.length > 0) {
-        heatmapsByModel = {};
-        const uniqueModels = [...new Set(allHeatmaps.map(c => c.model_name || 'perch'))];
-        
-        uniqueModels.forEach(modelName => {
-          const modelChunks = allHeatmaps.filter(c => (c.model_name || 'perch') === modelName);
-          if (modelChunks.length === 0) return;
-          
-          const binsPerChunk = modelChunks[0].predictions.xai_heatmap.length;
-          const chunkDurationSec = modelName === 'birdnet' ? 3 : 5; // Approx for strides
-          const binsPerSec = binsPerChunk / chunkDurationSec;
-          
-          const lastChunk = modelChunks[modelChunks.length - 1];
-          const totalDurationSec = lastChunk.index + chunkDurationSec;
-          const totalBins = Math.ceil(totalDurationSec * binsPerSec);
-          
-          const accum = new Float32Array(totalBins);
-          const counts = new Uint16Array(totalBins);
-          
-          for (const c of modelChunks) {
-            const hm = c.predictions.xai_heatmap;
-            const startBin = Math.floor(c.index * binsPerSec);
-            for (let i = 0; i < hm.length; i++) {
-              const globalBin = startBin + i;
-              if (globalBin < totalBins) {
-                accum[globalBin] += hm[i];
-                counts[globalBin] += 1;
-              }
-            }
-          }
-          
-          const finalHeatmap = [];
-          for (let i = 0; i < totalBins; i++) {
-            finalHeatmap.push(counts[i] > 0 ? accum[i] / counts[i] : 0);
-          }
-          heatmapsByModel[modelName] = finalHeatmap;
-        });
-      }
-    }
+
+    const durationSec =
+      totalDurationSec > 0
+        ? totalDurationSec
+        : specs.length * windowSec;
+    stitched = trimSpectrogramToDuration(stitched, durationSec);
+
+    const stitchedXai = stitchXaiHeatmap(
+      resultChunks,
+      stitched.time_frames,
+      durationSec,
+      windowSec
+    );
+
+    const summaryXaiGenerating =
+      xaiPending &&
+      resultChunks.some(
+        (c) =>
+          c?.predictions?.meets_confidence_threshold &&
+          !(c?.predictions?.xai_heatmap?.length)
+      );
 
     return (
       <SpectrogramView
@@ -72,7 +54,8 @@ export default function ChunkVisualizerSection({
         segmentCount={specs.length}
         dict={dict}
         lang={lang}
-        heatmapsByModel={heatmapsByModel}
+        xaiHeatmap={stitchedXai}
+        xaiGenerating={summaryXaiGenerating}
       />
     );
   }
@@ -80,17 +63,22 @@ export default function ChunkVisualizerSection({
   const spec = getSpectrogramFromCache(spectrogramCache, chunk?.index);
   if (!spec) return null;
 
-  const mName = chunk?.model_name || 'perch';
-  const heatmapsByModel = chunk?.predictions?.xai_heatmap ? { [mName]: chunk.predictions.xai_heatmap } : null;
+  const xaiHeatmap = chunk?.predictions?.xai_heatmap ?? null;
+  const displaySegmentIndex = segmentNumberFromStart(chunk?.index ?? 0, windowSec) - 1;
+  const chunkXaiGenerating =
+    xaiPending &&
+    chunk?.predictions?.meets_confidence_threshold &&
+    !(xaiHeatmap?.length);
 
   return (
     <SpectrogramView
       spectrogram={spec}
-      chunkIndex={chunk.index}
+      chunkIndex={displaySegmentIndex}
       variant="chunk"
       dict={dict}
       lang={lang}
-      heatmapsByModel={heatmapsByModel}
+      xaiHeatmap={xaiHeatmap}
+      xaiGenerating={chunkXaiGenerating}
     />
   );
 }
@@ -102,12 +90,22 @@ export function buildReportPayload({
   okChunks,
   filename,
   spectrogramCache,
+  totalDurationSec,
 }) {
+  const modelName = okChunks?.[0]?.model_name ?? 'perch';
+  const windowSec = modelWindowSec(modelName);
   const sourceName = filename !== '—' ? filename : 'unknown.wav';
-  const durationSec = String((okChunks?.length ?? 1) * 5);
+  const durationSec =
+    totalDurationSec > 0
+      ? String(totalDurationSec)
+      : String((okChunks?.length ?? 1) * windowSec);
 
   if (isSummaryPage && summaryChunk) {
     const specs = collectSpectrogramsFromChunks(okChunks, spectrogramCache);
+    let stitched = concatSpectrogramPayloads(specs);
+    if (stitched && totalDurationSec > 0) {
+      stitched = trimSpectrogramToDuration(stitched, totalDurationSec);
+    }
     return {
       data: {
         analysis_id: `summary_${Date.now()}`,
@@ -120,7 +118,7 @@ export function buildReportPayload({
         chunkIndex: okChunks?.[0]?.index ?? 0,
         validChunkCount: okChunks?.length ?? 0,
       },
-      spectrogram: concatSpectrogramPayloads(specs),
+      spectrogram: stitched,
       spectrogramVariant: 'summary',
       spectrogramSegmentCount: specs.length,
       isSummaryReport: true,
@@ -130,7 +128,7 @@ export function buildReportPayload({
   }
 
   if (activeChunk && !activeChunk.error) {
-    const segmentNum = activeChunk.index + 1;
+    const segmentNum = segmentNumberFromStart(activeChunk.index ?? 0, windowSec);
     return {
       data: {
         analysis_id: activeChunk.analysis_id,
@@ -139,7 +137,7 @@ export function buildReportPayload({
       },
       audioInfo: {
         name: sourceName,
-        duration: '5.0',
+        duration: String(windowSec),
         chunkIndex: activeChunk.index,
       },
       spectrogram: getSpectrogramFromCache(spectrogramCache, activeChunk.index),
