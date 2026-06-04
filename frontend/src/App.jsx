@@ -3,7 +3,7 @@ import { useAudioProcessor } from './hooks/useAudioProcessor';
 import {
   isRemoteApiBase,
   waitForBackendReady,
-  analyzeAudioFile,
+  analyzeAudioStream,
 } from './services/api';
 import { buildSpectrogramCache } from './utils/spectrogramCache';
 import ResultPanel from './features/results/ResultPanel';
@@ -184,9 +184,27 @@ export default function App() {
   };
 
   const handleProcess = async () => {
-    if (!selectedFile) {
+    const file = selectedFile;
+    if (!file) {
       setErrorMessage(dict.noFileWarning);
       return;
+    }
+
+    if (file.size > 20 * 1024 * 1024) {
+      setErrorMessage(dict.fileTooLarge || 'File too large (max 20MB)');
+      return;
+    }
+
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const arrayBuffer = await file.arrayBuffer();
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      if (audioBuffer.duration > 30.5) { // 30s limit (allow small margin)
+        setErrorMessage(dict.fileTooLong || 'File too long (max 30 seconds)');
+        return;
+      }
+    } catch (e) {
+      console.warn('Could not pre-decode audio for length check', e);
     }
 
     const remoteApi = isRemoteApiBase();
@@ -215,10 +233,52 @@ export default function App() {
       setLoadingHint('');
       setIsProcessing(true);
       
-      const result = await analyzeAudioFile(selectedFile, { name: selectedFile.name }, selectedModel);
-      setPredictionResult(result);
-      setSpectrogramByIndex(buildSpectrogramCache(result.chunks || []));
-      setViewState('result');
+      const baseResult = {
+        chunks: [],
+        original_filename: selectedFile.name,
+        processed_at: new Date().toISOString(),
+        confidence_threshold: 0.8,
+        warnings: []
+      };
+      setPredictionResult(baseResult);
+      
+      let receivedAnyChunk = false;
+      
+      await analyzeAudioStream(
+        selectedFile, 
+        { name: selectedFile.name }, 
+        selectedModel,
+        (chunkData) => {
+          if (chunkData.event === 'init') {
+            // Initial event, we could set duration or something if needed
+            return;
+          }
+          
+          if (!receivedAnyChunk) {
+            setViewState('result');
+            receivedAnyChunk = true;
+          }
+          
+          setPredictionResult(prev => {
+            // If the chunk belongs to an index we already have, maybe it's from another model in ensemble?
+            // Since they are flat in chunks, we just append them.
+            return {
+              ...prev,
+              chunks: [...(prev.chunks || []), chunkData],
+              confidence_threshold: chunkData.predictions?.confidence_threshold ?? prev.confidence_threshold,
+            };
+          });
+          
+          if (chunkData.spectrogram) {
+            setSpectrogramByIndex(prev => ({
+              ...prev,
+              ...buildSpectrogramCache([chunkData])
+            }));
+          }
+        },
+        { signal: abortControllerRef.current.signal }
+      );
+      
       
     } catch (backendError) {
       console.error('Backend prediction failed:', backendError);

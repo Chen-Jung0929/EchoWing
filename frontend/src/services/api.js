@@ -158,3 +158,68 @@ export const analyzeAudioFile = async (file, metadata, modelSelection = 'perch',
     throw error;
   }
 };
+
+/**
+ * 讀取後端的 SSE 串流以接收 1 秒滑移的分析結果
+ * @param {Blob} file
+ * @param {Object} metadata
+ * @param {string} modelSelection
+ * @param {Function} onChunk - 收到每個串流資料時的回呼函數
+ * @param {{ signal?: AbortSignal }} [opts]
+ */
+export const analyzeAudioStream = async (file, metadata, modelSelection = 'perch', onChunk, opts = {}) => {
+  const { signal } = opts;
+  try {
+    const formData = new FormData();
+    formData.append('audio_chunks', file, file.name);
+    formData.append('original_filename', metadata.name);
+    formData.append('sample_rate', 32000);
+    formData.append('model_selection', modelSelection);
+
+    const response = await fetch(`${API_BASE_URL}/stream-predict`, {
+      method: 'POST',
+      body: formData,
+      signal,
+    });
+
+    if (!response.ok) {
+      let msg = `伺服器回應錯誤：狀態碼 ${response.status}`;
+      try {
+        const errorData = await response.json();
+        msg = parseErrorBody(errorData) || msg;
+      } catch (e) {}
+      throw new Error(msg);
+    }
+
+    // 處理 SSE 串流
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop(); // 保留最後一段未完成的資料
+
+      for (const block of lines) {
+        if (block.startsWith('data: ')) {
+          const dataStr = block.substring(6);
+          try {
+            const data = JSON.parse(dataStr);
+            if (data.event === 'done') return;
+            onChunk(data);
+          } catch (e) {
+            console.error('JSON Parse error in stream:', e, dataStr);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    if (error?.name === 'AbortError') throw error;
+    console.error(`[API Error] 音訊串流分析請求失敗:`, error);
+    throw error;
+  }
+};
