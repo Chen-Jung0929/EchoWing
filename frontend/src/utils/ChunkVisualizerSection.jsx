@@ -18,45 +18,50 @@ export default function ChunkVisualizerSection({
     const stitched = concatSpectrogramPayloads(specs);
     if (!stitched) return null;
     
-    // Build a continuous smooth heatmap over the entire 30s by averaging overlapping chunks
-    let summaryHeatmap = null;
+    // Build a continuous smooth heatmap over the entire 30s by averaging overlapping chunks for each model
+    let heatmapsByModel = null;
     if (resultChunks && resultChunks.length > 0) {
       const allHeatmaps = resultChunks
         .filter(c => c.predictions?.xai_heatmap)
         .sort((a, b) => a.index - b.index);
         
       if (allHeatmaps.length > 0) {
-        // Assume 1 index = 1 second.
-        // E.g., chunk at index 0 covers 0-5s. Heatmap has N bins for 5s.
-        // We map each bin to a global time and accumulate.
-        const binsPerChunk = allHeatmaps[0].predictions.xai_heatmap.length;
-        const chunkDurationSec = 5; // Approx
-        const binsPerSec = binsPerChunk / chunkDurationSec;
+        heatmapsByModel = {};
+        const uniqueModels = [...new Set(allHeatmaps.map(c => c.model_name || 'perch'))];
         
-        const lastChunk = allHeatmaps[allHeatmaps.length - 1];
-        const totalDurationSec = lastChunk.index + chunkDurationSec;
-        const totalBins = Math.ceil(totalDurationSec * binsPerSec);
-        
-        const accum = new Float32Array(totalBins);
-        const counts = new Uint16Array(totalBins);
-        
-        for (const chunk of allHeatmaps) {
-          const hm = chunk.predictions.xai_heatmap;
-          const startBin = Math.floor(chunk.index * binsPerSec);
-          for (let i = 0; i < hm.length; i++) {
-            const globalBin = startBin + i;
-            if (globalBin < totalBins) {
-              accum[globalBin] += hm[i];
-              counts[globalBin] += 1;
+        uniqueModels.forEach(modelName => {
+          const modelChunks = allHeatmaps.filter(c => (c.model_name || 'perch') === modelName);
+          if (modelChunks.length === 0) return;
+          
+          const binsPerChunk = modelChunks[0].predictions.xai_heatmap.length;
+          const chunkDurationSec = modelName === 'birdnet' ? 3 : 5; // Approx for strides
+          const binsPerSec = binsPerChunk / chunkDurationSec;
+          
+          const lastChunk = modelChunks[modelChunks.length - 1];
+          const totalDurationSec = lastChunk.index + chunkDurationSec;
+          const totalBins = Math.ceil(totalDurationSec * binsPerSec);
+          
+          const accum = new Float32Array(totalBins);
+          const counts = new Uint16Array(totalBins);
+          
+          for (const c of modelChunks) {
+            const hm = c.predictions.xai_heatmap;
+            const startBin = Math.floor(c.index * binsPerSec);
+            for (let i = 0; i < hm.length; i++) {
+              const globalBin = startBin + i;
+              if (globalBin < totalBins) {
+                accum[globalBin] += hm[i];
+                counts[globalBin] += 1;
+              }
             }
           }
-        }
-        
-        const finalHeatmap = [];
-        for (let i = 0; i < totalBins; i++) {
-          finalHeatmap.push(counts[i] > 0 ? accum[i] / counts[i] : 0);
-        }
-        summaryHeatmap = finalHeatmap;
+          
+          const finalHeatmap = [];
+          for (let i = 0; i < totalBins; i++) {
+            finalHeatmap.push(counts[i] > 0 ? accum[i] / counts[i] : 0);
+          }
+          heatmapsByModel[modelName] = finalHeatmap;
+        });
       }
     }
 
@@ -67,13 +72,16 @@ export default function ChunkVisualizerSection({
         segmentCount={specs.length}
         dict={dict}
         lang={lang}
-        heatmap={summaryHeatmap}
+        heatmapsByModel={heatmapsByModel}
       />
     );
   }
 
   const spec = getSpectrogramFromCache(spectrogramCache, chunk?.index);
   if (!spec) return null;
+
+  const mName = chunk?.model_name || 'perch';
+  const heatmapsByModel = chunk?.predictions?.xai_heatmap ? { [mName]: chunk.predictions.xai_heatmap } : null;
 
   return (
     <SpectrogramView
@@ -82,7 +90,7 @@ export default function ChunkVisualizerSection({
       variant="chunk"
       dict={dict}
       lang={lang}
-      heatmap={chunk?.predictions?.xai_heatmap}
+      heatmapsByModel={heatmapsByModel}
     />
   );
 }

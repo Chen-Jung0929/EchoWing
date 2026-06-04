@@ -17,7 +17,7 @@ export default function SpectrogramView({
   dict,
   lang = 'zh',
   compact = false,
-  heatmap = null,
+  heatmapsByModel = null,
 }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -90,8 +90,8 @@ export default function SpectrogramView({
   const hint =
     dict?.spectrogramHint ??
     (lang === 'zh'
-      ? '橫軸為時間、縱軸為頻率（Mel）；由後端運算'
-      : 'Time vs Mel frequency; computed on the server');
+      ? '橫軸為時間、縱軸為頻率（Mel）；底部色彩軌道表示各模型關注時間點 (紅:Perch, 藍:BirdNET, 綠:SILIC)'
+      : 'Time vs Mel frequency; Colored bottom tracks indicate model attention (Red:Perch, Blue:BirdNET, Green:SILIC)');
   const durationSec = estimateSpectrogramDurationSec(spectrogram).toFixed(1);
 
   const meta =
@@ -174,27 +174,39 @@ export default function SpectrogramView({
           height={canvasSize.height}
           style={canvasStyle}
         />
-        {heatmap && heatmap.length > 0 && (
+        {heatmapsByModel && Object.keys(heatmapsByModel).length > 0 && (
           <div style={{
             position: 'absolute',
-            top: 0,
+            bottom: 0,
             left: 0,
             width: '100%',
-            height: '100%',
+            height: '24px',
             display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'flex-end',
             pointerEvents: 'none',
-            borderRadius: '0.75rem',
+            borderRadius: '0 0 0.75rem 0.75rem',
             overflow: 'hidden',
           }}>
-            {heatmap.map((weight, index) => (
-              <div 
-                key={index} 
-                style={{
-                  flex: 1,
-                  backgroundColor: `rgba(239, 68, 68, ${weight * 0.5})`, // Red overlay with alpha proportional to importance
-                }}
-              />
-            ))}
+            {Object.entries(heatmapsByModel).map(([mName, hmArray]) => {
+              let rgb = '239, 68, 68'; // red (perch)
+              if (mName === 'birdnet') rgb = '59, 130, 246'; // blue
+              if (mName === 'silic') rgb = '34, 197, 94'; // green
+              
+              return (
+                <div key={mName} style={{ display: 'flex', flex: 1, minHeight: '6px' }}>
+                  {hmArray.map((weight, index) => (
+                    <div 
+                      key={index} 
+                      style={{
+                        flex: 1,
+                        backgroundColor: `rgba(${rgb}, ${Math.max(0, Math.min(1, weight * 0.9))})`,
+                      }}
+                    />
+                  ))}
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
