@@ -5,8 +5,7 @@
  * @returns {string | null}
  */
 export function resolveSpeciesWikiUrl(species, lang) {
-  const zh = (species?.wiki_url_zh ?? '').trim();
-  const en = (species?.wiki_url_en ?? '').trim();
-  const preferred = lang === 'zh' ? zh || en : en || zh;
-  return preferred || null;
+  const query = species?.scientific_name || species?.name?.en || species?.name?.zh || species?.species_id;
+  if (!query) return null;
+  return `https://www.inaturalist.org/search?q=${encodeURIComponent(query)}`;
 }

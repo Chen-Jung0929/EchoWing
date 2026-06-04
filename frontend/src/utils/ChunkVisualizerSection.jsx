@@ -39,6 +39,7 @@ export default function ChunkVisualizerSection({
       variant="chunk"
       dict={dict}
       lang={lang}
+      heatmap={chunk?.predictions?.xai_heatmap}
     />
   );
 }

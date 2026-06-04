@@ -17,6 +17,7 @@ export default function SpectrogramView({
   dict,
   lang = 'zh',
   compact = false,
+  heatmap = null,
 }) {
   const canvasRef = useRef(null);
   const containerRef = useRef(null);
@@ -166,13 +167,36 @@ export default function SpectrogramView({
         </span>
       </div>
 
-      <div ref={isSummary && !compact ? containerRef : undefined} style={canvasWrapStyle}>
+      <div ref={isSummary && !compact ? containerRef : undefined} style={{...canvasWrapStyle, position: 'relative'}}>
         <canvas
           ref={canvasRef}
           width={canvasSize.width}
           height={canvasSize.height}
           style={canvasStyle}
         />
+        {heatmap && heatmap.length > 0 && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            pointerEvents: 'none',
+            borderRadius: '0.75rem',
+            overflow: 'hidden',
+          }}>
+            {heatmap.map((weight, index) => (
+              <div 
+                key={index} 
+                style={{
+                  flex: 1,
+                  backgroundColor: `rgba(239, 68, 68, ${weight * 0.5})`, // Red overlay with alpha proportional to importance
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.75rem', textAlign: 'right' }}>

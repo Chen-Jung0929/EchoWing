@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { useAudioProcessor } from './hooks/useAudioProcessor';
 import {
-  analyzeAudioChunks,
-  analyzeSingleAudioChunk,
   isRemoteApiBase,
   waitForBackendReady,
+  analyzeAudioFile,
 } from './services/api';
 import { buildSpectrogramCache } from './utils/spectrogramCache';
 import ResultPanel from './features/results/ResultPanel';
@@ -75,7 +74,8 @@ export default function App() {
   const [spectrogramByIndex, setSpectrogramByIndex] = useState({});
   const [errorMessage, setErrorMessage] = useState('');
   const [loadingHint, setLoadingHint] = useState('');
-  const { processAudio, isProcessing } = useAudioProcessor();
+  const [selectedModel, setSelectedModel] = useState('perch');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const dict = getDict(lang);
 
@@ -213,43 +213,13 @@ export default function App() {
         }
       }
       setLoadingHint('');
+      setIsProcessing(true);
       
-      const chunks = await processAudio(selectedFile);
+      const result = await analyzeAudioFile(selectedFile, { name: selectedFile.name }, selectedModel);
+      setPredictionResult(result);
+      setSpectrogramByIndex(buildSpectrogramCache(result.chunks || []));
+      setViewState('result');
       
-      const baseResult = {
-        chunks: [],
-        original_filename: selectedFile.name,
-        processed_at: new Date().toISOString(),
-        confidence_threshold: 0.8,
-        warnings: []
-      };
-      
-      setPredictionResult(baseResult);
-      
-      for (let i = 0; i < chunks.length; i++) {
-        const singleResult = await analyzeSingleAudioChunk(chunks[i], i, {
-          name: selectedFile.name,
-        });
-        
-        const newChunkPrediction = singleResult.chunks[0];
-        if (!newChunkPrediction) continue;
-        
-        setPredictionResult(prev => ({
-          ...prev,
-          chunks: [...prev.chunks, newChunkPrediction],
-          confidence_threshold: singleResult.confidence_threshold ?? prev.confidence_threshold,
-          warnings: [...(prev.warnings || []), ...(singleResult.warnings || [])]
-        }));
-        
-        setSpectrogramByIndex(prev => ({
-          ...prev,
-          ...buildSpectrogramCache([newChunkPrediction])
-        }));
-        
-        if (i === 0) {
-          setViewState('result');
-        }
-      }
     } catch (backendError) {
       console.error('Backend prediction failed:', backendError);
 
@@ -292,6 +262,7 @@ export default function App() {
       setViewState('error');
     } finally {
       setLoadingHint('');
+      setIsProcessing(false);
     }
   };
 
@@ -472,6 +443,23 @@ export default function App() {
                     {errorMessage}
                   </div>
                 )}
+                
+                <div className="flex flex-col gap-2">
+                   <label htmlFor="model-select" className="text-sm font-bold text-[var(--c-text)]/70">
+                     Model Selection:
+                   </label>
+                   <select 
+                     id="model-select"
+                     value={selectedModel}
+                     onChange={(e) => setSelectedModel(e.target.value)}
+                     className="bg-[var(--c-bg)]/70 text-[var(--c-text)] border-none rounded-xl px-4 py-3 font-bold cursor-pointer"
+                   >
+                     <option value="perch">Perch (Google)</option>
+                     <option value="birdnet">BirdNET (Cornell)</option>
+                     <option value="silic">SILIC (Academia Sinica)</option>
+                     <option value="ensemble">Ensemble (All Models)</option>
+                   </select>
+                </div>
 
                 <button
                   onClick={handleProcess}

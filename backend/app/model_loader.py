@@ -11,7 +11,12 @@ from starlette.concurrency import run_in_threadpool
 from app.adjustion import load_taxonomy_map
 from app.audio_mel import configure_torch_threads
 from app.config import Settings
-from app.inference import create_predictor
+from app.inference import (
+    create_perch_predictor,
+    create_birdnet_predictor,
+    create_silic_predictor,
+    create_onnx_predictor
+)
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +30,26 @@ class ModelStatus(str, Enum):
 
 def _load_models_sync(settings: Settings):
     configure_torch_threads(settings.num_threads)
-    predictor = create_predictor(settings)
+    
+    predictors = {}
+    try:
+        predictors["perch"] = create_perch_predictor(settings)
+    except Exception as e:
+        logger.warning(f"Failed to load Perch: {e}")
+        
+    try:
+        predictors["birdnet"] = create_birdnet_predictor(settings)
+    except Exception as e:
+        logger.warning(f"Failed to load BirdNET: {e}")
+        
+    try:
+        predictors["silic"] = create_silic_predictor(settings)
+    except Exception as e:
+        logger.warning(f"Failed to load SILIC: {e}")
+        
+    # Also load the default taxonomy for fallback/perch
     taxonomy = load_taxonomy_map(settings.taxonomy_csv_path)
-    return predictor, taxonomy
+    return predictors, taxonomy
 
 
 async def ensure_models_loaded(app) -> None:
@@ -59,12 +81,12 @@ async def ensure_models_loaded(app) -> None:
         settings: Settings = state.settings
 
         try:
-            logger.info("Loading inference models (%s)...", settings.inference_backend)
-            predictor, taxonomy = await run_in_threadpool(_load_models_sync, settings)
-            state.predictor = predictor
+            logger.info("Loading inference models...")
+            predictors, taxonomy = await run_in_threadpool(_load_models_sync, settings)
+            state.predictors = predictors
             state.taxonomy = taxonomy
             state.model_status = ModelStatus.READY
-            logger.info("Models ready: %s classes", len(predictor.labels))
+            logger.info("Models ready.")
         except Exception as exc:
             state.model_status = ModelStatus.ERROR
             state.load_error = str(exc)
@@ -84,8 +106,10 @@ def status_payload(app) -> dict:
         "ready": state.model_status == ModelStatus.READY,
         "status": state.model_status.value,
     }
-    if state.model_status == ModelStatus.READY and state.predictor is not None:
-        body["num_classes"] = len(state.predictor.labels)
+    if state.model_status == ModelStatus.READY and hasattr(state, "predictors"):
+        # Just use perch classes count for status payload or sum them
+        perch = state.predictors.get("perch")
+        body["num_classes"] = len(perch.labels) if perch else 0
         body["confidence_threshold"] = state.settings.confidence_threshold
     if state.model_status == ModelStatus.ERROR and state.load_error:
         body["error"] = state.load_error

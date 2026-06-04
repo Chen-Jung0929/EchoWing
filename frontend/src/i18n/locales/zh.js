@@ -103,7 +103,7 @@ const zh = {
   segmentLowConfidenceHint: '未達信心門檻',
   expandSpeciesList: '展開其餘 {count} 筆物種',
   collapseSpeciesList: '收合為前 5 名',
-  wikiLink: '維基百科',
+  wikiLink: '在 iNaturalist 搜尋',
   wikiUnavailable: '暫無維基連結',
   saveResult: '儲存預測結果',
   printResult: '列印預測結果',

@@ -48,6 +48,7 @@ class Prediction(BaseModel):
     top_species: list[TopSpecies]
     top_classes: list[TopClass]
     attention_weights: list[float] | None = None
+    xai_heatmap: list[float] | None = None
     meets_confidence_threshold: bool = False
     reference_species: list[TopSpecies] = Field(default_factory=list)
 
@@ -61,6 +62,7 @@ class DecisionSupport(BaseModel):
 class ChunkPrediction(BaseModel):
     index: int
     analysis_id: str
+    model_name: str = "perch"
     predictions: Prediction | None = None
     decision_support: DecisionSupport | None = None
     spectrogram: SpectrogramPayload | None = None

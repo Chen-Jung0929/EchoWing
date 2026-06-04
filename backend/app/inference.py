@@ -11,14 +11,24 @@ from app.audio_mel import AudioToMelSpectrogram
 from app.config import Settings, chunk_samples, get_settings
 
 
-def create_predictor(settings: Settings | None = None):
-    """Factory: Perch (default) or legacy ONNX ResNet."""
+def create_perch_predictor(settings: Settings | None = None):
     cfg = settings or get_settings()
-    if cfg.inference_backend == "onnx":
-        return BirdChunkPredictor(cfg)
-    from app.perch_inference import PerchChunkPredictor  # noqa: PLC0415 — lazy TF import
-
+    from app.perch_inference import PerchChunkPredictor
     return PerchChunkPredictor(cfg)
+
+def create_birdnet_predictor(settings: Settings | None = None):
+    cfg = settings or get_settings()
+    from app.birdnet_inference import BirdNetPredictor
+    return BirdNetPredictor(cfg)
+
+def create_silic_predictor(settings: Settings | None = None):
+    cfg = settings or get_settings()
+    from app.silic_inference import SilicPredictor
+    return SilicPredictor(cfg)
+
+def create_onnx_predictor(settings: Settings | None = None):
+    cfg = settings or get_settings()
+    return BirdChunkPredictor(cfg)
 
 
 def load_val_line_baseline(settings: Settings) -> np.ndarray:

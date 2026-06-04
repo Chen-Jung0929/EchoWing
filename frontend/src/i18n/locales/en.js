@@ -105,7 +105,7 @@ const en = {
   segmentLowConfidenceHint: 'Below confidence threshold',
   expandSpeciesList: 'Show {count} more species',
   collapseSpeciesList: 'Show top 5 only',
-  wikiLink: 'Wikipedia',
+  wikiLink: 'Search on iNaturalist',
   wikiUnavailable: 'No Wikipedia link',
   saveResult: 'Save prediction result',
   printResult: 'Print prediction result',

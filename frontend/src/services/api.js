@@ -125,20 +125,14 @@ export const analyzeAudioChunks = async (chunks, metadata, opts = {}) => {
   }
 };
 
-/**
- * 將單一音訊區塊傳送至後端進行推論
- * @param {Blob} chunkBlob
- * @param {number} index
- * @param {Object} metadata
- * @param {{ signal?: AbortSignal }} [opts]
- */
-export const analyzeSingleAudioChunk = async (chunkBlob, index, metadata, opts = {}) => {
+export const analyzeAudioFile = async (file, metadata, modelSelection = 'perch', opts = {}) => {
   const { signal } = opts;
   try {
     const formData = new FormData();
-    formData.append('audio_chunks', chunkBlob, `chunk_${index}.wav`);
+    formData.append('audio_chunks', file, file.name);
     formData.append('original_filename', metadata.name);
     formData.append('sample_rate', 32000);
+    formData.append('model_selection', modelSelection);
 
     const response = await fetch(`${API_BASE_URL}/predict`, {
       method: 'POST',
@@ -160,7 +154,7 @@ export const analyzeSingleAudioChunk = async (chunkBlob, index, metadata, opts =
     return errorData;
   } catch (error) {
     if (error?.name === 'AbortError') throw error;
-    console.error(`[API Error] 第 ${index} 塊音訊分析請求失敗:`, error);
+    console.error(`[API Error] 音訊分析請求失敗:`, error);
     throw error;
   }
 };

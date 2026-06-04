@@ -23,6 +23,7 @@ from app.model_loader import (
     schedule_warmup,
     status_payload,
 )
+from app.xai import generate_occlusion_heatmap
 from app.schemas import (
     ChunkPrediction,
     DecisionSupport,
@@ -257,7 +258,7 @@ def _chunk_from_probs(
 async def lifespan(app: FastAPI):
     settings = get_settings()
     app.state.settings = settings
-    app.state.predictor = None
+    app.state.predictors = {}
     app.state.taxonomy = None
     app.state.model_status = ModelStatus.IDLE
     app.state.load_error = None
@@ -356,96 +357,111 @@ async def warmup(request: Request) -> HealthResponse:
     return HealthResponse(**status_payload(request.app))
 
 
-def _process_multipart_chunks(
-    predictor: BirdChunkPredictor,
+from app.audio_mel import load_waveform_full
+
+def _process_audio(
     settings: Settings,
+    predictors: dict,
     taxonomy: dict[str, dict[str, str]],
     blobs: list[tuple[int, bytes, str | None]],
     *,
     original_filename: str,
     claimed_sample_rate: int,
     warnings: list[str],
+    model_selection: str,
 ) -> PredictResponse:
-    """
-    blobs: list of (chunk_index, raw_bytes, filename_for_errors) sorted by chunk_index.
-    """
-    labels = predictor.labels
+    # 1. Stitch all uploaded blobs into a single continuous waveform
     by_index = sorted(blobs, key=lambda x: x[0])
-    seen: set[int] = set()
-    for idx, _, _ in by_index:
-        if idx in seen:
-            raise ValueError(f"duplicate chunk index in request: {idx}")
-        seen.add(idx)
-
-    indices_ok: list[int] = []
-    tensors_ok: list[torch.Tensor] = []
-    wave_by_idx: dict[int, torch.Tensor] = {}
-    errors: dict[int, str] = {}
-
+    waveforms = []
+    
+    # We will just load the first file to get device (CPU)
+    device = torch.device("cpu")
+    
     for idx, raw, _fn in by_index:
         try:
-            w = load_waveform_fixed_chunk(
-                raw, settings, predictor.device, format_hint="wav"
-            )
-            wave = w.squeeze(0)
-            wave_by_idx[idx] = wave
-            tensors_ok.append(wave)
-            indices_ok.append(idx)
-        except Exception as exc:  # noqa: BLE001 — return per-chunk error to client
+            w = load_waveform_full(raw, settings, device, format_hint="wav")
+            waveforms.append(w.squeeze(0)) # shape (1, S)
+        except Exception as exc:
             logger.warning("chunk %s decode failed: %s", idx, exc)
-            errors[idx] = "decode_failed"
 
-    prob_by_idx: dict[int, np.ndarray] = {}
-    attn_by_idx: dict[int, np.ndarray] = {}
-    if tensors_ok:
-        stacked = torch.stack(tensors_ok, dim=0).unsqueeze(1)
-        probs_all, attention_all = predictor.predict_waveform_batch(stacked)
-        for i, idx in enumerate(indices_ok):
-            p = probs_all[i]
-            if getattr(predictor, "uses_baseline", False):
-                prob_by_idx[idx] = np.clip(p - predictor.baseline, 0.0, 1.0)
-            else:
-                prob_by_idx[idx] = np.clip(p, 0.0, 1.0)
-            if attention_all is not None:
-                attn_by_idx[idx] = attention_all[i]
-
-    top_k_n = settings.response_top_k
+    if not waveforms:
+        return PredictResponse(chunks=[], original_filename=original_filename, warnings=warnings)
+        
+    full_waveform = torch.cat(waveforms, dim=1) # (1, Total_S)
+    total_samples = full_waveform.shape[1]
+    
+    # Determine which models to run
+    models_to_run = []
+    if model_selection == "ensemble":
+        models_to_run = list(predictors.keys())
+    elif model_selection in predictors:
+        models_to_run = [model_selection]
+    else:
+        models_to_run = ["perch"]
+        
     chunks_out: list[ChunkPrediction] = []
-    for idx, _, _ in by_index:
-        if idx in errors:
-            chunks_out.append(
-                ChunkPrediction(
-                    index=idx,
-                    analysis_id=_make_analysis_id(idx),
-                    predictions=None,
-                    decision_support=None,
-                    error=errors[idx],
-                )
-            )
+    chunk_index_counter = 0
+    
+    for model_name in models_to_run:
+        predictor = predictors.get(model_name)
+        if not predictor:
             continue
-        chunks_out.append(
-            _chunk_from_probs(
-                chunk_index=idx,
-                probs=prob_by_idx[idx],
+            
+        labels = predictor.labels
+        
+        # Determine chunk size (default 5s for perch, 3s for birdnet)
+        chunk_sec = 3 if model_name == "birdnet" else 5
+        chunk_samples = chunk_sec * settings.sample_rate
+        
+        # Slice full waveform into chunks
+        for start in range(0, total_samples, chunk_samples):
+            end = start + chunk_samples
+            chunk_wave = full_waveform[:, start:end]
+            
+            # Pad if too short
+            if chunk_wave.shape[1] < chunk_samples:
+                chunk_wave = torch.nn.functional.pad(chunk_wave, (0, chunk_samples - chunk_wave.shape[1]))
+                
+            batch_wave = chunk_wave.unsqueeze(0) # (1, 1, S)
+            
+            probs_all, attn_all = predictor.predict_waveform_batch(batch_wave)
+            probs = probs_all[0]
+            
+            if getattr(predictor, "uses_baseline", False) and hasattr(predictor, "baseline"):
+                probs = np.clip(probs - predictor.baseline, 0.0, 1.0)
+            
+            # Calculate XAI if enabled and confidence is high enough
+            xai_heatmap = None
+            meets_threshold = bool(np.max(probs) >= settings.confidence_threshold)
+            
+            if meets_threshold and settings.enable_xai:
+                target_idx = int(np.argmax(probs))
+                xai_heatmap = generate_occlusion_heatmap(
+                    chunk_wave, predictor, target_idx, 
+                    sample_rate=settings.sample_rate, 
+                    window_sec=settings.xai_window_sec
+                )
+                
+            spectrogram = compute_spectrogram_payload(chunk_wave, settings, device)
+            
+            cp = _chunk_from_probs(
+                chunk_index=chunk_index_counter,
+                probs=probs,
                 labels=labels,
                 taxonomy=taxonomy,
-                top_k=top_k_n,
-                attention_row=attn_by_idx.get(idx),
+                top_k=settings.response_top_k,
+                attention_row=attn_all[0] if attn_all is not None else None,
                 confidence_threshold=settings.confidence_threshold,
-                spectrogram=compute_spectrogram_payload(
-                    wave_by_idx[idx], settings, predictor.device
-                ),
+                spectrogram=spectrogram,
             )
-        )
+            cp.model_name = model_name
+            if cp.predictions:
+                cp.predictions.xai_heatmap = xai_heatmap
+            chunks_out.append(cp)
+            chunk_index_counter += 1
 
     if claimed_sample_rate != settings.sample_rate:
-        warnings = [
-            *warnings,
-            (
-                f"sample_rate field was {claimed_sample_rate}, "
-                f"server uses {settings.sample_rate} for inference"
-            ),
-        ]
+        warnings.append(f"sample_rate was {claimed_sample_rate}, server uses {settings.sample_rate}")
 
     return PredictResponse(
         chunks=chunks_out,
@@ -461,6 +477,7 @@ async def predict(
     audio_chunks: list[UploadFile] = File(...),
     original_filename: str = Form(""),
     sample_rate: int = Form(32_000),
+    model_selection: str = Form("perch"),
 ) -> PredictResponse:
     try:
         await ensure_models_loaded(request.app)
@@ -471,7 +488,7 @@ async def predict(
         ) from exc
 
     settings: Settings = request.app.state.settings
-    predictor: BirdChunkPredictor = request.app.state.predictor
+    predictors: dict = getattr(request.app.state, "predictors", {})
     taxonomy: dict[str, dict[str, str]] = request.app.state.taxonomy
     sem: asyncio.Semaphore = request.app.state.prediction_sem
 
@@ -485,32 +502,20 @@ async def predict(
         if n_bytes > max_b:
             raise HTTPException(
                 status_code=413,
-                detail={
-                    "message": f"Request body too large (max {settings.max_body_mb} MB)"
-                },
+                detail={"message": f"Request body too large (max {settings.max_body_mb} MB)"},
             )
 
     if not audio_chunks:
-        raise HTTPException(
-            status_code=422,
-            detail={"message": "No audio_chunks uploaded"},
-        )
+        raise HTTPException(status_code=422, detail={"message": "No audio_chunks uploaded"})
 
     if len(audio_chunks) > settings.max_chunks:
-        raise HTTPException(
-            status_code=422,
-            detail={"message": f"Too many audio_chunks (max {settings.max_chunks})"},
-        )
+        raise HTTPException(status_code=422, detail={"message": f"Too many chunks (max {settings.max_chunks})"})
 
     indexed = list(enumerate(audio_chunks))
     indexed.sort(key=lambda it: filename_sort_key(it[1].filename, it[0]))
 
     warnings: list[str] = []
-    if any(not CHUNK_FILENAME_RE.search(uf.filename or "") for _, uf in indexed):
-        warnings.append(
-            "Some files did not match chunk_<index>.wav; index falls back to upload order."
-        )
-
+    
     blobs: list[tuple[int, bytes, str | None]] = []
     for upload_order, uf in indexed:
         name = uf.filename or ""
@@ -518,23 +523,21 @@ async def predict(
         chunk_idx = int(m.group(1)) if m else upload_order
         data = await uf.read()
         if not data:
-            raise HTTPException(
-                status_code=422,
-                detail={"message": f"Empty file: {name or 'unnamed'}"},
-            )
+            continue
         blobs.append((chunk_idx, data, name))
 
     try:
         async with sem:
             return await run_in_threadpool(
-                _process_multipart_chunks,
-                predictor,
+                _process_audio,
                 settings,
+                predictors,
                 taxonomy,
                 blobs,
                 original_filename=original_filename,
                 claimed_sample_rate=sample_rate,
                 warnings=warnings,
+                model_selection=model_selection,
             )
     except ValueError as e:
         raise HTTPException(status_code=422, detail={"message": str(e)}) from e

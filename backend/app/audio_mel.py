@@ -54,7 +54,7 @@ def _load_waveform_torchaudio(
     return waveform, int(sr_t)
 
 
-def load_waveform_fixed_chunk(
+def load_waveform_full(
     source: BinaryIO | bytes,
     settings: Settings,
     device: torch.device,
@@ -62,10 +62,8 @@ def load_waveform_fixed_chunk(
     format_hint: str | None = None,
 ) -> torch.Tensor:
     """
-    Decode audio, mono, resample to sample_rate, pad/trim to exactly one chunk length.
-    Returns shape (1, chunk_samples).
-
-    WAV 優先經 soundfile 讀取，避免新版 torchaudio 強制依賴 TorchCodec。
+    Decode audio, mono, resample to sample_rate, but keeps the full length.
+    Returns shape (1, samples).
     """
     buf: BinaryIO
     if isinstance(source, bytes):
@@ -77,7 +75,6 @@ def load_waveform_fixed_chunk(
     if format_hint in (None, "wav"):
         try:
             data, sr = sf.read(buf, dtype="float32", always_2d=True)
-            # (samples, channels) -> (channels, samples)
             waveform = torch.from_numpy(data.T.copy())
             sr = int(sr)
         except Exception:
@@ -93,14 +90,24 @@ def load_waveform_fixed_chunk(
     if waveform.shape[0] > 1:
         waveform = waveform.mean(dim=0, keepdim=True)
 
-    target = chunk_samples(settings)
     if waveform.numel() == 0 or waveform.shape[1] == 0:
-        waveform = torch.zeros((1, target), dtype=torch.float32)
+        # Fallback empty
+        waveform = torch.zeros((1, settings.sample_rate), dtype=torch.float32)
 
+    return waveform.contiguous().to(device=device, dtype=torch.float32)
+
+def load_waveform_fixed_chunk(
+    source: BinaryIO | bytes,
+    settings: Settings,
+    device: torch.device,
+    *,
+    format_hint: str | None = None,
+) -> torch.Tensor:
+    waveform = load_waveform_full(source, settings, device, format_hint=format_hint)
+    target = chunk_samples(settings)
     n = waveform.shape[1]
     if n < target:
         waveform = torch.nn.functional.pad(waveform, (0, target - n))
     elif n > target:
         waveform = waveform[:, :target]
-
-    return waveform.contiguous().to(device=device, dtype=torch.float32)
+    return waveform
