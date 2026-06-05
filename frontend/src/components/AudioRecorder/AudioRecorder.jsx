@@ -33,7 +33,12 @@ function formatClock(ms) {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
-export default function AudioRecorder({ dict, onRecordingComplete, onErrorChange }) {
+export default function AudioRecorder({
+  dict,
+  onRecordingComplete,
+  onErrorChange,
+  recordingDisabled = false,
+}) {
   const [phase, setPhase] = useState('idle');
   const [elapsedMs, setElapsedMs] = useState(0);
   const [recorderError, setRecorderError] = useState('');
@@ -109,6 +114,8 @@ export default function AudioRecorder({ dict, onRecordingComplete, onErrorChange
   }, [buildFileFromChunks, clearTimers, onRecordingComplete, stopStream]);
 
   const startRecording = async () => {
+    if (recordingDisabled) return;
+
     setRecorderError('');
     chunksRef.current = [];
 
@@ -178,9 +185,16 @@ export default function AudioRecorder({ dict, onRecordingComplete, onErrorChange
       {!isRecording ? (
         <button
           type="button"
-          onClick={startRecording}
-          className="flex h-full min-h-[5.5rem] w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-[var(--c-primary)] px-1 py-2 font-bold text-[var(--c-primary)] transition-all hover:bg-[var(--c-primary)] hover:text-[var(--c-muted)]"
+          onClick={recordingDisabled ? undefined : startRecording}
+          disabled={recordingDisabled}
+          className={
+            recordingDisabled
+              ? 'flex h-full min-h-[5.5rem] w-full cursor-not-allowed flex-col items-center justify-center gap-1 rounded-xl border-2 border-[var(--c-text)]/20 px-1 py-2 font-bold text-[var(--c-text)]/35'
+              : 'flex h-full min-h-[5.5rem] w-full flex-col items-center justify-center gap-1 rounded-xl border-2 border-[var(--c-primary)] px-1 py-2 font-bold text-[var(--c-primary)] transition-all hover:bg-[var(--c-primary)] hover:text-[var(--c-muted)]'
+          }
           aria-label={dict.startRecording}
+          aria-disabled={recordingDisabled || undefined}
+          title={recordingDisabled ? dict.inAppBrowserRecordingHint : undefined}
         >
           <MdMic className="h-8 w-8 shrink-0" aria-hidden />
           <span className="text-center text-xs leading-tight">{dict.startRecording}</span>

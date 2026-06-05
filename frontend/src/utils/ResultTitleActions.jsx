@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { MdSave, MdDownload, MdDownloadDone } from 'react-icons/md';
+import { MdSave, MdPrint, MdShare, MdClose, MdMoreHoriz } from 'react-icons/md';
+import ShareResultMenu from './ShareResultMenu';
 
 const FAB_BG = {
   backgroundImage: "url('/icon_bg.png')",
@@ -9,13 +10,13 @@ const FAB_BG = {
   backgroundRepeat: 'no-repeat',
 };
 const FAB_BTN =
-  'relative flex shrink-0 items-center justify-center rounded-full border border-[var(--c-text)]/10 shadow-md transition-transform focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--c-primary)] enabled:hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40';
+  'relative flex shrink-0 items-center justify-center rounded-full border border-[var(--c-text)]/10 shadow-md transition-all duration-200 focus:outline-none focus-visible:ring-1 focus-visible:ring-[var(--c-primary)] enabled:hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40';
 
 const FAB_ICON_COLOR = '#000000';
 const FAB_ICON_SIZE = 20;
 const DONE_MS = 3000;
 
-function SaveTextButton({ label, labelDone, onSave, saved }) {
+function SaveTextButton({ label, labelDone, onSave, saved, className = '' }) {
   const [flashDone, setFlashDone] = useState(false);
   const timerRef = useRef(null);
 
@@ -40,7 +41,7 @@ function SaveTextButton({ label, labelDone, onSave, saved }) {
       onClick={onSave}
       disabled={!onSave}
       aria-label={showDone ? labelDone : label}
-      className={`${FAB_BTN} h-12 w-12`}
+      className={`${FAB_BTN} h-12 w-12 ${className}`}
       style={FAB_BG}
     >
       <MdSave color={FAB_ICON_COLOR} size={FAB_ICON_SIZE} aria-hidden />
@@ -48,79 +49,165 @@ function SaveTextButton({ label, labelDone, onSave, saved }) {
   );
 }
 
-function DownloadButton({ ariaLabel, ariaLabelDone, onDownload }) {
-  const [done, setDone] = useState(false);
+function PrintButton({ ariaLabel, onPrint, className = '' }) {
   const [busy, setBusy] = useState(false);
-  const doneTimerRef = useRef(null);
-
-  useEffect(() => {
-    return () => {
-      if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
-    };
-  }, []);
 
   const handleClick = async () => {
-    if (!onDownload || busy || done) return;
+    if (!onPrint || busy) return;
     setBusy(true);
     try {
-      await onDownload();
-      setDone(true);
-      if (doneTimerRef.current) clearTimeout(doneTimerRef.current);
-      doneTimerRef.current = setTimeout(() => {
-        setDone(false);
-        doneTimerRef.current = null;
-      }, DONE_MS);
+      await onPrint();
     } catch (err) {
       if (err?.name !== 'AbortError') {
-        console.error('[Download]', err);
+        console.error('[Print]', err);
       }
     } finally {
       setBusy(false);
     }
   };
 
-  const Icon = done ? MdDownloadDone : MdDownload;
-
   return (
     <button
       type="button"
       onClick={handleClick}
-      disabled={!onDownload || busy}
-      aria-label={done ? ariaLabelDone : ariaLabel}
-      className={`${FAB_BTN} h-12 w-12`}
+      disabled={!onPrint || busy}
+      aria-label={ariaLabel}
+      className={`${FAB_BTN} h-12 w-12 ${className}`}
       style={FAB_BG}
     >
-      <Icon color={FAB_ICON_COLOR} size={FAB_ICON_SIZE} aria-hidden />
+      <MdPrint color={FAB_ICON_COLOR} size={FAB_ICON_SIZE} aria-hidden />
     </button>
   );
 }
 
-export function ResultFloatingActions({ dict, onSave, onDownload, surveySaved, actionsDisabled = false }) {
+function ShareFabButton({ ariaLabel, onClick, disabled = false, className = '' }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      className={`${FAB_BTN} h-12 w-12 ${className}`}
+      style={FAB_BG}
+    >
+      <MdShare color={FAB_ICON_COLOR} size={FAB_ICON_SIZE} aria-hidden />
+    </button>
+  );
+}
+
+export function ResultFloatingActions({
+  dict,
+  onSave,
+  onPrint,
+  getSharePayload,
+  surveySaved,
+  actionsDisabled = false,
+}) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  useEffect(() => {
+    if (!actionsDisabled) return undefined;
+    setShareOpen(false);
+    setMenuOpen(false);
+  }, [actionsDisabled]);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShareOpen(false);
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, [menuOpen]);
+
   if (typeof document === 'undefined') return null;
 
   return createPortal(
-    <div
-      className="fixed bottom-6 right-6 z-[200] flex shrink-0 items-center gap-3"
-      role="group"
-      aria-label={dict.resultTitle}
-    >
-      <SaveTextButton
-        label={dict.saveResult}
-        labelDone={dict.saveDone}
-        onSave={actionsDisabled ? undefined : onSave}
-        saved={surveySaved}
+    <>
+      {menuOpen ? (
+        <button
+          type="button"
+          className="fixed inset-0 z-[190] cursor-default"
+          aria-label={dict.shareModalClose}
+          onClick={() => {
+            setShareOpen(false);
+            setMenuOpen(false);
+          }}
+        />
+      ) : null}
+
+      <div
+        className="fixed bottom-6 right-6 z-[200] flex flex-col-reverse items-center gap-3"
+        role="group"
+        aria-label={dict.resultTitle}
+      >
+        <button
+          type="button"
+          disabled={actionsDisabled}
+          onClick={() => {
+            if (actionsDisabled) return;
+            setShareOpen(false);
+            setMenuOpen((open) => !open);
+          }}
+          aria-expanded={menuOpen}
+          aria-disabled={actionsDisabled}
+          aria-label={
+            actionsDisabled
+              ? dict.xaiGeneratingHint
+              : menuOpen
+                ? dict.actionsMenuClose
+                : dict.actionsMenuOpen
+          }
+          className={`${FAB_BTN} h-14 w-14`}
+          style={FAB_BG}
+        >
+          {menuOpen ? (
+            <MdClose color={FAB_ICON_COLOR} size={24} aria-hidden />
+          ) : (
+            <MdMoreHoriz color={FAB_ICON_COLOR} size={24} aria-hidden />
+          )}
+        </button>
+
+        {menuOpen ? (
+          <>
+            <ShareFabButton
+              ariaLabel={dict.shareResult}
+              disabled={!getSharePayload}
+              onClick={() => setShareOpen(true)}
+            />
+            <SaveTextButton
+              label={dict.saveResult}
+              labelDone={dict.saveDone}
+              onSave={onSave}
+              saved={surveySaved}
+            />
+            <PrintButton ariaLabel={dict.printResult} onPrint={onPrint} />
+          </>
+        ) : null}
+      </div>
+
+      <ShareResultMenu
+        open={shareOpen}
+        onClose={() => setShareOpen(false)}
+        getSharePayload={getSharePayload}
+        dict={dict}
       />
-      <DownloadButton
-        ariaLabel={dict.downloadResult}
-        ariaLabelDone={dict.downloadDone}
-        onDownload={actionsDisabled ? undefined : onDownload}
-      />
-    </div>,
+    </>,
     document.body
   );
 }
 
-export function ResultTitleBar({ dict, onSave, onDownload, surveySaved, actionsDisabled = false }) {
+export function ResultTitleBar({
+  dict,
+  onSave,
+  onPrint,
+  getSharePayload,
+  surveySaved,
+  actionsDisabled = false,
+}) {
   return (
     <>
       <h2 className="text-center min-w-0 truncate text-2xl font-black tracking-tight text-[var(--c-text)] md:text-3xl">
@@ -134,7 +221,8 @@ export function ResultTitleBar({ dict, onSave, onDownload, surveySaved, actionsD
       <ResultFloatingActions
         dict={dict}
         onSave={onSave}
-        onDownload={onDownload}
+        onPrint={onPrint}
+        getSharePayload={getSharePayload}
         surveySaved={surveySaved}
         actionsDisabled={actionsDisabled}
       />

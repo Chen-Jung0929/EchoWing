@@ -13,6 +13,7 @@ import {
 } from './aggregateByVote';
 import { buildFullReportModel } from './buildFullReportModel';
 import { ResultTitleBar } from './ResultTitleActions';
+import { buildResultShareContent } from './shareResult';
 import { isSurveyMetadataSaved } from './surveyMetadata';
 import { chunkIdentity } from './chunkIdentity';
 
@@ -196,9 +197,9 @@ export default function ChunkResultsView({
   const [saveVersion, setSaveVersion] = useState(0);
   const [modalConfirmLabel, setModalConfirmLabel] = useState(null);
   const reportRef = useRef(null);
-  const pendingDownloadRef = useRef(false);
-  const downloadResolveRef = useRef(null);
-  const downloadRejectRef = useRef(null);
+  const pendingPrintRef = useRef(false);
+  const printResolveRef = useRef(null);
+  const printRejectRef = useRef(null);
 
   const summary = useMemo(
     () =>
@@ -251,30 +252,58 @@ export default function ChunkResultsView({
     ]
   );
 
-  const runPdfDownload = useCallback(async () => {
+  const runPdfPrint = useCallback(async () => {
     await new Promise((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(resolve));
     });
-    if (!reportRef.current?.downloadPdf) {
+    if (!reportRef.current?.printPdf) {
       throw new Error('PDF report is not ready');
     }
-    await reportRef.current.downloadPdf();
+    await reportRef.current.printPdf();
   }, []);
 
+  const getSharePayload = useCallback(
+    () =>
+      buildResultShareContent({
+        pageIndex,
+        summary,
+        chunks,
+        filename,
+        lang,
+        dict,
+        windowSec,
+        processedAt: formatAnalyzedAt(result.processed_at, lang),
+        spectrogramCache: spectrogramByIndex,
+        totalDurationSec,
+      }),
+    [
+      pageIndex,
+      summary,
+      chunks,
+      filename,
+      lang,
+      dict,
+      windowSec,
+      result.processed_at,
+      spectrogramByIndex,
+      totalDurationSec,
+    ]
+  );
+
   const handleSaveRequest = useCallback(() => {
-    pendingDownloadRef.current = false;
+    pendingPrintRef.current = false;
     setModalConfirmLabel(dict.saveModalConfirm);
     setSaveModalOpen(true);
   }, [dict.saveModalConfirm]);
 
   const handleSaveModalClose = useCallback(() => {
     setSaveModalOpen(false);
-    if (pendingDownloadRef.current) {
-      downloadRejectRef.current?.(new DOMException('Cancelled', 'AbortError'));
-      downloadResolveRef.current = null;
-      downloadRejectRef.current = null;
+    if (pendingPrintRef.current) {
+      printRejectRef.current?.(new DOMException('Cancelled', 'AbortError'));
+      printResolveRef.current = null;
+      printRejectRef.current = null;
     }
-    pendingDownloadRef.current = false;
+    pendingPrintRef.current = false;
   }, []);
 
   const handleSaveConfirm = useCallback(
@@ -282,39 +311,39 @@ export default function ChunkResultsView({
       setSaveModalOpen(false);
       setSurveyMetadata(metadata);
       setSaveVersion((v) => v + 1);
-      const shouldDownload = pendingDownloadRef.current;
-      pendingDownloadRef.current = false;
+      const shouldPrint = pendingPrintRef.current;
+      pendingPrintRef.current = false;
       await new Promise((resolve) => {
         requestAnimationFrame(() => requestAnimationFrame(resolve));
       });
-      if (shouldDownload) {
+      if (shouldPrint) {
         try {
-          await runPdfDownload();
-          downloadResolveRef.current?.();
+          await runPdfPrint();
+          printResolveRef.current?.();
         } catch (err) {
-          downloadRejectRef.current?.(err);
+          printRejectRef.current?.(err);
           throw err;
         } finally {
-          downloadResolveRef.current = null;
-          downloadRejectRef.current = null;
+          printResolveRef.current = null;
+          printRejectRef.current = null;
         }
       }
     },
-    [runPdfDownload]
+    [runPdfPrint]
   );
 
-  const handleDownloadResult = useCallback(() => {
+  const handlePrintResult = useCallback(() => {
     if (isSurveyMetadataSaved(surveyMetadata)) {
-      return runPdfDownload();
+      return runPdfPrint();
     }
     return new Promise((resolve, reject) => {
-      downloadResolveRef.current = resolve;
-      downloadRejectRef.current = reject;
-      pendingDownloadRef.current = true;
-      setModalConfirmLabel(dict.downloadModalConfirm);
+      printResolveRef.current = resolve;
+      printRejectRef.current = reject;
+      pendingPrintRef.current = true;
+      setModalConfirmLabel(dict.printModalConfirm);
       setSaveModalOpen(true);
     });
-  }, [surveyMetadata, runPdfDownload, dict.downloadModalConfirm]);
+  }, [surveyMetadata, runPdfPrint, dict.printModalConfirm]);
 
   const confidenceThreshold = resolveConfidenceThreshold(result.confidence_threshold);
   const thresholdPct = Math.round(confidenceThreshold * 100);
@@ -358,7 +387,8 @@ export default function ChunkResultsView({
           <ResultTitleBar
             dict={dict}
             onSave={handleSaveRequest}
-            onDownload={handleDownloadResult}
+            onPrint={handlePrintResult}
+            getSharePayload={getSharePayload}
             surveySaved={saveVersion}
             actionsDisabled={actionsDisabled}
           />

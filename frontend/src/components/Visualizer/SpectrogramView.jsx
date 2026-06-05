@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
+import { MdClose, MdZoomIn } from 'react-icons/md';
 import {
   computeSpectrogramCanvasSize,
   drawSpectrogramPayload,
@@ -11,6 +13,234 @@ import {
 } from '../../utils/spectrogramCache';
 
 const COMPACT_MAX_WIDTH = 680;
+const ENLARGE_CANVAS_HEIGHT = 420;
+const ENLARGE_XAI_STRIP_HEIGHT = 48;
+const ENLARGE_PX_PER_FRAME = 3;
+
+function SpectrogramPlot({
+  spectrogram,
+  alignedXai,
+  hasXai,
+  xaiGenerating,
+  canvasSize,
+  displayHeight,
+  xaiStripDisplayPx,
+  xaiStripCanvasH,
+  generatingLabel,
+  onEnlarge,
+  enlargeLabel,
+}) {
+  const canvasRef = useRef(null);
+  const xaiCanvasRef = useRef(null);
+
+  useEffect(() => {
+    if (!spectrogram || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    drawSpectrogramPayload(ctx, spectrogram, canvas.width, canvas.height);
+  }, [spectrogram, canvasSize.width, canvasSize.height]);
+
+  useEffect(() => {
+    if (!hasXai || !xaiCanvasRef.current) return;
+    const canvas = xaiCanvasRef.current;
+    const ctx = canvas.getContext('2d');
+    if (!ctx || !alignedXai) return;
+    drawXaiStripBelow(ctx, alignedXai, canvas.width, canvas.height);
+  }, [hasXai, alignedXai, canvasSize.width, xaiStripCanvasH]);
+
+  const plotWrapStyle = {
+    width: '100%',
+    border: '1px solid rgba(57, 77, 101, 0.15)',
+    borderRadius: '0.75rem',
+    overflow: 'hidden',
+    background: '#f8fafc',
+    position: 'relative',
+  };
+
+  const specCanvasStyle = {
+    width: '100%',
+    height: displayHeight,
+    display: 'block',
+    verticalAlign: 'top',
+  };
+
+  const xaiCanvasStyle = {
+    width: '100%',
+    height: `${xaiStripDisplayPx}px`,
+    display: 'block',
+  };
+
+  const plotBody = (
+    <>
+      <canvas
+        ref={canvasRef}
+        width={canvasSize.width}
+        height={canvasSize.height}
+        style={specCanvasStyle}
+      />
+      {hasXai ? (
+        <canvas
+          ref={xaiCanvasRef}
+          width={canvasSize.width}
+          height={xaiStripCanvasH}
+          style={xaiCanvasStyle}
+          aria-hidden
+        />
+      ) : null}
+      {xaiGenerating ? (
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'rgba(248, 250, 252, 0.72)',
+            pointerEvents: 'none',
+          }}
+          role="status"
+          aria-live="polite"
+        >
+          <span
+            style={{
+              fontSize: '0.9375rem',
+              fontWeight: 800,
+              color: '#394d65',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.5rem',
+              background: 'rgba(255,255,255,0.9)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+            }}
+          >
+            {generatingLabel}
+          </span>
+        </div>
+      ) : null}
+    </>
+  );
+
+  if (!onEnlarge) {
+    return <div style={plotWrapStyle}>{plotBody}</div>;
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onEnlarge}
+      aria-label={enlargeLabel}
+      className="group relative w-full cursor-zoom-in rounded-[0.75rem] border-0 bg-transparent p-0 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--c-primary)]"
+    >
+      <div style={plotWrapStyle}>
+        {plotBody}
+        {!xaiGenerating ? (
+          <span
+            className="pointer-events-none absolute right-2 top-2 flex items-center gap-1 rounded-full border border-[var(--c-text)]/10 bg-white/90 px-2 py-1 text-[10px] font-bold text-[var(--c-text)]/70 opacity-0 shadow-sm transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+            aria-hidden
+          >
+            <MdZoomIn size={14} />
+          </span>
+        ) : null}
+      </div>
+    </button>
+  );
+}
+
+function SpectrogramEnlargeModal({
+  open,
+  onClose,
+  spectrogram,
+  alignedXai,
+  hasXai,
+  xaiGenerating,
+  title,
+  meta,
+  hint,
+  generatingLabel,
+  generatingHint,
+  dict,
+}) {
+  const enlargeSize = useMemo(() => {
+    if (!spectrogram) {
+      return { width: 800, height: ENLARGE_CANVAS_HEIGHT };
+    }
+    const maxW =
+      typeof window !== 'undefined' ? Math.floor(window.innerWidth * 0.92) : 1200;
+    const naturalW = Math.round(spectrogram.time_frames * ENLARGE_PX_PER_FRAME);
+    return {
+      width: Math.min(maxW, Math.max(naturalW, 640)),
+      height: ENLARGE_CANVAS_HEIGHT,
+      pxPerFrame: ENLARGE_PX_PER_FRAME,
+    };
+  }, [spectrogram]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open, onClose]);
+
+  if (!open || typeof document === 'undefined' || !spectrogram) return null;
+
+  return createPortal(
+    <>
+      <button
+        type="button"
+        className="fixed inset-0 z-[240] cursor-default bg-black/55"
+        aria-label={dict?.spectrogramEnlargeClose ?? 'Close enlarged view'}
+        onClick={onClose}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={dict?.spectrogramEnlarge ?? 'View spectrogram larger'}
+        className="fixed left-1/2 top-1/2 z-[250] flex max-h-[92vh] w-[min(92vw,72rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-[var(--c-text)]/10 bg-[var(--c-card)] shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-3 border-b border-[var(--c-text)]/10 px-4 py-3">
+          <div className="min-w-0">
+            <h3 className="truncate text-lg font-black text-[var(--c-text)]">{title}</h3>
+            <p className="mt-0.5 font-mono text-xs text-[var(--c-text)]/55">{meta}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={dict?.spectrogramEnlargeClose ?? 'Close enlarged view'}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--c-text)]/10 text-[var(--c-text)] transition-colors hover:bg-[var(--c-bg)]/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--c-primary)]"
+          >
+            <MdClose size={20} aria-hidden />
+          </button>
+        </div>
+
+        <div className="overflow-auto p-4">
+          <SpectrogramPlot
+            spectrogram={spectrogram}
+            alignedXai={alignedXai}
+            hasXai={hasXai}
+            xaiGenerating={xaiGenerating}
+            canvasSize={enlargeSize}
+            displayHeight="min(55vh, 26rem)"
+            xaiStripDisplayPx={ENLARGE_XAI_STRIP_HEIGHT}
+            xaiStripCanvasH={ENLARGE_XAI_STRIP_HEIGHT}
+            generatingLabel={generatingLabel}
+          />
+        </div>
+
+        <p className="border-t border-[var(--c-text)]/10 px-4 py-3 text-right text-xs text-[var(--c-text)]/55">
+          {xaiGenerating ? generatingHint : hint}
+        </p>
+      </div>
+    </>,
+    document.body
+  );
+}
 
 export default function SpectrogramView({
   spectrogram,
@@ -23,10 +253,9 @@ export default function SpectrogramView({
   xaiHeatmap = null,
   xaiGenerating = false,
 }) {
-  const canvasRef = useRef(null);
-  const xaiCanvasRef = useRef(null);
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(0);
+  const [enlarged, setEnlarged] = useState(false);
 
   const isSummary = variant === 'summary';
   const displayHeight = compact ? '10rem' : '11rem';
@@ -45,8 +274,8 @@ export default function SpectrogramView({
   const generatingHint =
     dict?.xaiGeneratingHint ??
     (lang === 'zh'
-      ? '可解釋性熱圖計算中，完成後可儲存或下載報告'
-      : 'Computing explainability heatmaps; save and download unlock when done');
+      ? '可解釋性熱圖計算中，完成後可儲存、分享或列印報告'
+      : 'Computing explainability heatmaps; save, share, and print unlock when done');
 
   useEffect(() => {
     if (!isSummary || compact) return;
@@ -91,22 +320,6 @@ export default function SpectrogramView({
     };
   }, [spectrogram, isSummary, compact, containerWidth, canvasHeight]);
 
-  useEffect(() => {
-    if (!spectrogram || !canvasRef.current) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    drawSpectrogramPayload(ctx, spectrogram, canvas.width, canvas.height);
-  }, [spectrogram, canvasSize.width, canvasSize.height]);
-
-  useEffect(() => {
-    if (!hasXai || !xaiCanvasRef.current) return;
-    const canvas = xaiCanvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx || !alignedXai) return;
-    drawXaiStripBelow(ctx, alignedXai, canvas.width, canvas.height);
-  }, [hasXai, alignedXai, canvasSize.width, xaiStripCanvasH]);
-
   if (!spectrogram) {
     return (
       <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
@@ -142,37 +355,18 @@ export default function SpectrogramView({
         marginTop: '1.5rem',
       };
 
-  const plotWrapStyle = {
-    width: isSummary ? '100%' : `${canvasSize.width}px`,
-    maxWidth: '100%',
-    margin: isSummary ? undefined : '0 auto',
-    border: '1px solid rgba(57, 77, 101, 0.15)',
-    borderRadius: '0.75rem',
-    overflow: 'hidden',
-    background: '#f8fafc',
-  };
-
-  const specCanvasStyle = {
-    width: '100%',
-    height: displayHeight,
-    display: 'block',
-    verticalAlign: 'top',
-  };
-
-  const xaiCanvasStyle = {
-    width: '100%',
-    height: `${xaiStripDisplayPx}px`,
-    display: 'block',
-  };
-
-  const canvasWrapStyle = isSummary
+  const plotOuterStyle = isSummary
     ? { width: '100%', borderRadius: '0.75rem' }
     : {
         display: 'flex',
         justifyContent: 'center',
         width: '100%',
+        maxWidth: `${canvasSize.width}px`,
+        margin: '0 auto',
         borderRadius: '0.75rem',
       };
+
+  const enlargeLabel = dict?.spectrogramEnlarge ?? (lang === 'zh' ? '放大檢視頻譜圖' : 'View spectrogram larger');
 
   return (
     <div style={shellStyle}>
@@ -201,58 +395,44 @@ export default function SpectrogramView({
         </span>
       </div>
 
-      <div ref={isSummary && !compact ? containerRef : undefined} style={canvasWrapStyle}>
-        <div style={{ ...plotWrapStyle, position: 'relative' }}>
-          <canvas
-            ref={canvasRef}
-            width={canvasSize.width}
-            height={canvasSize.height}
-            style={specCanvasStyle}
-          />
-          {hasXai ? (
-            <canvas
-              ref={xaiCanvasRef}
-              width={canvasSize.width}
-              height={xaiStripCanvasH}
-              style={xaiCanvasStyle}
-              aria-hidden
-            />
-          ) : null}
-          {xaiGenerating ? (
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                background: 'rgba(248, 250, 252, 0.72)',
-                pointerEvents: 'none',
-              }}
-              role="status"
-              aria-live="polite"
-            >
-              <span
-                style={{
-                  fontSize: '0.9375rem',
-                  fontWeight: 800,
-                  color: '#394d65',
-                  padding: '0.5rem 1rem',
-                  borderRadius: '0.5rem',
-                  background: 'rgba(255,255,255,0.9)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                }}
-              >
-                {generatingLabel}
-              </span>
-            </div>
-          ) : null}
-        </div>
+      <div ref={isSummary && !compact ? containerRef : undefined} style={plotOuterStyle}>
+        <SpectrogramPlot
+          spectrogram={spectrogram}
+          alignedXai={alignedXai}
+          hasXai={hasXai}
+          xaiGenerating={xaiGenerating}
+          canvasSize={canvasSize}
+          displayHeight={displayHeight}
+          xaiStripDisplayPx={xaiStripDisplayPx}
+          xaiStripCanvasH={xaiStripCanvasH}
+          generatingLabel={generatingLabel}
+          onEnlarge={compact ? undefined : () => setEnlarged(true)}
+          enlargeLabel={enlargeLabel}
+        />
       </div>
 
       <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.75rem', textAlign: 'right' }}>
-        {xaiGenerating ? generatingHint : hint}
+        {xaiGenerating
+          ? generatingHint
+          : compact
+            ? hint
+            : `${dict?.spectrogramEnlargeHint ?? (lang === 'zh' ? '點擊頻譜圖可放大檢視' : 'Click the spectrogram to enlarge')} · ${hint}`}
       </p>
+
+      <SpectrogramEnlargeModal
+        open={enlarged}
+        onClose={() => setEnlarged(false)}
+        spectrogram={spectrogram}
+        alignedXai={alignedXai}
+        hasXai={hasXai}
+        xaiGenerating={xaiGenerating}
+        title={title}
+        meta={meta}
+        hint={hint}
+        generatingLabel={generatingLabel}
+        generatingHint={generatingHint}
+        dict={dict}
+      />
     </div>
   );
 }

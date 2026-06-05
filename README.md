@@ -42,6 +42,7 @@ npm run dev
 | **辨識結果** | 總覽投票彙整 + 各分析窗分頁、信心門檻、低信心候選 |
 | **視覺化** | Mel 頻譜、XAI 時間條、維基連結 |
 | **田野紀錄** | 總覽／各窗備註 → PDF |
+| **結果分享** | 分享目前分頁（頻譜圖 + 可編輯文字）；手機／電腦行為不同（見下方） |
 | **後端 API** | `health` / `warmup` / `ready` / `predict` / `stream-predict` |
 | **部署** | [Hugging Face Docker Space](backend/DEPLOY_HF.md)、[Render](render.yaml)（範例 ONNX） |
 
@@ -55,6 +56,19 @@ npm run dev
 | `error` | 錯誤與重試 |
 
 XAI 計算中：**儲存／PDF 下載停用**，頻譜顯示「XAI生成中...」。
+
+### 結果分享（`ShareResultMenu`）
+
+辨識結果頁右下角「分享目前分頁」可產生**分享圖**（含頻譜與物種摘要）與**可編輯文字**。文字模板僅 **社群短文**、**詳細** 兩種，內容語言跟隨網站中／英設定（`frontend/src/i18n/locales/` 的 `shareTemplateSocial` 與 `shareResult.js` 內 `detailed` 組裝）。
+
+| 裝置 | 分享方式 | 說明 |
+|------|----------|------|
+| **手機** | 「分享到...」→ 系統分享 | 一次帶入圖片與文字至 Line、Messenger 等 App；**不提供**各平台獨立按鈕 |
+| **電腦** | Threads / X / Facebook + 複製文字 | 自動複製文字、複製或下載圖片，並開啟對應平台發文頁；**不含 Instagram**（網頁無法可靠一鍵發圖） |
+
+**In-app browser（Messenger、Facebook、Instagram 等內建瀏覽器）**：麥克風 API 常受限，首頁**僅支援上傳**，錄音按鈕停用並提示改以 Safari／Chrome 開啟。
+
+**版控與建置產物**：`npm run build` 輸出的 `frontend/dist/` 已在 `frontend/.gitignore` 排除，請勿提交；部署時於 CI 或本機建置後上傳 `dist/` 至 Vercel 等靜態主機。
 
 ---
 
@@ -128,6 +142,8 @@ BirdCLEF/
         │   ├── aggregateByVote.js    # 總覽投票（分析窗編號）
         │   ├── chunkIdentity.js      # SSE chunk 合併
         │   ├── spectrogramCache.js
+        │   ├── shareResult.js          # 分享文字模板、平台／系統分享
+        │   ├── ShareResultMenu.jsx
         │   └── pdf/
         └── i18n/locales/zh.js · en.js
 ```
@@ -315,9 +331,23 @@ python backend/scripts/hf_warmup.py --url https://<帳號>-<space>.hf.space
 
 - 修改前端後執行 `npm run build` 確認編譯（見 `frontend/AGENTS.md`）。
 - Mock：`App.jsx` 的 `USE_MOCK_FALLBACK`（預設 `false`）。
-- 錄音需 **HTTPS** 或 **localhost**。
+- 錄音需 **HTTPS** 或 **localhost**；Messenger 等 in-app browser 僅支援上傳（見上方「結果分享」）。
 - PDF 字型：`frontend/public/fonts/NotoSansTC-Regular.ttf`。
 - 總覽「出現片段」編號 = **分析窗序號**（與 tab「窗 1、窗 2」一致），非時間軸秒數。
+
+### `.gitignore` 規定摘要
+
+| 路徑／類型 | 規則位置 | 說明 |
+|------------|----------|------|
+| `frontend/dist/`、`node_modules/` | `frontend/.gitignore` | 建置產物與依賴不納版控 |
+| `frontend/.env.production.local`、`.env.local` | 根目錄 + `frontend/.gitignore` | 本機 API 覆寫；可版控 `frontend/.env.production` |
+| `backend/.env`、`backend/.env.*` | 根目錄 + `backend/.gitignore` | 密鑰與本地設定（保留 `.env.example`） |
+| `backend/models/*` 大型權重 | `backend/.gitignore` | 預設排除；Perch／BirdNET 結構與部分標籤除外（見檔內註解） |
+| `__pycache__/`、`*.pyc` | 根目錄 `.gitignore` | Python 快取 |
+| `wavs/*` 測試音／影片 | 根目錄 `.gitignore` | 本地測試媒體 |
+| `EchoWing-Backend/` | 根目錄 `.gitignore` | 舊版重複 checkout |
+
+完整規則見根目錄 [`.gitignore`](.gitignore)、[`frontend/.gitignore`](frontend/.gitignore)、[`backend/.gitignore`](backend/.gitignore)。
 
 ---
 

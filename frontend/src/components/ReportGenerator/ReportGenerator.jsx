@@ -19,6 +19,17 @@ const ReportGenerator = forwardRef(function ReportGenerator(
       }
       pdf.save(filename);
     },
+    printPdf: async () => {
+      if (!reportModel) {
+        throw new Error('Report data is not ready');
+      }
+      const { pdf, qa } = await buildBirdReportPdf(reportModel, { lang });
+      if (qa?.warnings?.length) {
+        console.warn('[PDF QA]', qa.warnings);
+      }
+      pdf.autoPrint();
+      window.open(pdf.output('bloburl'), '_blank');
+    },
   }));
 
   return null;

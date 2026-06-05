@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   isRemoteApiBase,
   waitForBackendReady,
@@ -22,6 +22,7 @@ import {
 import AudioRecorder from './components/AudioRecorder/AudioRecorder';
 import { getDict } from './i18n';
 import { isSupportedMediaFile, MEDIA_FILE_ACCEPT } from './utils/supportedMedia';
+import { isInAppBrowser } from './utils/inAppBrowser';
 import DayHeroScene from './features/hero/DayHeroScene';
 import NightHeroScene from './features/hero/NightHeroScene';
 import KiwiAnimation from './features/loading/KiwiAnimation';
@@ -86,6 +87,7 @@ export default function App() {
   const abortControllerRef = useRef(null);
 
   const dict = getDict(lang);
+  const recordingBlocked = useMemo(() => isInAppBrowser(), []);
 
   // --- 寫入 html.light / html.dark ---
   useEffect(() => {
@@ -531,12 +533,19 @@ export default function App() {
                         dict={dict}
                         onRecordingComplete={handleRecordingComplete}
                         onErrorChange={setRecorderError}
+                        recordingDisabled={recordingBlocked}
                       />
                     </div>
                   </div>
 
                   <p className="text-center text-xs text-[var(--c-text)]/55">{dict.uploadFormatsHint}</p>
-                  <p className="text-center text-xs text-[var(--c-text)]/45">{dict.recordMaxHint}</p>
+                  {recordingBlocked ? (
+                    <p className="text-center text-xs text-amber-600 dark:text-amber-400" role="status">
+                      {dict.inAppBrowserRecordingHint}
+                    </p>
+                  ) : (
+                    <p className="text-center text-xs text-[var(--c-text)]/45">{dict.recordMaxHint}</p>
+                  )}
 
                   {recorderError ? (
                     <p className="text-center text-sm font-bold text-red-500" role="alert">
