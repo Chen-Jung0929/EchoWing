@@ -15,7 +15,7 @@ from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
 from app.audio_mel import load_waveform_fixed_chunk
-from app.config import Settings, get_settings
+from app.config import Settings, confidence_threshold_for_model, get_settings
 from app.inference import BirdChunkPredictor
 from app.model_loader import (
     ModelStatus,
@@ -422,6 +422,7 @@ def _process_audio(
     labels = predictor.labels
     chunk_sec = 3 if model_name == "birdnet" else 5
     chunk_samples = chunk_sec * settings.sample_rate
+    model_threshold = confidence_threshold_for_model(settings, model_name)
 
     chunks_out: list[ChunkPrediction] = []
 
@@ -441,7 +442,7 @@ def _process_audio(
             probs = np.clip(probs - predictor.baseline, 0.0, 1.0)
 
         xai_heatmap = None
-        meets_threshold = bool(np.max(probs) >= settings.confidence_threshold)
+        meets_threshold = bool(np.max(probs) >= model_threshold)
 
         if meets_threshold and settings.enable_xai:
             target_idx = int(np.argmax(probs))
@@ -464,7 +465,7 @@ def _process_audio(
             taxonomy=model_taxonomy,
             top_k=settings.response_top_k,
             attention_row=attn_all[0] if attn_all is not None else None,
-            confidence_threshold=settings.confidence_threshold,
+            confidence_threshold=model_threshold,
             spectrogram=spectrogram,
             model_name=model_name,
         )
@@ -480,7 +481,7 @@ def _process_audio(
         chunks=chunks_out,
         original_filename=original_filename,
         warnings=warnings,
-        confidence_threshold=settings.confidence_threshold,
+        confidence_threshold=model_threshold,
     )
 
 import json
@@ -531,6 +532,7 @@ async def _stream_process_audio(
 
     chunk_sec = 3 if model_name == "birdnet" else 5
     stride_samples = chunk_sec * settings.sample_rate
+    model_threshold = confidence_threshold_for_model(settings, model_name)
 
     init_event = {
         "event": "init",
@@ -540,7 +542,7 @@ async def _stream_process_audio(
         "window_sec": chunk_sec,
         "stride_sec": chunk_sec,
         "total_duration_sec": total_samples / settings.sample_rate,
-        "confidence_threshold": settings.confidence_threshold,
+        "confidence_threshold": model_threshold,
         "xai_pending": settings.enable_xai,
     }
     yield f"data: {json.dumps(init_event)}\n\n"
@@ -578,7 +580,7 @@ async def _stream_process_audio(
             taxonomy=model_taxonomy,
             top_k=settings.response_top_k,
             attention_row=attn_all[0] if attn_all is not None else None,
-            confidence_threshold=settings.confidence_threshold,
+            confidence_threshold=model_threshold,
             spectrogram=spectrogram,
             model_name=model_name,
         )
@@ -589,7 +591,7 @@ async def _stream_process_audio(
         yield f"data: {cp.model_dump_json()}\n\n"
         await asyncio.sleep(0.01)
 
-        meets_threshold = bool(np.max(probs) >= settings.confidence_threshold)
+        meets_threshold = bool(np.max(probs) >= model_threshold)
         if meets_threshold and settings.enable_xai:
             xai_jobs.append(
                 {

@@ -1,6 +1,7 @@
 import { chunkTimeRangeLabel, segmentNumberFromStart } from './aggregateByVote';
 import { formatMessage } from '../i18n';
 import { getLocalizedText } from '../i18n/getLocalizedText';
+import { getModelDisplayLabel } from './modelLabel';
 import {
   collectSpectrogramsFromChunks,
   concatSpectrogramPayloads,
@@ -83,6 +84,7 @@ function buildTabLabel(pageIndex, chunk, windowSec, dict) {
  * @param {string} [opts.processedAt]
  * @param {Map<number, object> | Record<number, object>} [opts.spectrogramCache]
  * @param {number} [opts.totalDurationSec]
+ * @param {string} [opts.modelName]
  */
 export function buildResultShareContent({
   pageIndex,
@@ -95,9 +97,11 @@ export function buildResultShareContent({
   processedAt,
   spectrogramCache,
   totalDurationSec = 0,
+  modelName = 'perch',
 }) {
   const url = typeof window !== 'undefined' ? window.location.href : '';
   const title = `${dict.title} · ${dict.resultTitle}`;
+  const modelLabel = getModelDisplayLabel(modelName, dict);
 
   let tabLabel;
   let speciesItems;
@@ -142,11 +146,13 @@ export function buildResultShareContent({
       topSpecies: speciesItems[0]?.name ?? dict.noSpeciesHint,
       confidence: speciesItems[0]?.pct ?? 0,
       tabLabel,
+      modelLabel,
       url,
     }),
     detailed: [
       `${dict.title} — ${tabLabel}`,
       processedAt ? `${dict.analyzedAt}: ${processedAt}` : null,
+      `${dict.modelUsed}: ${modelLabel}`,
       `${dict.sourceFile}: ${filename}`,
       voteLine || null,
       dict.topSpecies,
@@ -171,6 +177,7 @@ export function buildResultShareContent({
     title: dict.title,
     tabLabel,
     filename,
+    modelLabel,
     speciesItems,
     url,
     dict,
@@ -182,6 +189,8 @@ export function buildResultShareContent({
     text: templates.social,
     url,
     tabLabel,
+    modelName,
+    modelLabel,
     templates,
     speciesItems,
     imageDataUrl,

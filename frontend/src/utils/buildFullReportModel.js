@@ -89,6 +89,7 @@ export function buildFullReportModel({
 
   return {
     sourceName,
+    modelName,
     confidenceThreshold: resolvedThreshold,
     analysisId: summary
       ? `summary_${okChunks[0]?.analysis_id ?? 'report'}`

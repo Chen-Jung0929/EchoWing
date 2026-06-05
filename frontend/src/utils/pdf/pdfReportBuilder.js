@@ -13,6 +13,8 @@ import {
 import { applyPdfFont, ensurePdfFonts, pickLocalized } from './pdfFonts';
 import { renderSpectrogramForPdf } from './pdfSpectrogram';
 import { resolveConfidenceThreshold } from '../../config/confidenceThreshold';
+import { getDict } from '../../i18n';
+import { getModelDisplayLabel } from '../modelLabel';
 import { segmentNumberFromStart } from '../aggregateByVote';
 import { validatePdfQuality } from './pdfQualityCheck';
 
@@ -201,12 +203,15 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
     durationSec,
     windowSec,
     confidenceThreshold,
+    modelName = 'perch',
     segmentRows,
     segmentReports,
     surveyMetadata,
   } = reportModel;
 
   const thresholdPct = Math.round(resolveConfidenceThreshold(confidenceThreshold) * 100);
+  const dict = getDict(lang);
+  const modelLabel = getModelDisplayLabel(modelName, dict);
   const reportTitle =
     lang === 'zh' ? '鳥類聲學辨識分析報告' : 'Bird Acoustic Analysis Report';
   const generatedLabel = new Date(generatedAt).toLocaleString(
@@ -278,6 +283,10 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
       {
         label: lang === 'zh' ? '信心門檻' : 'Threshold',
         value: `${thresholdPct}%`,
+      },
+      {
+        label: dict.modelUsed,
+        value: modelLabel,
       },
     ],
     { fontSize: 9 }

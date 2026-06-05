@@ -74,6 +74,7 @@ function drawSpectrogramInset(ctx, spectrogram, x, y, w, h, opacity = 0.42) {
  * @param {string} opts.title
  * @param {string} opts.tabLabel
  * @param {string} opts.filename
+ * @param {string} opts.modelLabel
  * @param {Array<{ name: string, pct: number }>} opts.speciesItems
  * @param {string} opts.url
  * @param {import('../i18n').LocaleMessages} opts.dict
@@ -83,6 +84,7 @@ export function renderShareImageCard({
   title,
   tabLabel,
   filename,
+  modelLabel = '',
   speciesItems,
   url,
   dict,
@@ -118,10 +120,20 @@ export function renderShareImageCard({
   ctx.font = '500 28px system-ui, sans-serif';
   ctx.fillStyle = 'rgba(57, 77, 101, 0.55)';
   const sourceLine = `${dict.sourceFile}: ${filename}`;
-  wrapText(ctx, sourceLine, 80, 230, width - 160, 36);
+  let metaY = wrapText(ctx, sourceLine, 80, 230, width - 160, 36);
+  if (modelLabel) {
+    metaY = wrapText(
+      ctx,
+      `${dict.modelUsed}: ${modelLabel}`,
+      80,
+      metaY + 8,
+      width - 160,
+      36
+    );
+  }
 
   const panelX = 72;
-  const panelY = 300;
+  const panelY = modelLabel ? 340 : 300;
   const panelW = width - 144;
   const panelH = 520;
 
@@ -148,13 +160,13 @@ export function renderShareImageCard({
 
   ctx.fillStyle = '#394d65';
   ctx.font = 'bold 36px system-ui, sans-serif';
-  ctx.fillText(dict.topSpecies, 112, 370);
+  ctx.fillText(dict.topSpecies, 112, panelY + 70);
 
   const items = speciesItems?.length
     ? speciesItems.slice(0, 5)
     : [{ name: dict.noSpeciesHint, pct: 0 }];
 
-  let itemY = 430;
+  let itemY = panelY + 130;
   for (const item of items) {
     ctx.font = '600 40px system-ui, sans-serif';
     ctx.fillStyle = '#394d65';

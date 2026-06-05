@@ -20,6 +20,7 @@ def _import_tflite():
         import tensorflow as tf
         return tf.lite
 
+
 def _resample_waveform(wave: np.ndarray, src_sr: int, dst_sr: int) -> np.ndarray:
     """Linear resample mono float32 waveform."""
     if src_sr == dst_sr:
@@ -35,6 +36,39 @@ def _load_label_lines(path) -> list[str]:
         return [line.strip() for line in f if line.strip()]
 
 
+def logit_from_score(score: float) -> float:
+    """Inverse of naive sigmoid; used for legacy score calibration."""
+    clipped = float(np.clip(score, 1e-7, 1.0 - 1e-7))
+    return float(np.log(clipped / (1.0 - clipped)))
+
+
+def logits_to_birdnet_confidence(
+    logits: np.ndarray,
+    *,
+    sensitivity: float = 1.0,
+    legacy_score_anchor: float = 0.15,
+) -> np.ndarray:
+    """
+    Convert BirdNET TFLite logits to confidence scores.
+
+    BirdNET-Analyzer applies σ(s·L) with user ``sigmoid_sensitivity`` s (see
+    birdnet flat_sigmoid: exponent uses ``-sensitivity`` → σ(s·L)).
+
+    ``legacy_score_anchor`` calibrates so that detections that previously showed
+    ~0.15 under naive σ(L) map to 0.5 after shift (EchoWing 50% cutoff).
+    """
+    values = np.asarray(logits, dtype=np.float64)
+    anchor_logit = logit_from_score(legacy_score_anchor)
+    scaled = sensitivity * (values - anchor_logit)
+    with np.errstate(over="ignore", under="ignore"):
+        confidence = 1.0 / (1.0 + np.exp(-scaled))
+    return np.clip(
+        np.nan_to_num(confidence, nan=0.0, posinf=1.0, neginf=0.0),
+        0.0,
+        1.0,
+    ).astype(np.float32, copy=False)
+
+
 class BirdNetPredictor:
     """BirdNET v2.4 acoustic TFLite (audio-model.tflite)."""
 
@@ -45,9 +79,11 @@ class BirdNetPredictor:
         self.device = torch.device("cpu")
         self.model_path = settings.birdnet_model_path
         self.labels_path = settings.birdnet_labels_path
+        self.sigmoid_sensitivity = settings.birdnet_sigmoid_sensitivity
+        self.legacy_score_anchor = settings.birdnet_legacy_score_anchor
 
         tflite = _import_tflite()
-        
+
         logger.info("Loading BirdNET TFLite from %s", self.model_path)
         try:
             self.interpreter = tflite.Interpreter(model_path=str(self.model_path))
@@ -57,7 +93,7 @@ class BirdNetPredictor:
         except Exception as e:
             logger.warning(f"Could not load BirdNET model: {e}")
             self.interpreter = None
-            
+
         if self.labels_path.is_file():
             self.labels = _load_label_lines(self.labels_path)
         else:
@@ -70,8 +106,15 @@ class BirdNetPredictor:
                     len(self.labels),
                     out_size,
                 )
-            
+
         self.baseline = np.zeros(len(self.labels), dtype=np.float32)
+
+    def _logits_to_confidence(self, logits: np.ndarray) -> np.ndarray:
+        return logits_to_birdnet_confidence(
+            logits,
+            sensitivity=self.sigmoid_sensitivity,
+            legacy_score_anchor=self.legacy_score_anchor,
+        )
 
     def predict_waveform_batch(self, chunks: torch.Tensor) -> tuple[np.ndarray, np.ndarray | None]:
         """
@@ -80,7 +123,7 @@ class BirdNetPredictor:
         """
         if self.interpreter is None:
             raise RuntimeError("BirdNET model not loaded.")
-            
+
         waveforms = chunks.squeeze(1).detach().cpu().numpy().astype(np.float32, copy=False)
         n = waveforms.shape[0]
         src_sr = self.settings.sample_rate
@@ -99,10 +142,7 @@ class BirdNetPredictor:
             self.interpreter.set_tensor(self.input_details[0]["index"], input_tensor)
             self.interpreter.invoke()
             logits = self.interpreter.get_tensor(self.output_details[0]["index"])[0]
-            # v2.4 TFLite may return logits; apply sigmoid if not already probabilities.
-            if logits.min() < 0.0 or logits.max() > 1.0:
-                logits = 1.0 / (1.0 + np.exp(-logits))
-            probs_parts.append(logits.astype(np.float32, copy=False))
-            
+            probs_parts.append(self._logits_to_confidence(logits))
+
         out = np.stack(probs_parts, axis=0)
-        return np.clip(np.nan_to_num(out, nan=0.0, posinf=1.0, neginf=0.0), 0.0, 1.0).astype(np.float32, copy=False), None
+        return out, None

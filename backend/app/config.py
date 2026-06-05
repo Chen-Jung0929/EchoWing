@@ -47,6 +47,11 @@ class Settings(BaseSettings):
     response_top_k: int = 5
     confidence_threshold: float = 0.5
 
+    # BirdNET: TFLite 輸出為 logit；經 sensitivity 與分數校準後再與門檻比較
+    birdnet_sigmoid_sensitivity: float = 1.0
+    birdnet_legacy_score_anchor: float = 0.15
+    birdnet_confidence_threshold: float = 0.5
+
     # XAI
     enable_xai: bool = True
     xai_window_sec: float = 0.25 # 250ms occlusion window
@@ -60,6 +65,13 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def confidence_threshold_for_model(settings: Settings, model_name: str) -> float:
+    """Per-model confidence cutoffs (BirdNET uses calibrated 0.5 by default)."""
+    if model_name == "birdnet":
+        return settings.birdnet_confidence_threshold
+    return settings.confidence_threshold
 
 
 def chunk_samples(settings: Settings) -> int:

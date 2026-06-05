@@ -14,6 +14,7 @@ import {
 import { buildFullReportModel } from './buildFullReportModel';
 import { ResultTitleBar } from './ResultTitleActions';
 import { buildResultShareContent } from './shareResult';
+import { getModelDisplayLabel, resolveResultModelName } from './modelLabel';
 import { isSurveyMetadataSaved } from './surveyMetadata';
 import { chunkIdentity } from './chunkIdentity';
 
@@ -184,7 +185,8 @@ export default function ChunkResultsView({
   spectrogramByIndex = {},
 }) {
   const allChunks = result.chunks ?? [];
-  const modelName = allChunks[0]?.model_name ?? 'perch';
+  const modelName = resolveResultModelName(result);
+  const modelLabel = getModelDisplayLabel(modelName, dict);
   const windowSec = modelWindowSec(modelName);
   const chunks = useMemo(
     () => displayChunksForModel(allChunks, modelName),
@@ -275,6 +277,7 @@ export default function ChunkResultsView({
         processedAt: formatAnalyzedAt(result.processed_at, lang),
         spectrogramCache: spectrogramByIndex,
         totalDurationSec,
+        modelName,
       }),
     [
       pageIndex,
@@ -287,6 +290,7 @@ export default function ChunkResultsView({
       result.processed_at,
       spectrogramByIndex,
       totalDurationSec,
+      modelName,
     ]
   );
 
@@ -415,6 +419,9 @@ export default function ChunkResultsView({
             </ResultBadge>
             <ResultBadge>
               {formatMessage(dict.confidenceThresholdBadge, { threshold: thresholdPct })}
+            </ResultBadge>
+            <ResultBadge>
+              {dict.modelUsed} · {modelLabel}
             </ResultBadge>
           </div>
         </header>
