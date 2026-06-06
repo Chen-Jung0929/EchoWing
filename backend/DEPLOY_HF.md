@@ -60,8 +60,15 @@ Space 會依 `backend/Dockerfile`：
 |------|------|------|
 | `TRIAGELENS_EAGER_WARMUP` | `true` | 啟動後背景載入模型 |
 | `TRIAGELENS_SKIP_PREFLIGHT` | `true` | 略過啟動試推論（省時） |
-| `TRIAGELENS_NUM_THREADS` | `2` | CPU 執行緒 |
-| `TRIAGELENS_CONFIDENCE_THRESHOLD` | `0.5` | 信心門檻 |
+| `TRIAGELENS_NUM_THREADS` | `2` | Phase 1 Perch / PyTorch CPU 執行緒 |
+| `TRIAGELENS_XAI_PARALLEL` | `2` | Phase 2 同時進行的 XAI 工作數（2 vCPU 建議 2） |
+| `TRIAGELENS_SPECTROGRAM_PARALLEL` | `2` | Phase 1 並行計算頻譜圖 |
+| `TRIAGELENS_INFERENCE_BATCH_PARALLEL` | `2` | Phase 1 並行推論批次數（2 vCPU 建議 2） |
+| `TRIAGELENS_MAX_CONCURRENT_PREDICTIONS` | `1` | 同時分析請求數（1 = 單使用者吃滿雙核） |
+| `TRIAGELENS_CONFIDENCE_THRESHOLD` | `0.5` | SILIC 等通用信心門檻 |
+| `TRIAGELENS_PERCH_CONFIDENCE_THRESHOLD` | `0.75` | Perch 信心門檻 |
+| `TRIAGELENS_XAI_STRIDE_SEC` | `0.1` | XAI 遮蔽步長（BirdNET / SILIC） |
+| `TRIAGELENS_PERCH_XAI_STRIDE_SEC` | `0.3` | Perch XAI 遮蔽步長 |
 
 首次 build 可能 **15～40 分鐘**（安裝 TF + 複製模型）。
 

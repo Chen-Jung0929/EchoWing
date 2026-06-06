@@ -123,4 +123,10 @@ def status_payload(app) -> dict:
         body["confidence_threshold"] = state.settings.confidence_threshold
     if state.model_status == ModelStatus.ERROR and state.load_error:
         body["error"] = state.load_error
+    active = int(getattr(state, "active_predictions", 0))
+    max_concurrent = int(state.settings.max_concurrent_predictions)
+    body["active_predictions"] = active
+    body["max_concurrent_predictions"] = max_concurrent
+    body["analysis_busy"] = active > 0
+    body["analysis_slots_available"] = max(0, max_concurrent - active)
     return body

@@ -37,7 +37,7 @@ async function fetchJson(path, options = {}) {
  * @returns {Promise<{ ok: boolean, ready: boolean, status: string, error?: string }>}
  */
 export async function fetchBackendStatus() {
-  const { response, body } = await fetchJson('/warmup');
+  const { response, body } = await fetchJson('/health');
   if (!response.ok && response.status !== 503) {
     throw new Error(parseErrorBody(body) || `伺服器回應錯誤：${response.status}`);
   }
@@ -51,10 +51,16 @@ export async function fetchBackendStatus() {
 export async function waitForBackendReady(opts = {}) {
   const { signal, onTick } = opts;
   const deadline = Date.now() + WARMUP_TIMEOUT_MS;
+  let warmupRequested = false;
 
   while (Date.now() < deadline) {
     if (signal?.aborted) {
       throw new DOMException('Aborted', 'AbortError');
+    }
+
+    if (!warmupRequested) {
+      await fetchJson('/warmup');
+      warmupRequested = true;
     }
 
     const payload = await fetchBackendStatus();
@@ -229,27 +235,43 @@ export const analyzeAudioStream = async (
     const reader = response.body.getReader();
     const decoder = new TextDecoder('utf-8');
     let buffer = '';
+    let streamDone = false;
+
+    const dispatchSseBlocks = (blocks) => {
+      for (const block of blocks) {
+        if (!block.startsWith('data: ')) continue;
+        const dataStr = block.substring(6).trim();
+        if (!dataStr) continue;
+        try {
+          const data = JSON.parse(dataStr);
+          if (data.event === 'done') {
+            streamDone = true;
+            continue;
+          }
+          chunkHandler(data);
+        } catch (e) {
+          console.error('JSON Parse error in stream:', e, dataStr);
+        }
+      }
+    };
 
     while (true) {
       const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n\n');
-      buffer = lines.pop(); // 保留最後一段未完成的資料
-
-      for (const block of lines) {
-        if (block.startsWith('data: ')) {
-          const dataStr = block.substring(6);
-          try {
-            const data = JSON.parse(dataStr);
-            if (data.event === 'done') return;
-            chunkHandler(data);
-          } catch (e) {
-            console.error('JSON Parse error in stream:', e, dataStr);
-          }
-        }
+      if (value) {
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() ?? '';
+        dispatchSseBlocks(lines);
       }
+      if (done) {
+        buffer += decoder.decode();
+        if (buffer.trim()) {
+          dispatchSseBlocks([buffer]);
+          buffer = '';
+        }
+        break;
+      }
+      if (streamDone) break;
     }
   } catch (error) {
     if (error?.name === 'AbortError') throw error;

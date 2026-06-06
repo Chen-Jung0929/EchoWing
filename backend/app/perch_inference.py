@@ -7,6 +7,10 @@ import numpy as np
 import torch
 
 from app.config import Settings, chunk_samples
+from app.tensorflow_threads import (
+    configure_tensorflow_threads,
+    recommended_tf_intra_op_threads,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +78,10 @@ class PerchChunkPredictor:
         self._embed_batch_size = max(1, settings.batch_size)
 
         tf = _import_tensorflow()
+        configure_tensorflow_threads(
+            settings,
+            intra_op=recommended_tf_intra_op_threads(settings),
+        )
         self._tf = tf
 
         logger.info("Loading Perch SavedModel from %s", savedmodel_path)

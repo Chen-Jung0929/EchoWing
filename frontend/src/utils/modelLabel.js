@@ -8,6 +8,26 @@ export function normalizeModelName(modelName) {
   return 'perch';
 }
 
+/** 首頁模型選單順序：BirdNET、SILIC 標 fast；Perch 置底標 expert。 */
+export const LANDING_MODEL_OPTIONS = [
+  { value: 'birdnet', tag: 'fast' },
+  { value: 'silic', tag: 'fast' },
+  { value: 'perch', tag: 'expert' },
+];
+
+export const DEFAULT_MODEL_SELECTION = 'birdnet';
+
+/**
+ * @param {string | undefined | null} modelName
+ * @param {import('../i18n').LocaleMessages} dict
+ */
+export function formatLandingModelOption(modelName, dict) {
+  const name = getModelDisplayLabel(modelName, dict);
+  const tag =
+    normalizeModelName(modelName) === 'perch' ? dict.modelTagExpert : dict.modelTagFast;
+  return `${name} · ${tag}`;
+}
+
 /**
  * @param {string | undefined | null} modelName
  * @param {import('../i18n').LocaleMessages} dict

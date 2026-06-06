@@ -3,6 +3,8 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
+import time
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
@@ -15,7 +17,7 @@ from pydantic import BaseModel
 from starlette.concurrency import run_in_threadpool
 
 from app.audio_mel import load_waveform_fixed_chunk
-from app.config import Settings, confidence_threshold_for_model, get_settings
+from app.config import Settings, confidence_threshold_for_model, get_settings, xai_stride_sec_for_model
 from app.inference import BirdChunkPredictor
 from app.model_loader import (
     ModelStatus,
@@ -38,6 +40,24 @@ from app.spectrogram import compute_spectrogram_payload
 from app.timeline import EvidenceAccumulator, build_timeline_deconv_payload
 
 logger = logging.getLogger(__name__)
+
+
+def _configure_app_logging() -> None:
+    """Ensure app.* INFO logs are visible under plain `uvicorn app.main:app --reload`."""
+    app_logger = logging.getLogger("app")
+    if app_logger.level <= logging.INFO and app_logger.handlers:
+        return
+    app_logger.setLevel(logging.INFO)
+    if not app_logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(
+            logging.Formatter("%(levelname)s [%(name)s] %(message)s")
+        )
+        app_logger.addHandler(handler)
+    app_logger.propagate = False
+
+
+_configure_app_logging()
 
 CHUNK_FILENAME_RE = re.compile(r"chunk_(\d+)", re.IGNORECASE)
 ATTENTION_BINS = 10
@@ -276,6 +296,18 @@ def _chunk_from_probs(
 
 
 @asynccontextmanager
+async def _prediction_slot(app: FastAPI):
+    """Hold concurrency slot and expose busy state via /api/health."""
+    sem: asyncio.Semaphore = app.state.prediction_sem
+    async with sem:
+        app.state.active_predictions += 1
+        try:
+            yield
+        finally:
+            app.state.active_predictions -= 1
+
+
+@asynccontextmanager
 async def lifespan(app: FastAPI):
     settings = get_settings()
     app.state.settings = settings
@@ -286,6 +318,7 @@ async def lifespan(app: FastAPI):
     app.state.load_error = None
     app.state.model_load_lock = asyncio.Lock()
     app.state.prediction_sem = asyncio.Semaphore(settings.max_concurrent_predictions)
+    app.state.active_predictions = 0
     app.state.warmup_task = None
 
     if settings.eager_warmup:
@@ -336,6 +369,10 @@ class HealthResponse(BaseModel):
     num_classes: int | None = None
     confidence_threshold: float | None = None
     error: str | None = None
+    active_predictions: int | None = None
+    max_concurrent_predictions: int | None = None
+    analysis_busy: bool | None = None
+    analysis_slots_available: int | None = None
 
 
 @app.get("/")
@@ -406,6 +443,44 @@ def _apply_baseline(predictor, probs: np.ndarray) -> np.ndarray:
     if getattr(predictor, "uses_baseline", False) and hasattr(predictor, "baseline"):
         return np.clip(probs - predictor.baseline, 0.0, 1.0)
     return probs
+
+
+def _run_sliding_predict_batch(
+    batch_starts: list[int],
+    full_waveform: torch.Tensor,
+    *,
+    chunk_samples: int,
+    settings: Settings,
+    predictor,
+    window_sec: int,
+    device: torch.device,
+) -> list[tuple]:
+    """Sync worker: one sliding-window batch -> (probs, attn, spec, start_sec, aligned, wave)."""
+    batch_waves = [
+        _extract_chunk_wave(full_waveform, start, chunk_samples) for start in batch_starts
+    ]
+    batch_tensor = torch.stack(batch_waves, dim=0)
+    probs_all, attn_all = predictor.predict_waveform_batch(batch_tensor)
+    spec_workers = max(1, min(settings.spectrogram_parallel, len(batch_waves)))
+    results: list[tuple] = []
+    with ThreadPoolExecutor(max_workers=spec_workers) as spec_pool:
+        spec_futures: dict[int, object] = {}
+        for j, start in enumerate(batch_starts):
+            start_sec = start // settings.sample_rate
+            if _is_display_aligned(start_sec, window_sec):
+                spec_futures[j] = spec_pool.submit(
+                    compute_spectrogram_payload, batch_waves[j], settings, device
+                )
+        for j, start in enumerate(batch_starts):
+            start_sec = start // settings.sample_rate
+            display_aligned = _is_display_aligned(start_sec, window_sec)
+            probs = _apply_baseline(predictor, probs_all[j])
+            spectrogram = spec_futures[j].result() if j in spec_futures else None
+            attn_row = attn_all[j] if attn_all is not None else None
+            results.append(
+                (probs, attn_row, spectrogram, start_sec, display_aligned, batch_waves[j])
+            )
+    return results
 
 
 def _is_display_aligned(start_sec: int, window_sec: int) -> bool:
@@ -489,6 +564,7 @@ def _process_audio(
                     target_idx,
                     sample_rate=settings.sample_rate,
                     window_sec=settings.xai_window_sec,
+                    stride_sec=xai_stride_sec_for_model(settings, model_name),
                 )
 
             spectrogram = (
@@ -595,36 +671,43 @@ async def _stream_process_audio(
     evidence_acc = EvidenceAccumulator()
     starts = _sliding_starts(total_samples, stride_samples)
 
-    # Phase 1: batched sliding-window inference (spectrogram only on display-aligned windows)
-    for batch_offset in range(0, len(starts), settings.batch_size):
-        batch_starts = starts[batch_offset : batch_offset + settings.batch_size]
-        batch_waves = [
-            _extract_chunk_wave(full_waveform, start, chunk_samples)
-            for start in batch_starts
-        ]
-        batch_tensor = torch.stack(batch_waves, dim=0)
+    batch_groups = [
+        starts[offset : offset + settings.batch_size]
+        for offset in range(0, len(starts), settings.batch_size)
+    ]
+    batch_parallel = max(1, min(settings.inference_batch_parallel, len(batch_groups)))
+    logger.info(
+        "Phase 1: sliding inference (%d windows, %d batches, parallel=%d)",
+        len(starts),
+        len(batch_groups),
+        batch_parallel,
+    )
+    phase1_t0 = time.perf_counter()
+    batch_sem = asyncio.Semaphore(batch_parallel)
 
-        def run_predict_batch(waves=batch_waves, tensor=batch_tensor, starts=batch_starts):
-            probs_all, attn_all = predictor.predict_waveform_batch(tensor)
-            results = []
-            for j, start in enumerate(starts):
-                start_sec = start // settings.sample_rate
-                display_aligned = _is_display_aligned(start_sec, window_sec)
-                probs = _apply_baseline(predictor, probs_all[j])
-                spectrogram = (
-                    compute_spectrogram_payload(waves[j], settings, device)
-                    if display_aligned
-                    else None
-                )
-                attn_row = attn_all[j] if attn_all is not None else None
-                results.append(
-                    (probs, attn_row, spectrogram, start_sec, display_aligned, waves[j])
-                )
-            return results
+    async def run_batch_async(batch_starts: list[int]) -> list[tuple]:
+        async with batch_sem:
+            return await run_in_threadpool(
+                _run_sliding_predict_batch,
+                batch_starts,
+                full_waveform,
+                chunk_samples=chunk_samples,
+                settings=settings,
+                predictor=predictor,
+                window_sec=window_sec,
+                device=device,
+            )
 
-        batch_results = await run_in_threadpool(run_predict_batch)
+    # Phase 1: parallel sliding-window batches (spectrogram only on display-aligned windows)
+    for wave_start in range(0, len(batch_groups), batch_parallel):
+        wave = batch_groups[wave_start : wave_start + batch_parallel]
+        wave_results = await asyncio.gather(*(run_batch_async(bs) for bs in wave))
+        wave_items: list[tuple] = []
+        for batch_results in wave_results:
+            wave_items.extend(batch_results)
+        wave_items.sort(key=lambda row: row[3])
 
-        for probs, attn_row, spectrogram, start_sec, display_aligned, chunk_wave in batch_results:
+        for probs, attn_row, spectrogram, start_sec, display_aligned, chunk_wave in wave_items:
             cp = _chunk_from_probs(
                 chunk_index=start_sec,
                 probs=probs,
@@ -656,42 +739,66 @@ async def _stream_process_audio(
                     }
                 )
 
+    phase1_ms = int((time.perf_counter() - phase1_t0) * 1000)
     timeline_payload = build_timeline_deconv_payload(
         evidence_acc,
         duration_sec=duration_sec,
         window_sec=window_sec,
         stride_sec=stride_sec,
     )
-    yield f"data: {timeline_payload.model_dump_json()}\n\n"
+    timeline_event = timeline_payload.model_dump()
+    timeline_event["phase1_ms"] = phase1_ms
+    if not settings.enable_xai:
+        timeline_event["phase2_ms"] = 0
+    yield f"data: {json.dumps(timeline_event)}\n\n"
     await asyncio.sleep(0)
 
     # Phase 2: XAI per display-aligned window, then patch heatmaps via xai_update events
     if settings.enable_xai:
-        for job in xai_jobs:
-            cw = job["chunk_wave"]
-            target_idx = job["target_idx"]
+        phase2_t0 = time.perf_counter()
+        if xai_jobs:
+            parallel = max(1, min(settings.xai_parallel, len(xai_jobs)))
+            logger.info("Phase 2: XAI (%d jobs, parallel=%d)", len(xai_jobs), parallel)
 
-            def run_xai():
-                return generate_occlusion_heatmap(
-                    cw,
-                    predictor,
-                    target_idx,
-                    sample_rate=settings.sample_rate,
-                    window_sec=settings.xai_window_sec,
-                )
+            xai_sem = asyncio.Semaphore(parallel)
 
-            xai_heatmap = await run_in_threadpool(run_xai)
-            update_event = {
-                "event": "xai_update",
-                "index": job["index"],
-                "model_name": model_name,
-                "analysis_id": job["analysis_id"],
-                "xai_heatmap": xai_heatmap,
-            }
-            yield f"data: {json.dumps(update_event)}\n\n"
-            await asyncio.sleep(0.01)
+            async def run_xai_job(job: dict) -> dict:
+                async with xai_sem:
+                    cw = job["chunk_wave"]
+                    target_idx = job["target_idx"]
 
-        yield f"data: {json.dumps({'event': 'xai_done'})}\n\n"
+                    def run_xai():
+                        return generate_occlusion_heatmap(
+                            cw,
+                            predictor,
+                            target_idx,
+                            sample_rate=settings.sample_rate,
+                            window_sec=settings.xai_window_sec,
+                            stride_sec=xai_stride_sec_for_model(settings, model_name),
+                        )
+
+                    xai_heatmap = await run_in_threadpool(run_xai)
+                    return {
+                        "event": "xai_update",
+                        "index": job["index"],
+                        "model_name": model_name,
+                        "analysis_id": job["analysis_id"],
+                        "xai_heatmap": xai_heatmap,
+                    }
+
+            tasks = [asyncio.create_task(run_xai_job(job)) for job in xai_jobs]
+            for finished in asyncio.as_completed(tasks):
+                update_event = await finished
+                yield f"data: {json.dumps(update_event)}\n\n"
+                await asyncio.sleep(0.01)
+        else:
+            logger.info("Phase 2: XAI skipped (no display windows above threshold)")
+
+        phase2_ms = max(0, round((time.perf_counter() - phase2_t0) * 1000))
+        if xai_jobs and phase2_ms < 1:
+            phase2_ms = 1
+        logger.info("Phase 2 complete: %d ms (%d jobs)", phase2_ms, len(xai_jobs))
+        yield f"data: {json.dumps({'event': 'xai_done', 'phase1_ms': phase1_ms, 'phase2_ms': phase2_ms})}\n\n"
 
 
 @app.post("/api/predict", response_model=PredictResponse)
@@ -714,8 +821,6 @@ async def predict(
     predictors: dict = getattr(request.app.state, "predictors", {})
     taxonomy: dict[str, dict[str, str]] = request.app.state.taxonomy
     taxonomy_by_model = getattr(request.app.state, "taxonomy_by_model", None)
-    sem: asyncio.Semaphore = request.app.state.prediction_sem
-
     cl = request.headers.get("content-length")
     if cl is not None:
         try:
@@ -751,7 +856,7 @@ async def predict(
         blobs.append((chunk_idx, data, name))
 
     try:
-        async with sem:
+        async with _prediction_slot(request.app):
             return await run_in_threadpool(
                 _process_audio,
                 settings,
@@ -787,10 +892,14 @@ async def stream_predict(
     predictors: dict = getattr(request.app.state, "predictors", {})
     taxonomy: dict[str, dict[str, str]] = request.app.state.taxonomy
     taxonomy_by_model = getattr(request.app.state, "taxonomy_by_model", None)
-    sem: asyncio.Semaphore = request.app.state.prediction_sem
-
     if not audio_chunks:
         raise HTTPException(status_code=422, detail={"message": "No audio_chunks uploaded"})
+
+    logger.info(
+        "POST /api/stream-predict model=%s file=%s",
+        model_selection,
+        original_filename or audio_chunks[0].filename or "?",
+    )
 
     indexed = list(enumerate(audio_chunks))
     indexed.sort(key=lambda it: filename_sort_key(it[1].filename, it[0]))
@@ -806,7 +915,7 @@ async def stream_predict(
         blobs.append((chunk_idx, data, name))
 
     async def event_generator():
-        async with sem:
+        async with _prediction_slot(request.app):
             async for chunk in _stream_process_audio(
                 settings,
                 predictors,

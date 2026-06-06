@@ -29,7 +29,12 @@ import { isInAppBrowser } from './utils/inAppBrowser';
 import DayHeroScene from './features/hero/DayHeroScene';
 import NightHeroScene from './features/hero/NightHeroScene';
 import KiwiAnimation from './features/loading/KiwiAnimation';
-import GuidePage from './features/guide/GuidePage';
+import GuideModal from './components/GuideModal/GuideModal';
+import {
+  DEFAULT_MODEL_SELECTION,
+  formatLandingModelOption,
+  LANDING_MODEL_OPTIONS,
+} from './utils/modelLabel';
 
 const USE_MOCK_FALLBACK = false;
 const MOCK_RESULT_URL = '/mock_data/perch_result.json';
@@ -84,11 +89,15 @@ export default function App() {
   const [spectrogramByIndex, setSpectrogramByIndex] = useState({});
   const [errorMessage, setErrorMessage] = useState('');
   const [loadingHint, setLoadingHint] = useState('');
-  const [selectedModel, setSelectedModel] = useState('perch');
+  const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_SELECTION);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const fileRef = useRef(null);
   const abortControllerRef = useRef(null);
+  const predictionStartedAtRef = useRef(null);
+  const phase1StartedAtRef = useRef(null);
+  const phase2StartedAtRef = useRef(null);
 
   const dict = getDict(lang);
   const recordingBlocked = useMemo(() => isInAppBrowser(), []);
@@ -144,7 +153,63 @@ export default function App() {
 
   const openGuide = () => {
     setIsMenuOpen(false);
-    setViewState('guide');
+    setGuideOpen(true);
+  };
+
+  const resolvePhase2Ms = (timing = {}, prev) => {
+    const clientMs =
+      phase2StartedAtRef.current != null
+        ? Date.now() - phase2StartedAtRef.current
+        : undefined;
+    const serverMs =
+      timing.phase2_ms != null ? Number(timing.phase2_ms) : undefined;
+    const prevMs =
+      prev?.prediction_phase2_ms != null
+        ? Number(prev.prediction_phase2_ms)
+        : undefined;
+
+    if (Number.isFinite(serverMs) && serverMs > 0) return serverMs;
+    if (Number.isFinite(clientMs) && clientMs > 0) return clientMs;
+    if (Number.isFinite(prevMs) && prevMs > 0) return prevMs;
+    if (Number.isFinite(serverMs)) return serverMs;
+    if (Number.isFinite(prevMs)) return prevMs;
+    return undefined;
+  };
+
+  const mergePhaseTimings = (prev, timing = {}) => {
+    const phase1Ms =
+      timing.phase1_ms != null
+        ? timing.phase1_ms
+        : prev?.prediction_phase1_ms != null
+          ? prev.prediction_phase1_ms
+          : phase1StartedAtRef.current != null
+            ? Date.now() - phase1StartedAtRef.current
+            : undefined;
+    const phase2Ms = resolvePhase2Ms(timing, prev);
+    const hasPhase1 = phase1Ms != null && Number.isFinite(phase1Ms);
+    const hasPhase2 = phase2Ms != null && Number.isFinite(phase2Ms);
+    const totalMs =
+      hasPhase1 && hasPhase2
+        ? phase1Ms + phase2Ms
+        : prev?.prediction_duration_ms;
+    return {
+      ...prev,
+      ...(hasPhase1 ? { prediction_phase1_ms: phase1Ms } : {}),
+      ...(hasPhase2 ? { prediction_phase2_ms: phase2Ms } : {}),
+      ...(totalMs != null ? { prediction_duration_ms: totalMs } : {}),
+    };
+  };
+
+  const applyPredictionDuration = (prev) => {
+    if (
+      prev?.prediction_phase1_ms != null &&
+      prev?.prediction_phase2_ms != null
+    ) {
+      return mergePhaseTimings(prev, {});
+    }
+    const started = predictionStartedAtRef.current;
+    if (!started || prev?.prediction_duration_ms != null) return prev;
+    return { ...prev, prediction_duration_ms: Date.now() - started };
   };
 
   const resetToLanding = () => {
@@ -247,6 +312,9 @@ export default function App() {
     setErrorMessage('');
     setPredictionResult(null);
     setSpectrogramByIndex({});
+    predictionStartedAtRef.current = Date.now();
+    phase1StartedAtRef.current = null;
+    phase2StartedAtRef.current = null;
 
     abortControllerRef.current?.abort();
     const abortController = new AbortController();
@@ -255,12 +323,15 @@ export default function App() {
 
     try {
       let serverConfidenceThreshold = DEFAULT_CONFIDENCE_THRESHOLD;
+      let showBusyHint = false;
       if (remoteApi) {
         const readyPayload = await waitForBackendReady({
           signal,
           onTick: (payload) => {
             if (!payload.ready) {
               setLoadingHint(dict.serverWakingText);
+            } else if (payload.analysis_busy) {
+              setLoadingHint(dict.serverBusyText);
             }
           },
         });
@@ -271,8 +342,14 @@ export default function App() {
         if (wakingElapsed < MIN_SERVER_WAKING_HINT_MS) {
           await wait(MIN_SERVER_WAKING_HINT_MS - wakingElapsed);
         }
+        showBusyHint = Boolean(readyPayload.analysis_busy);
+        if (showBusyHint) {
+          setLoadingHint(dict.serverBusyText);
+        }
       }
-      setLoadingHint('');
+      if (!showBusyHint) {
+        setLoadingHint('');
+      }
       setIsProcessing(true);
       
       const baseResult = {
@@ -293,6 +370,7 @@ export default function App() {
         signal,
         onChunk: (chunkData) => {
           if (chunkData.event === 'init') {
+            phase1StartedAtRef.current = Date.now();
             xaiPending = Boolean(chunkData.xai_pending);
             setPredictionResult((prev) => ({
               ...prev,
@@ -320,10 +398,19 @@ export default function App() {
 
           if (chunkData.event === 'xai_done') {
             xaiPending = false;
-            setPredictionResult((prev) => ({
-              ...prev,
-              xai_pending: false,
-            }));
+            const timingPayload = {
+              phase1_ms: chunkData.phase1_ms,
+              phase2_ms: resolvePhase2Ms(chunkData, null),
+            };
+            phase2StartedAtRef.current = null;
+            setPredictionResult((prev) =>
+              applyPredictionDuration(
+                mergePhaseTimings(
+                  { ...prev, xai_pending: false },
+                  timingPayload
+                )
+              )
+            );
             setLoadingHint('');
             setViewState('result');
             return;
@@ -331,6 +418,7 @@ export default function App() {
 
           if (chunkData.event === 'timeline_deconv') {
             if (xaiPending) {
+              phase2StartedAtRef.current = Date.now();
               setLoadingHint(dict.xaiGenerating);
             }
             setPredictionResult((prev) => {
@@ -339,7 +427,11 @@ export default function App() {
                 fromServer?.species?.length
                   ? fromServer
                   : ensureTimeline({ ...prev, timeline: fromServer });
-              return { ...prev, timeline };
+              const timingPayload = { phase1_ms: chunkData.phase1_ms };
+              if (!xaiPending && chunkData.phase2_ms != null) {
+                timingPayload.phase2_ms = chunkData.phase2_ms;
+              }
+              return mergePhaseTimings({ ...prev, timeline }, timingPayload);
             });
             return;
           }
@@ -373,7 +465,11 @@ export default function App() {
       });
 
       setPredictionResult((prev) => {
-        const next = prev?.xai_pending ? { ...prev, xai_pending: false } : { ...prev };
+        const withPhases = mergePhaseTimings(prev, {});
+        const withDuration = applyPredictionDuration(withPhases);
+        const next = withDuration?.xai_pending
+          ? { ...withDuration, xai_pending: false }
+          : { ...withDuration };
         const timeline = ensureTimeline(next);
         if (timeline && !next.timeline?.species?.length) {
           return { ...next, timeline };
@@ -403,6 +499,9 @@ export default function App() {
               mockResult.confidence_threshold
             ),
             processed_at: new Date().toISOString(),
+            prediction_duration_ms: predictionStartedAtRef.current
+              ? Date.now() - predictionStartedAtRef.current
+              : null,
             backend_error:
               backendError instanceof Error
                 ? backendError.message
@@ -635,19 +734,24 @@ export default function App() {
                 )}
                 
                 <div className="flex flex-col gap-2">
-                   <label htmlFor="model-select" className="text-sm font-bold text-[var(--c-text)]/70">
-                     Model Selection:
-                   </label>
-                   <select 
-                     id="model-select"
-                     value={selectedModel}
-                     onChange={(e) => setSelectedModel(e.target.value)}
-                     className="bg-[var(--c-bg)]/70 text-[var(--c-text)] border-none rounded-xl px-4 py-3 font-bold cursor-pointer"
-                   >
-                     <option value="perch">Perch (Google)</option>
-                     <option value="birdnet">BirdNET (Cornell)</option>
-                     <option value="silic">SILIC (Academia Sinica)</option>
-                   </select>
+                  <label
+                    htmlFor="model-select"
+                    className="text-sm font-bold text-[var(--c-text)]/70"
+                  >
+                    {dict.modelSelectionLabel}
+                  </label>
+                  <select
+                    id="model-select"
+                    value={selectedModel}
+                    onChange={(e) => setSelectedModel(e.target.value)}
+                    className="bg-[var(--c-bg)]/70 text-[var(--c-text)] border-none rounded-xl px-4 py-3 font-bold cursor-pointer"
+                  >
+                    {LANDING_MODEL_OPTIONS.map(({ value }) => (
+                      <option key={value} value={value}>
+                        {formatLandingModelOption(value, dict)}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <button
@@ -734,19 +838,8 @@ export default function App() {
           </div>
         )}
 
-        {/* 5. 使用說明與模型宣告 */}
-        {viewState === 'guide' && (
-          <div
-            className="min-h-screen"
-            style={{
-              background: isDarkMode
-                ? 'linear-gradient(to bottom, #141a1a 0%, #3D342F 100%)'
-                : 'linear-gradient(to bottom, #E9D5CC 0%, #DCD7DC 100%)',
-            }}
-          >
-            <GuidePage dict={dict} onBack={resetToLanding} />
-          </div>
-        )}
+        {/* 5. 使用說明與模型宣告（彈窗） */}
+        <GuideModal open={guideOpen} dict={dict} onClose={() => setGuideOpen(false)} />
       </main>
 
     </div>

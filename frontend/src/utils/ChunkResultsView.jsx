@@ -23,6 +23,7 @@ import {
   displayChunkForTime,
   timelineSelectionLabel,
 } from './timeline/timelineNavigation';
+import { formatPredictionDuration } from './formatPredictionDuration';
 import { buildTimelineDecisionSupport } from './timeline/buildTimelineDecisionSupport';
 
 function formatAnalyzedAt(isoString, lang) {
@@ -326,6 +327,18 @@ export default function ChunkResultsView({
 
   const confidenceThreshold = resolveConfidenceThreshold(result.confidence_threshold);
   const thresholdPct = Math.round(confidenceThreshold * 100);
+  // const phase1DurationLabel = formatPredictionDuration(
+  //   result.prediction_phase1_ms,
+  //   lang
+  // );
+  // const phase2DurationLabel = formatPredictionDuration(
+  //   result.prediction_phase2_ms,
+  //   lang
+  // );
+  const predictionDurationLabel = formatPredictionDuration(
+    result.prediction_duration_ms,
+    lang
+  );
   const xaiPending = result.xai_pending === true;
   const actionsDisabled = xaiPending;
 
@@ -425,6 +438,15 @@ export default function ChunkResultsView({
             <ResultBadge>
               {dict.modelUsed} · {modelLabel}
             </ResultBadge>
+            {/* <ResultBadge>
+              {dict.phase1Duration} · {phase1DurationLabel}
+            </ResultBadge>
+            <ResultBadge>
+              {dict.phase2Duration} · {phase2DurationLabel}
+            </ResultBadge> */}
+            <ResultBadge>
+              {dict.totalPredictionDuration} · {predictionDurationLabel}
+            </ResultBadge>
           </div>
         </header>
 
@@ -459,7 +481,7 @@ export default function ChunkResultsView({
         />
       ) : null}
 
-      <div className="mb-4">
+      <div className="mt-8 mb-4">
         {timeline ? (
           <TimelineSection
             timeline={timeline}

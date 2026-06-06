@@ -48,7 +48,7 @@ const en = {
   locationPickerError: 'Could not load map',
   locationError: 'Could not get location. Please enter it manually.',
   locationUnsupported: 'Geolocation is not supported in this browser.',
-  recordMaxHint: 'Each recording is limited to 60 seconds.',
+  recordMaxHint: 'Each recording is limited to 30 seconds.',
   micPermissionError: 'Microphone access was denied. Check your browser permissions.',
   recorderNotSupported: 'Recording is not supported in this browser.',
   recorderStartError: 'Could not start recording. Try another browser or check your audio device.',
@@ -57,6 +57,8 @@ const en = {
   processBtn: 'Process & Identify',
   loadingText: 'Analyzing audio features—please wait a moment...',
   serverWakingText: 'Waking up the analysis AI—please wait a moment...',
+  serverBusyText:
+    'The server is analyzing audio for another user. Your request is queued and may take longer...',
   themeLight: 'Light Mode',
   themeDark: 'Dark Mode',
   themeSystem: 'System Default',
@@ -65,6 +67,9 @@ const en = {
   resultTitle: 'Prediction Results',
   taskLabel: 'Acoustic analysis',
   modelUsed: 'Model',
+  modelSelectionLabel: 'Model',
+  modelTagFast: 'fast',
+  modelTagExpert: 'expert',
   modelPerch: 'Perch v2 (Google)',
   modelBirdnet: 'BirdNET v2.4 (Cornell)',
   modelSilic: 'SILIC (Academia Sinica)',
@@ -147,6 +152,9 @@ const en = {
   timelineNavHint:
     'Click an event row or timeline peak to inspect that time range; click again to clear.',
   timelineEventCount: 'Events',
+  phase1Duration: 'Phase 1 inference',
+  phase2Duration: 'Phase 2 XAI',
+  totalPredictionDuration: 'Total time',
   timelineLowConfidenceTitle: 'No clear species events detected',
   timelineLowConfidenceBody:
     'Timeline events did not meet confidence thresholds (general ≥10%, recording boundary ≥20%). Review the spectrogram or try re-recording.',
@@ -191,6 +199,7 @@ const en = {
   guideTitle: 'How to Use & Model Attribution',
   guideSubtitle: 'EchoWing bird sound recognition workflow and AI model citations',
   guideBackBtn: 'Back to Home',
+  guideModalClose: 'Close',
   guideUsageTitle: 'How to use',
   guideUsageSteps: [
     'Upload audio or video, or record in the browser (max 30 s per clip, 20 MB file limit).',

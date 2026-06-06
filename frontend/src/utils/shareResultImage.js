@@ -3,35 +3,76 @@ import { renderSpectrogramWithLabels } from './spectrogramWithLabels';
 
 /**
  * @param {CanvasRenderingContext2D} ctx
+ * @param {string} token
+ * @param {number} maxWidth
+ */
+function breakLongToken(ctx, token, maxWidth) {
+  if (ctx.measureText(token).width <= maxWidth) return [token];
+  const parts = [];
+  let current = '';
+  for (const ch of token) {
+    const next = current + ch;
+    if (ctx.measureText(next).width > maxWidth && current) {
+      parts.push(current);
+      current = ch;
+    } else {
+      current = next;
+    }
+  }
+  if (current) parts.push(current);
+  return parts;
+}
+
+/**
+ * @param {CanvasRenderingContext2D} ctx
  * @param {string} text
  * @param {number} x
  * @param {number} y
  * @param {number} maxWidth
  * @param {number} lineHeight
+ * @param {number} [maxLines]
  * @returns {number}
  */
-function wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines = Infinity) {
   const paragraphs = String(text).split('\n');
   let cursorY = y;
+  let lineCount = 0;
 
   for (const paragraph of paragraphs) {
     const words = paragraph.split(' ');
     let line = '';
 
+    const flushLine = (content) => {
+      if (!content || lineCount >= maxLines) return false;
+      ctx.fillText(content, x, cursorY);
+      cursorY += lineHeight;
+      lineCount += 1;
+      return lineCount < maxLines;
+    };
+
     for (let i = 0; i < words.length; i += 1) {
-      const testLine = line ? `${line} ${words[i]}` : words[i];
-      if (ctx.measureText(testLine).width > maxWidth && line) {
-        ctx.fillText(line, x, cursorY);
-        line = words[i];
-        cursorY += lineHeight;
-      } else {
-        line = testLine;
+      const word = words[i];
+      const tokens = breakLongToken(ctx, word, maxWidth);
+
+      for (const token of tokens) {
+        const testLine = line ? `${line} ${token}` : token;
+        if (ctx.measureText(testLine).width > maxWidth && line) {
+          if (!flushLine(line)) return cursorY;
+          line = token;
+        } else {
+          line = testLine;
+        }
       }
     }
 
-    if (line) {
-      ctx.fillText(line, x, cursorY);
-      cursorY += lineHeight;
+    if (line && lineCount < maxLines) {
+      const truncated =
+        lineCount === maxLines - 1 && ctx.measureText(`${line}…`).width <= maxWidth
+          ? `${line}…`
+          : line;
+      flushLine(truncated);
+    } else if (line && lineCount >= maxLines) {
+      return cursorY;
     }
   }
 
@@ -68,14 +109,14 @@ function drawSpectrogramInset(
   w,
   h,
   {
-    opacity = 0.42,
+    opacity = 1,
     events = [],
     durationSec = 0,
     resolveName = (name) => name?.zh ?? name?.en ?? '',
     timeOffsetSec = 0,
   } = {}
 ) {
-  const plotH = Math.max(1, Math.round(h * 0.72));
+  const plotH = Math.max(1, Math.round(h * 0.68));
   const rendered = renderSpectrogramWithLabels(spectrogram, {
     events,
     durationSec: durationSec > 0 ? durationSec : undefined,
@@ -183,6 +224,9 @@ export function renderShareImageCard({
   const panelY = modelLabel ? 340 : 300;
   const panelW = width - 144;
   const panelH = 520;
+  const specStripH = spectrogram ? 196 : 0;
+  const speciesMaxItems = spectrogram ? 3 : 5;
+  const speciesRowH = spectrogram ? 76 : 88;
 
   ctx.fillStyle = '#ffffff';
   ctx.strokeStyle = 'rgba(57, 77, 101, 0.12)';
@@ -191,64 +235,107 @@ export function renderShareImageCard({
   ctx.fill();
   ctx.stroke();
 
+  const specStripY = panelY + panelH - specStripH;
+
   if (spectrogram) {
     ctx.save();
-    roundRect(ctx, panelX, panelY, panelW, panelH, 28);
+    ctx.beginPath();
+    ctx.rect(panelX, specStripY, panelW, specStripH);
     ctx.clip();
-    drawSpectrogramInset(ctx, spectrogram, panelX + 12, panelY + panelH - 168, panelW - 24, 156, {
-      opacity: 0.28,
-      events,
-      durationSec,
-      resolveName,
-      timeOffsetSec,
-    });
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
-    ctx.fillRect(panelX + 12, panelY + 12, panelW - 24, panelH - 188);
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(panelX, specStripY, panelW, specStripH);
+    drawSpectrogramInset(
+      ctx,
+      spectrogram,
+      panelX + 12,
+      specStripY + 36,
+      panelW - 24,
+      specStripH - 48,
+      {
+        opacity: 1,
+        events,
+        durationSec,
+        resolveName,
+        timeOffsetSec,
+      }
+    );
     ctx.restore();
+
+    ctx.strokeStyle = 'rgba(57, 77, 101, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(panelX + 16, specStripY);
+    ctx.lineTo(panelX + panelW - 16, specStripY);
+    ctx.stroke();
 
     ctx.fillStyle = 'rgba(57, 77, 101, 0.55)';
     ctx.font = '600 22px system-ui, sans-serif';
-    ctx.fillText(dict.spectrogramTitle, 112, panelY + panelH - 182);
+    ctx.textAlign = 'left';
+    ctx.fillText(dict.spectrogramTitle, panelX + 24, specStripY + 28);
   }
 
   ctx.fillStyle = '#394d65';
   ctx.font = 'bold 36px system-ui, sans-serif';
-  ctx.fillText(dict.topSpecies, 112, panelY + 70);
+  ctx.textAlign = 'left';
+  ctx.fillText(dict.topSpecies, panelX + 40, panelY + 56);
 
   const items = speciesItems?.length
-    ? speciesItems.slice(0, 5)
+    ? speciesItems.slice(0, speciesMaxItems)
     : [{ name: dict.noSpeciesHint, pct: 0 }];
 
-  let itemY = panelY + 130;
+  const speciesBottom = specStripH > 0 ? specStripY - 12 : panelY + panelH - 24;
+  let itemY = panelY + 108;
+
   for (const item of items) {
-    ctx.font = '600 40px system-ui, sans-serif';
+    if (itemY + 20 > speciesBottom) break;
+
+    ctx.font = '600 36px system-ui, sans-serif';
     ctx.fillStyle = '#394d65';
-    const name = item.name.length > 18 ? `${item.name.slice(0, 18)}…` : item.name;
-    ctx.fillText(name, 112, itemY);
+    const nameMaxW = panelW - 200;
+    let name = item.name;
+    if (ctx.measureText(name).width > nameMaxW) {
+      while (name.length > 1 && ctx.measureText(`${name}…`).width > nameMaxW) {
+        name = name.slice(0, -1);
+      }
+      name = `${name}…`;
+    }
+    ctx.fillText(name, panelX + 40, itemY);
 
     if (item.pct > 0) {
-      ctx.font = 'bold 40px system-ui, sans-serif';
+      ctx.font = 'bold 36px system-ui, sans-serif';
       ctx.fillStyle = '#7e98a7';
-      ctx.fillText(`${item.pct}%`, width - 180, itemY);
+      ctx.textAlign = 'right';
+      ctx.fillText(`${item.pct}%`, panelX + panelW - 40, itemY);
+      ctx.textAlign = 'left';
 
+      const barY = itemY + 14;
+      const barW = panelW - 80;
       ctx.fillStyle = 'rgba(126, 152, 167, 0.2)';
-      roundRect(ctx, 112, itemY + 18, width - 224, 14, 7);
+      roundRect(ctx, panelX + 40, barY, barW, 12, 6);
       ctx.fill();
       ctx.fillStyle = '#7e98a7';
-      roundRect(ctx, 112, itemY + 18, ((width - 224) * item.pct) / 100, 14, 7);
+      roundRect(ctx, panelX + 40, barY, (barW * item.pct) / 100, 12, 6);
       ctx.fill();
     }
 
-    itemY += 88;
+    itemY += speciesRowH;
   }
 
+  const urlY = panelY + panelH + 36;
+  const watermarkY = height - 56;
+  const urlMaxLines = Math.max(
+    2,
+    Math.floor((watermarkY - urlY - 16) / 28)
+  );
+
   ctx.fillStyle = 'rgba(57, 77, 101, 0.45)';
-  ctx.font = '500 24px system-ui, sans-serif';
-  wrapText(ctx, url, 80, 900, width - 160, 32);
+  ctx.font = '500 22px system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  wrapText(ctx, url, 80, urlY, width - 160, 28, urlMaxLines);
 
   ctx.fillStyle = 'rgba(57, 77, 101, 0.35)';
   ctx.font = '500 22px system-ui, sans-serif';
-  ctx.fillText(dict.shareImageWatermark, 80, height - 56);
+  ctx.fillText(dict.shareImageWatermark, 80, watermarkY);
 
   return canvas.toDataURL('image/png');
 }

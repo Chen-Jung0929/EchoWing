@@ -4,7 +4,7 @@ import { useState } from 'react';
 // 根據 Kaggle Perch 模型的需求設定常數
 const TARGET_SAMPLE_RATE = 32000;
 const CHUNK_DURATION = 5; // 5 秒
-const MAX_DURATION = 60; // 最高 60 秒
+const MAX_DURATION = 30; // 最高 30 秒
 
 export function useAudioProcessor() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -62,7 +62,7 @@ export function useAudioProcessor() {
       const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
       // 2. 設定 OfflineAudioContext 進行降採樣與單聲道轉換
-      // duration 限制為最大 60 秒
+      // duration 限制為最大 30 秒
       const duration = Math.min(audioBuffer.duration, MAX_DURATION);
       const offlineCtx = new OfflineAudioContext(
         1, // 強制單聲道 (Mono)

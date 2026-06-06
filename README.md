@@ -283,11 +283,14 @@ npm run build
 | `TRIAGELENS_BIRDNET_MODEL_PATH` | `models/birdnet/audio-model.tflite` | BirdNET |
 | `TRIAGELENS_BIRDNET_LABELS_PATH` | `models/birdnet/labels/zh.txt` | 標籤 |
 | `TRIAGELENS_SILIC_MODEL_PATH` | `models/silic/silic_best_model.pt` | SILIC 權重 |
-| `TRIAGELENS_CONFIDENCE_THRESHOLD` | `0.5` | Perch／SILIC 信心門檻 |
+| `TRIAGELENS_CONFIDENCE_THRESHOLD` | `0.5` | SILIC 等通用信心門檻 |
+| `TRIAGELENS_PERCH_CONFIDENCE_THRESHOLD` | `0.75` | Perch 信心門檻 |
 | `TRIAGELENS_BIRDNET_SIGMOID_SENSITIVITY` | `1.0` | BirdNET sigmoid sensitivity（同 Analyzer 預設） |
 | `TRIAGELENS_BIRDNET_LEGACY_SCORE_ANCHOR` | `0.15` | 校準基準：舊版 naive 分數約 0.15 對齊轉換後 0.5 |
 | `TRIAGELENS_BIRDNET_CONFIDENCE_THRESHOLD` | `0.5` | BirdNET 校準後信心門檻 |
 | `TRIAGELENS_ENABLE_XAI` | `true` | 是否跑 occlusion XAI |
+| `TRIAGELENS_XAI_STRIDE_SEC` | `0.1` | XAI 遮蔽步長（BirdNET / SILIC） |
+| `TRIAGELENS_PERCH_XAI_STRIDE_SEC` | `0.3` | Perch XAI 遮蔽步長 |
 | `TRIAGELENS_MAX_CHUNKS` | `120` | 單次請求窗數上限 |
 | `TRIAGELENS_EAGER_WARMUP` | `true` | 啟動時背景載入模型 |
 

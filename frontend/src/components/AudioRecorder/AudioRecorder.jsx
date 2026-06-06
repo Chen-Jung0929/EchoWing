@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { MdMic, MdStop } from 'react-icons/md';
 
-const MAX_MS = 60_000;
+const MAX_MS = 30_000;
 
 function pickMimeType() {
   const candidates = [
@@ -27,7 +27,8 @@ function extensionFromMime(mime) {
 }
 
 function formatClock(ms) {
-  const totalSec = Math.min(Math.floor(ms / 1000), 60);
+  const maxSec = MAX_MS / 1000;
+  const totalSec = Math.min(Math.floor(ms / 1000), maxSec);
   const m = Math.floor(totalSec / 60);
   const s = totalSec % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
