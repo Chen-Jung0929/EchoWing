@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { formatMessage } from '../i18n';
 import DownloadMetadataModal from '../components/DownloadMetadataModal/DownloadMetadataModal';
+import NearbyRecordsModal from '../components/NearbyRecordsModal/NearbyRecordsModal';
 import ReportGenerator from '../components/ReportGenerator/ReportGenerator';
 import {
   aggregateChunksByVote,
@@ -12,11 +13,13 @@ import {
   segmentNumberFromStart,
 } from './aggregateByVote';
 import { buildFullReportModel } from './buildFullReportModel';
+import { buildSurveySheetPayload } from './buildSurveySheetPayload';
 import { ResultTitleBar } from './ResultTitleActions';
 import { buildResultShareContent } from './shareResult';
 import { getModelDisplayLabel, resolveResultModelName } from './modelLabel';
 import { isSurveyMetadataSaved } from './surveyMetadata';
 import { chunkIdentity } from './chunkIdentity';
+import { isSurveySheetConfigured, submitSurveyRecord } from '../services/surveySheet';
 
 function formatAnalyzedAt(isoString, lang) {
   if (!isoString) return '—';
@@ -197,8 +200,12 @@ export default function ChunkResultsView({
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [surveyMetadata, setSurveyMetadata] = useState(null);
   const [saveVersion, setSaveVersion] = useState(0);
+  const [sheetUploadStatus, setSheetUploadStatus] = useState('idle');
+  const [sheetUploadError, setSheetUploadError] = useState('');
+  const [nearbyModalOpen, setNearbyModalOpen] = useState(false);
   const [modalConfirmLabel, setModalConfirmLabel] = useState(null);
   const reportRef = useRef(null);
+  const surveyMetadataRef = useRef(null);
   const pendingPrintRef = useRef(false);
   const printResolveRef = useRef(null);
   const printRejectRef = useRef(null);
@@ -310,10 +317,48 @@ export default function ChunkResultsView({
     pendingPrintRef.current = false;
   }, []);
 
+  const uploadSurveyToSheet = useCallback(
+    async (metadata) => {
+      if (!isSurveySheetConfigured()) {
+        setSheetUploadStatus('idle');
+        setSheetUploadError('');
+        return { skipped: true };
+      }
+
+      setSheetUploadStatus('uploading');
+      setSheetUploadError('');
+
+      try {
+        const payload = buildSurveySheetPayload({
+          result,
+          surveyMetadata: metadata,
+          dict,
+          lang,
+        });
+        const outcome = await submitSurveyRecord(payload);
+        if (outcome.skipped) {
+          setSheetUploadStatus('idle');
+          return outcome;
+        }
+        setSheetUploadStatus('success');
+        return outcome;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setSheetUploadStatus('error');
+        setSheetUploadError(message);
+        throw err;
+      }
+    },
+    [result, dict, lang]
+  );
+
+  surveyMetadataRef.current = surveyMetadata;
+
   const handleSaveConfirm = useCallback(
     async (metadata) => {
       setSaveModalOpen(false);
       setSurveyMetadata(metadata);
+      surveyMetadataRef.current = metadata;
       setSaveVersion((v) => v + 1);
       const shouldPrint = pendingPrintRef.current;
       pendingPrintRef.current = false;
@@ -332,8 +377,11 @@ export default function ChunkResultsView({
           printRejectRef.current = null;
         }
       }
+      uploadSurveyToSheet(metadata).catch(() => {
+        // Error state is stored in sheetUploadStatus / sheetUploadError.
+      });
     },
-    [runPdfPrint]
+    [runPdfPrint, uploadSurveyToSheet]
   );
 
   const handlePrintResult = useCallback(() => {
@@ -366,6 +414,13 @@ export default function ChunkResultsView({
     [tabCount]
   );
 
+  const nearbyInitialCoordinates = useMemo(
+    () => surveyMetadata?.overview?.coordinates ?? null,
+    [surveyMetadata]
+  );
+
+  const showNearbyFab = isSurveySheetConfigured();
+
   return (
     <div className="w-full max-w-4xl bg-[var(--c-card)]/82 backdrop-blur-md p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--c-text)]/5">
       {fullReportModel ? (
@@ -385,6 +440,15 @@ export default function ChunkResultsView({
         onClose={handleSaveModalClose}
         onConfirm={handleSaveConfirm}
       />
+
+      <NearbyRecordsModal
+        open={nearbyModalOpen}
+        dict={dict}
+        lang={lang}
+        initialCoordinates={nearbyInitialCoordinates}
+        onClose={() => setNearbyModalOpen(false)}
+      />
+
       {/* Part A — overflow-visible 避免裁切 tooltip */}
       <div className="sticky top-24 z-10 -mx-2 px-2 py-4 mb-2 overflow-visible bg-[var(--c-card)]/95 backdrop-blur-md border-b border-[var(--c-text)]/10">
         <header className="mb-4 mt-2">
@@ -395,8 +459,20 @@ export default function ChunkResultsView({
             getSharePayload={getSharePayload}
             surveySaved={saveVersion}
             actionsDisabled={actionsDisabled}
+            onNearbyRecords={() => setNearbyModalOpen(true)}
+            nearbyEnabled={showNearbyFab}
           />
 
+          {sheetUploadStatus === 'success' ? (
+            <p className="mt-2 text-center text-xs font-bold text-emerald-600 dark:text-emerald-400" role="status">
+              {dict.sheetUploadSuccess}
+            </p>
+          ) : null}
+          {sheetUploadStatus === 'error' && sheetUploadError ? (
+            <p className="mt-2 text-center text-xs font-bold text-red-500" role="alert">
+              {dict.sheetUploadError}: {sheetUploadError}
+            </p>
+          ) : null}
 
           <details className="mt-2 flex flex-col items-center max-w-full">
             <summary className="cursor-pointer text-xs text-[var(--c-text)]/45 hover:text-[var(--c-primary)] transition-colors list-none [&::-webkit-details-marker]:hidden">

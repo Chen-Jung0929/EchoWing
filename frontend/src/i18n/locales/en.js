@@ -15,7 +15,7 @@ const en = {
   downloadRecording: 'Download recording',
   saveModalTitle: 'Field observation',
   saveModalHint:
-    'Overview and per-segment notes are included in the full PDF. If already saved, download uses them directly.',
+    'Overview and per-segment notes are included in the full PDF. Saving also syncs to Google Sheets when configured.',
   saveModalCancel: 'Cancel',
   saveModalConfirm: 'Save',
   downloadModalConfirm: 'Confirm & download',
@@ -40,6 +40,12 @@ const en = {
   location: 'Location',
   locationPlaceholder: 'Address, landmark, or coordinates',
   useCurrentLocation: 'Current location',
+  pickLocationOnMap: 'Pick on map',
+  locationPickerTitle: 'Pick location on map',
+  locationPickerHint: 'Click the map or drag the marker, then confirm to fill address and coordinates.',
+  locationPickerConfirm: 'Use this location',
+  locationPickerLoading: 'Loading map…',
+  locationPickerError: 'Could not load map',
   locationError: 'Could not get location. Please enter it manually.',
   locationUnsupported: 'Geolocation is not supported in this browser.',
   recordMaxHint: 'Each recording is limited to 60 seconds.',
@@ -157,6 +163,56 @@ const en = {
   downloadDone: 'Downloaded',
   login: 'Log in',
   logout: 'Log out',
+
+  navGuide: 'Guide',
+  guideTitle: 'How to Use & Model Attribution',
+  guideSubtitle: 'EchoWing bird sound recognition workflow and AI model citations',
+  guideBackBtn: 'Back to Home',
+  guideUsageTitle: 'How to use',
+  guideUsageSteps: [
+    'Upload audio or video, or record in the browser (max 30 s per clip, 20 MB file limit).',
+    'Choose a model (Perch, BirdNET, or SILIC) and tap Process & Identify.',
+    'Review the vote aggregate summary, per-window predictions, spectrograms, and XAI heatmaps.',
+    'Fill in field notes and tap Save to update the PDF and sync to Google Sheets when configured.',
+    'In in-app browsers (Messenger, Instagram, etc.), recording may be unavailable—upload a file or open in Safari/Chrome instead.',
+  ],
+  guideModelsTitle: 'Model attribution',
+  guideModels: [
+    {
+      name: 'Perch v2 (Google)',
+      citation:
+        'Google bird acoustic embedding model used in tasks such as BirdCLEF. This app runs CPU inference via SavedModel.',
+    },
+    {
+      name: 'BirdNET v2.4 (Cornell Lab of Ornithology)',
+      citation:
+        'Cornell Lab TFLite acoustic classifier with 3 s analysis windows and calibrated scores compared to a confidence threshold.',
+    },
+    {
+      name: 'SILIC (Academia Sinica)',
+      citation: 'Academia Sinica bird acoustic model with 5 s analysis windows.',
+    },
+  ],
+  guideDisclaimerTitle: 'Disclaimer',
+  guideDisclaimerBody:
+    'The AI module provides analysis and decision-support suggestions only. It does not make final decisions or guarantee absolute correctness. Field notes and sheet sync content are user-provided—always rely on in-person observation.',
+  sheetUploadSuccess: 'Synced to spreadsheet',
+  sheetUploadError: 'Spreadsheet sync failed',
+
+  nearbyRecordsBtn: 'Nearby records',
+  nearbyRecordsTitle: 'Nearby field records',
+  nearbyRecordsSubtitle: 'Records with GPS near your current location',
+  nearbyRecordsEmpty: 'No GPS records within this radius',
+  nearbyRecordsError: 'Could not load nearby records',
+  nearbyRecordsNoLocation:
+    'Location unavailable. Use “Current location” in field notes or allow browser geolocation.',
+  nearbyRecordsLoading: 'Searching nearby records…',
+  nearbyRecordsDistance: '~{distance}',
+  nearbyRecordsRadiusLabel: 'Search radius',
+  nearbyRecordsRadiusOption: '{km} km',
+  locationMapTitle: 'Location map',
+  googleMapsNotConfigured: 'Google Maps API key is not configured; map embed is unavailable.',
+  googleMapsOpenExternal: 'Open in Google Maps',
 };
 
 export default en;

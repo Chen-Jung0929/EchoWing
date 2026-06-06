@@ -18,6 +18,7 @@ import {
   MdLightMode,
   MdCloudUpload,
   MdDownload,
+  MdHelpOutline,
 } from 'react-icons/md';
 import AudioRecorder from './components/AudioRecorder/AudioRecorder';
 import { getDict } from './i18n';
@@ -26,6 +27,7 @@ import { isInAppBrowser } from './utils/inAppBrowser';
 import DayHeroScene from './features/hero/DayHeroScene';
 import NightHeroScene from './features/hero/NightHeroScene';
 import KiwiAnimation from './features/loading/KiwiAnimation';
+import GuidePage from './features/guide/GuidePage';
 
 const USE_MOCK_FALLBACK = false;
 const MOCK_RESULT_URL = '/mock_data/perch_result.json';
@@ -137,6 +139,11 @@ export default function App() {
   };
 
   const showHeroScene = viewState === 'landing';
+
+  const openGuide = () => {
+    setIsMenuOpen(false);
+    setViewState('guide');
+  };
 
   const resetToLanding = () => {
     abortControllerRef.current?.abort();
@@ -450,6 +457,16 @@ export default function App() {
               <MdLanguage className="w-6 h-6 text-[var(--c-text)]" />
             </button>
 
+            <button
+              type="button"
+              onClick={openGuide}
+              className="p-2 rounded-lg hover:bg-[var(--c-card)]/40 transition-colors focus:outline-none"
+              aria-label={dict.navGuide}
+              title={dict.navGuide}
+            >
+              <MdHelpOutline className="w-6 h-6 text-[var(--c-text)]" />
+            </button>
+
             
             {/* <button
               type="button"
@@ -682,6 +699,20 @@ export default function App() {
                 {dict.retryBtn}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* 5. 使用說明與模型宣告 */}
+        {viewState === 'guide' && (
+          <div
+            className="min-h-screen"
+            style={{
+              background: isDarkMode
+                ? 'linear-gradient(to bottom, #141a1a 0%, #3D342F 100%)'
+                : 'linear-gradient(to bottom, #E9D5CC 0%, #DCD7DC 100%)',
+            }}
+          >
+            <GuidePage dict={dict} onBack={resetToLanding} />
           </div>
         )}
       </main>

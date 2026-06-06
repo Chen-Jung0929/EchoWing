@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { MdClose, MdMyLocation } from 'react-icons/md';
+import { MdClose, MdMap, MdMyLocation } from 'react-icons/md';
 import {
   createEmptySurveyMetadata,
   fetchCurrentCoordinates,
@@ -8,6 +8,9 @@ import {
   normalizeSurveyMetadata,
   trimSurveyMetadata,
 } from '../../utils/surveyMetadata';
+import { isGoogleMapsConfigured } from '../../config/googleMaps';
+import LocationMap from '../LocationMap/LocationMap';
+import LocationPickerModal from '../LocationPickerModal/LocationPickerModal';
 
 const inputClass =
   'w-full rounded-xl border border-[var(--c-text)]/15 bg-[var(--c-bg)]/80 px-3 py-2.5 text-sm text-[var(--c-text)] placeholder:text-[var(--c-text)]/40 focus:border-[var(--c-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--c-primary)]/25';
@@ -27,6 +30,8 @@ export default function DownloadMetadataModal({
   const [form, setForm] = useState(() => createEmptySurveyMetadata(chunkIndices));
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState('');
+  const [mapPickerOpen, setMapPickerOpen] = useState(false);
+  const mapPickerAvailable = isGoogleMapsConfigured();
 
   const chunkKey = useMemo(() => chunkIndices.join(','), [chunkIndices]);
   const defaultObserver = dict.defaultObserverName;
@@ -129,6 +134,18 @@ export default function DownloadMetadataModal({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [open, onClose]);
 
+  const handleMapPickConfirm = useCallback(({ latitude, longitude, location }) => {
+    setLocationError('');
+    setForm((prev) => ({
+      ...prev,
+      overview: {
+        ...prev.overview,
+        coordinates: { latitude, longitude },
+        location,
+      },
+    }));
+  }, []);
+
   if (!open || typeof document === 'undefined') return null;
 
   const setOverview = (key, value) => {
@@ -162,7 +179,15 @@ export default function DownloadMetadataModal({
   const sortedIndices = [...chunkIndices].sort((a, b) => a - b);
 
   return createPortal(
-    <div
+    <>
+      <LocationPickerModal
+        open={mapPickerOpen}
+        dict={dict}
+        initialCoordinates={form.overview.coordinates}
+        onConfirm={handleMapPickConfirm}
+        onClose={() => setMapPickerOpen(false)}
+      />
+      <div
       className="fixed inset-0 z-[300] flex items-center justify-center p-4"
       role="presentation"
       onMouseDown={(e) => {
@@ -220,7 +245,7 @@ export default function DownloadMetadataModal({
                   <label className={labelClass} htmlFor="dm-location">
                     {dict.location}
                   </label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <input
                       id="dm-location"
                       type="text"
@@ -236,7 +261,7 @@ export default function DownloadMetadataModal({
                         }));
                       }}
                       placeholder={dict.locationPlaceholder}
-                      className={`${inputClass} min-w-0 flex-1`}
+                      className={`${inputClass} min-w-0 flex-1 basis-full sm:basis-0`}
                     />
                     <button
                       type="button"
@@ -246,13 +271,39 @@ export default function DownloadMetadataModal({
                       title={dict.useCurrentLocation}
                     >
                       <MdMyLocation className="h-4 w-4" aria-hidden />
-                      <span className="hidden sm:inline">{dict.useCurrentLocation}</span>
+                      <span>{dict.useCurrentLocation}</span>
                     </button>
+                    {mapPickerAvailable ? (
+                      <button
+                        type="button"
+                        onClick={() => setMapPickerOpen(true)}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-xl border border-[var(--c-text)]/20 px-3 py-2 text-xs font-bold text-[var(--c-text)]/80 transition-colors hover:bg-[var(--c-bg)]/80"
+                        title={dict.pickLocationOnMap}
+                      >
+                        <MdMap className="h-4 w-4" aria-hidden />
+                        <span>{dict.pickLocationOnMap}</span>
+                      </button>
+                    ) : null}
                   </div>
+                  {!mapPickerAvailable ? (
+                    <p className="mt-1 text-[10px] text-[var(--c-text)]/45">
+                      {dict.googleMapsNotConfigured}
+                    </p>
+                  ) : null}
                   {locationError ? (
                     <p className="mt-1 text-xs font-bold text-red-500" role="alert">
                       {locationError}
                     </p>
+                  ) : null}
+                  {form.overview.coordinates ? (
+                    <LocationMap
+                      latitude={form.overview.coordinates.latitude}
+                      longitude={form.overview.coordinates.longitude}
+                      title={dict.locationMapTitle}
+                      height={180}
+                      className="mt-3"
+                      dict={dict}
+                    />
                   ) : null}
                 </div>
 
@@ -369,7 +420,8 @@ export default function DownloadMetadataModal({
           </div>
         </form>
       </div>
-    </div>,
+      </div>
+    </>,
     document.body
   );
 }

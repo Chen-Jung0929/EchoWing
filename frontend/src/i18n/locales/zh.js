@@ -14,7 +14,7 @@ const zh = {
   stopRecording: '停止',
   downloadRecording: '下載錄音',
   saveModalTitle: '田野觀察紀錄',
-  saveModalHint: '總覽與各片段田野備註將併入完整 PDF；已儲存過則下載時直接套用。',
+  saveModalHint: '總覽與各片段田野備註將併入完整 PDF；確認儲存時亦會同步至 Google 試算表（若已設定）。',
   saveModalCancel: '取消',
   saveModalConfirm: '確認儲存',
   downloadModalConfirm: '確認並下載',
@@ -39,6 +39,12 @@ const zh = {
   location: '地點',
   locationPlaceholder: '地址、地標或座標',
   useCurrentLocation: '目前位置',
+  pickLocationOnMap: '在地圖上選擇',
+  locationPickerTitle: '在地圖上選擇位置',
+  locationPickerHint: '點擊地圖或拖曳標記以選定位置，確認後會自動填入地址與座標。',
+  locationPickerConfirm: '使用此位置',
+  locationPickerLoading: '正在載入地圖…',
+  locationPickerError: '無法載入地圖',
   locationError: '無法取得位置，請手動輸入地點。',
   locationUnsupported: '此瀏覽器不支援定位功能。',
   recordMaxHint: '單次錄音最長 30 秒',
@@ -155,6 +161,56 @@ const zh = {
   downloadDone: '已下載',
   login: '登入',
   logout: '登出',
+
+  navGuide: '使用說明',
+  guideTitle: '使用說明與模型宣告',
+  guideSubtitle: 'EchoWing 鳥聲辨識工具的操作方式與 AI 模型引用',
+  guideBackBtn: '返回首頁',
+  guideUsageTitle: '使用方法',
+  guideUsageSteps: [
+    '上傳音訊或影片，或使用瀏覽器錄音（單次最長 30 秒、檔案上限 20MB）。',
+    '選擇辨識模型（Perch、BirdNET 或 SILIC），點擊「開始處理並辨識」。',
+    '檢視總覽投票彙整與各分析窗的物種預測、頻譜與 XAI 熱圖。',
+    '填寫田野觀察紀錄後按「確認儲存」，將一併寫入 PDF 並同步至 Google 試算表（若已設定）。',
+    '於 Messenger、Instagram 等 App 內建瀏覽器開啟時，錄音功能可能受限，請改以上傳或以外部瀏覽器開啟。',
+  ],
+  guideModelsTitle: '模型引用',
+  guideModels: [
+    {
+      name: 'Perch v2 (Google)',
+      citation:
+        'Google 開發之鳥類聲學 embedding 模型，適用於 BirdCLEF 等聲學辨識任務。本應用透過 SavedModel 進行 CPU 推論。',
+    },
+    {
+      name: 'BirdNET v2.4 (Cornell Lab of Ornithology)',
+      citation:
+        'Cornell 鳥類學實驗室之 TFLite 聲學分類模型，以 3 秒分析窗推論，並經分數校準後與信心門檻比較。',
+    },
+    {
+      name: 'SILIC (Academia Sinica)',
+      citation: '中央研究院團隊開發之鳥類聲學辨識模型，以 5 秒分析窗推論。',
+    },
+  ],
+  guideDisclaimerTitle: '免責與使用宣告',
+  guideDisclaimerBody:
+    '本網站之 AI 模組僅提供分析與行動建議，不作最終決定。本平台不保證辨識結果之絕對正確性，亦不構成預測承諾、最終決策或行為保證。田野紀錄與試算表同步內容由使用者自行填寫，請以實地觀察為準。',
+  sheetUploadSuccess: '已同步至試算表',
+  sheetUploadError: '試算表同步失敗',
+
+  nearbyRecordsBtn: '附近紀錄',
+  nearbyRecordsTitle: '附近田野紀錄',
+  nearbyRecordsSubtitle: '依目前位置搜尋試算表中 GPS 相近的紀錄',
+  nearbyRecordsEmpty: '此半徑內尚無含 GPS 的紀錄',
+  nearbyRecordsError: '無法載入附近紀錄',
+  nearbyRecordsNoLocation:
+    '無法取得位置。請在田野紀錄中使用「目前位置」，或允許瀏覽器定位後再試。',
+  nearbyRecordsLoading: '正在搜尋附近紀錄…',
+  nearbyRecordsDistance: '約 {distance}',
+  nearbyRecordsRadiusLabel: '搜尋半徑',
+  nearbyRecordsRadiusOption: '{km} 公里',
+  locationMapTitle: '位置地圖',
+  googleMapsNotConfigured: '未設定 Google Maps API 金鑰，無法嵌入地圖。',
+  googleMapsOpenExternal: '在 Google 地圖中開啟',
 };
 
 export default zh;

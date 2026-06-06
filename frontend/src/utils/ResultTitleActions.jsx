@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { MdSave, MdPrint, MdShare, MdClose, MdMoreHoriz } from 'react-icons/md';
+import { MdSave, MdPrint, MdShare, MdClose, MdMoreHoriz, MdPlace } from 'react-icons/md';
 import ShareResultMenu from './ShareResultMenu';
 
 const FAB_BG = {
@@ -102,6 +102,8 @@ export function ResultFloatingActions({
   getSharePayload,
   surveySaved,
   actionsDisabled = false,
+  onNearbyRecords,
+  nearbyEnabled = false,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -184,6 +186,20 @@ export function ResultFloatingActions({
               onSave={onSave}
               saved={surveySaved}
             />
+            {nearbyEnabled ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setMenuOpen(false);
+                  onNearbyRecords?.();
+                }}
+                aria-label={dict.nearbyRecordsBtn}
+                className={`${FAB_BTN} h-12 w-12`}
+                style={FAB_BG}
+              >
+                <MdPlace color={FAB_ICON_COLOR} size={FAB_ICON_SIZE} aria-hidden />
+              </button>
+            ) : null}
             <PrintButton ariaLabel={dict.printResult} onPrint={onPrint} />
           </>
         ) : null}
@@ -207,6 +223,8 @@ export function ResultTitleBar({
   getSharePayload,
   surveySaved,
   actionsDisabled = false,
+  onNearbyRecords,
+  nearbyEnabled = false,
 }) {
   return (
     <>
@@ -225,6 +243,8 @@ export function ResultTitleBar({
         getSharePayload={getSharePayload}
         surveySaved={surveySaved}
         actionsDisabled={actionsDisabled}
+        onNearbyRecords={onNearbyRecords}
+        nearbyEnabled={nearbyEnabled}
       />
     </>
   );
