@@ -1,113 +1,184 @@
 import {
+
   DEFAULT_CONFIDENCE_THRESHOLD,
+
   resolveConfidenceThreshold,
+
 } from '../config/confidenceThreshold';
+
 import {
-  aggregateChunksByVote,
+
   chunkTimeRangeLabel,
+
   modelWindowSec,
+
   segmentNumberFromStart,
+
 } from './aggregateByVote';
+
 import {
-  collectSpectrogramsFromChunks,
-  concatSpectrogramPayloads,
+
+  concatSpectrogramsToAudioDuration,
+
   getSpectrogramFromCache,
+
   trimSpectrogramToDuration,
+
 } from './spectrogramCache';
 
-export function buildFullReportModel({
-  result,
-  chunks,
-  filename,
-  spectrogramByIndex,
-  surveyMetadata,
-  confidenceThreshold = DEFAULT_CONFIDENCE_THRESHOLD,
-  modelName = 'perch',
-  windowSec = modelWindowSec(modelName),
-  totalDurationSec = 0,
-}) {
-  const resolvedThreshold = resolveConfidenceThreshold(confidenceThreshold);
-  const okChunks = (chunks ?? []).filter((c) => !c.error);
-  const summary = aggregateChunksByVote(chunks, {
-    confidenceThreshold: resolvedThreshold,
-    windowSec,
-  });
-  const sourceName = filename?.trim() && filename !== '—' ? filename.trim() : 'unknown.wav';
-  let stitchedSpec = concatSpectrogramPayloads(
-    collectSpectrogramsFromChunks(okChunks, spectrogramByIndex)
-  );
-  if (stitchedSpec && totalDurationSec > 0) {
-    stitchedSpec = trimSpectrogramToDuration(stitchedSpec, totalDurationSec);
-  }
+import { buildTimelineSpeciesSummary } from './timeline/timelineNavigation';
 
-  const segmentRows = (chunks ?? []).map((chunk) => {
-    const timeLabel = chunkTimeRangeLabel(chunk.index, windowSec);
-    const segNum = segmentNumberFromStart(chunk.index, windowSec);
-    if (chunk.error) {
-      return {
-        index: chunk.index,
-        segmentLabel: segNum,
-        timeLabel,
-        error: chunk.error,
-        topSpeciesName: null,
-        topProbability: null,
-        meetsThreshold: false,
-        lowConfidence: false,
-      };
-    }
-    const top = chunk.predictions?.top_species?.[0];
-    const meets = chunk.predictions?.meets_confidence_threshold === true;
-    return {
-      index: chunk.index,
-      segmentLabel: segNum,
-      timeLabel,
-      error: null,
-      topSpeciesName: top?.name ?? null,
-      topProbability: top?.probability ?? null,
-      meetsThreshold: meets,
-      lowConfidence: top != null && !meets,
-    };
-  });
+import { mergeDuplicateConsecutiveRows } from './timeline/mergeConsecutiveEvents';
+
+import { buildEventRangeSegments } from './timeline/eventRangeSegments';
+import { buildTimelineDecisionSupport } from './timeline/buildTimelineDecisionSupport';
+
+
+
+export function buildFullReportModel({
+
+  result,
+
+  chunks,
+
+  filename,
+
+  spectrogramByIndex,
+
+  surveyMetadata,
+
+  confidenceThreshold = DEFAULT_CONFIDENCE_THRESHOLD,
+
+  modelName = 'perch',
+
+  windowSec = modelWindowSec(modelName),
+
+  totalDurationSec = 0,
+
+  timeline = null,
+
+}) {
+
+  const resolvedThreshold = resolveConfidenceThreshold(confidenceThreshold);
+
+  const okChunks = (chunks ?? []).filter((c) => !c.error);
+
+  const sourceName = filename?.trim() && filename !== '—' ? filename.trim() : 'unknown.wav';
+
+  const stitchedSpec = concatSpectrogramsToAudioDuration(
+
+    okChunks,
+
+    spectrogramByIndex,
+
+    totalDurationSec,
+
+    windowSec
+
+  );
+
+
+
+  const timelineEventRows = timeline?.species_events?.length
+
+    ? mergeDuplicateConsecutiveRows(timeline.species_events)
+
+    : [];
+
+  const timelineSpeciesSummary = buildTimelineSpeciesSummary(timeline);
+
+  const eventSegments = timeline?.species_events?.length
+
+    ? buildEventRangeSegments(timeline.species_events)
+
+    : [];
+
+
+
+  const firstOk = okChunks[0] ?? null;
 
   const segmentReports = (chunks ?? []).map((chunk) => ({
+
     index: chunk.index,
+
     segmentNum: segmentNumberFromStart(chunk.index, windowSec),
+
     analysisId: chunk.analysis_id,
+
     error: chunk.error ?? null,
+
     predictions: chunk.predictions ?? null,
+
     decision_support: chunk.decision_support ?? null,
+
     spectrogram: chunk.error
+
       ? null
-      : getSpectrogramFromCache(spectrogramByIndex, chunk.index),
+
+      : trimSpectrogramToDuration(
+
+          getSpectrogramFromCache(spectrogramByIndex, chunk.index),
+
+          Math.min(windowSec, Math.max(0, (totalDurationSec || windowSec) - (chunk.index ?? 0)))
+
+        ),
+
     timeLabel: chunkTimeRangeLabel(chunk.index, windowSec),
+
   }));
 
+
+
   const lastStart = okChunks.length
+
     ? Math.max(...okChunks.map((c) => c.index ?? 0))
+
     : 0;
+
   const durationSec = totalDurationSec > 0 ? totalDurationSec : lastStart + windowSec;
 
+
+
   return {
+
     sourceName,
+
     modelName,
+
     confidenceThreshold: resolvedThreshold,
-    analysisId: summary
-      ? `summary_${okChunks[0]?.analysis_id ?? 'report'}`
-      : chunks[0]?.analysis_id ?? 'report',
+
+    analysisId: firstOk?.analysis_id ?? chunks[0]?.analysis_id ?? 'report',
+
     generatedAt: new Date().toISOString(),
-    summary: summary
-      ? {
-          predictions: summary.predictions,
-          decision_support: summary.decision_support,
-        }
-      : null,
+
+    decisionSupport: buildTimelineDecisionSupport(timeline, { windowSec }),
+
     okChunkCount: okChunks.length,
+
     totalChunkCount: chunks.length,
+
     durationSec,
+
     windowSec,
+
     stitchedSpectrogram: stitchedSpec,
-    segmentRows,
+
     segmentReports,
+
     surveyMetadata,
+
+    timeline,
+
+    timelineEventRows,
+
+    timelineSpeciesSummary,
+
+    eventSegments,
+
+    timelineEvents: timeline?.species_events ?? [],
+
   };
+
 }
+
+

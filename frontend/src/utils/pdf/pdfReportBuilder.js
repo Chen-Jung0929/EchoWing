@@ -17,6 +17,9 @@ import { getDict } from '../../i18n';
 import { getModelDisplayLabel } from '../modelLabel';
 import { segmentNumberFromStart } from '../aggregateByVote';
 import { validatePdfQuality } from './pdfQualityCheck';
+import { formatPeakTimeRange } from '../timeline/mergeConsecutiveEvents';
+import { filterEventsInTimeWindow } from '../spectrogramWithLabels';
+import { mergeDuplicateConsecutiveRows } from '../timeline/mergeConsecutiveEvents';
 
 const LOGO_SRC = '/logo.png';
 
@@ -147,6 +150,44 @@ function estimateTableHeight(rowCount, hasHead = true) {
   return (headRows + rowCount) * 6.5 + 4;
 }
 
+function timelineSpeciesTableBody(speciesRows, lang) {
+  if (!speciesRows?.length) {
+    return [
+      [
+        lang === 'zh' ? '無達事件信心門檻的物種。' : 'No species met the event confidence threshold.',
+        '—',
+        '—',
+      ],
+    ];
+  }
+  return speciesRows.map((s) => [
+    pickLocalized(s.name, lang),
+    `${Math.round((s.probability ?? 0) * 100)}%`,
+    s.peak_time != null ? `${s.peak_time}s` : '—',
+  ]);
+}
+
+function timelineEventTableBody(eventRows, lang) {
+  if (!eventRows?.length) {
+    return [
+      [
+        lang === 'zh' ? '尚無偵測到明顯物種事件。' : 'No distinct species events detected.',
+        '—',
+        '—',
+        '—',
+        '—',
+      ],
+    ];
+  }
+  return eventRows.map((row) => [
+    pickLocalized(row.name, lang),
+    `${row.onset}s`,
+    `${row.offset}s`,
+    formatPeakTimeRange(row),
+    `${Math.round((row.confidence ?? 0) * 100)}%`,
+  ]);
+}
+
 function speciesTableBody(speciesRows, lang, isSummary, validChunkCount, windowSec = 5) {
   if (!speciesRows?.length) {
     const msg =
@@ -174,7 +215,12 @@ function speciesTableBody(speciesRows, lang, isSummary, validChunkCount, windowS
 
 function measureSegmentBlock(reportModel, seg, lang, fieldRecordMode) {
   let h = 14 + 22;
-  const rows = seg.error ? 1 : (seg.predictions?.top_species?.length || 1);
+  const segStart = seg.index ?? 0;
+  const segEnd = segStart + (reportModel.windowSec ?? 5) - 1;
+  const segEvents = mergeDuplicateConsecutiveRows(
+    filterEventsInTimeWindow(reportModel.timelineEvents ?? [], segStart, segEnd)
+  );
+  const rows = seg.error ? 1 : Math.max(segEvents.length, 1);
   h += estimateTableHeight(rows);
   h += 52;
   const segMeta = reportModel.surveyMetadata?.segments?.[seg.index];
@@ -197,16 +243,19 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
     sourceName,
     analysisId,
     generatedAt,
-    summary,
+    decisionSupport,
     okChunkCount,
     totalChunkCount,
     durationSec,
     windowSec,
     confidenceThreshold,
     modelName = 'perch',
-    segmentRows,
     segmentReports,
     surveyMetadata,
+    stitchedSpectrogram,
+    timelineEventRows,
+    timelineSpeciesSummary,
+    timelineEvents,
   } = reportModel;
 
   const thresholdPct = Math.round(resolveConfidenceThreshold(confidenceThreshold) * 100);
@@ -292,65 +341,65 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
     { fontSize: 9 }
   );
 
-  layout.drawSectionHeading(lang === 'zh' ? '辨識結果彙整' : 'Aggregated results');
+  layout.drawSectionHeading(lang === 'zh' ? '物種活動摘要' : 'Species activity summary');
   layout.drawTextBlock(
     lang === 'zh'
-      ? '以下為各片段 Top 預測的投票彙整。'
-      : 'Vote aggregate across segment top predictions.',
+      ? '以下依時間軸反卷積與事件信心門檻彙整（非投票聚合）。'
+      : 'Timeline deconvolution with event-confidence filtering (not vote aggregation).',
     { fontSize: 8, color: [107, 114, 128], marginAfter: 5 }
   );
 
-  const summarySpecies = summary?.predictions?.top_species ?? [];
   drawTable(pdf, layout, {
     head: [
       [
         lang === 'zh' ? '物種名稱' : 'Species',
-        lang === 'zh' ? '出現百分比' : 'Appearance %',
-        lang === 'zh' ? '出現片段' : 'Segments',
+        lang === 'zh' ? '最高事件信心' : 'Peak event confidence',
+        lang === 'zh' ? '峰值時間' : 'Peak time',
       ],
     ],
-    body: speciesTableBody(summarySpecies, lang, true, okChunkCount, windowSec),
+    body: timelineSpeciesTableBody(timelineSpeciesSummary, lang),
   });
 
-  layout.drawSectionHeading(
-    lang === 'zh' ? '片段信心一覽表' : 'Segment confidence overview',
-    { compact: true }
-  );
-  const segConfBody = segmentRows.map((row) => {
-    let status =
-      lang === 'zh' ? '達門檻' : 'Above threshold';
-    if (row.error) status = lang === 'zh' ? '失敗' : 'Failed';
-    else if (row.lowConfidence) status = lang === 'zh' ? '低信心' : 'Low confidence';
-    else if (!row.topSpeciesName) status = '—';
-    const topLabel = row.error
-      ? row.error
-      : row.topSpeciesName
-        ? pickLocalized(row.topSpeciesName, lang)
-        : '—';
-    const pct =
-      row.topProbability != null
-        ? `${Math.round(row.topProbability * 100)}%`
-        : '—';
-    return [
-      String(row.segmentLabel),
-      row.timeLabel,
-      topLabel,
-      pct,
-      `${status} (${thresholdPct}%)`,
-    ];
+  layout.drawSectionHeading(lang === 'zh' ? '物種事件一覽' : 'Species events', {
+    compact: true,
   });
   drawTable(pdf, layout, {
     head: [
       [
-        lang === 'zh' ? '片段' : 'Seg.',
-        lang === 'zh' ? '時間' : 'Time',
-        lang === 'zh' ? 'Top 預測' : 'Top prediction',
-        lang === 'zh' ? '信心' : 'Conf.',
-        lang === 'zh' ? '狀態' : 'Status',
+        lang === 'zh' ? '物種' : 'Species',
+        lang === 'zh' ? '起始' : 'Onset',
+        lang === 'zh' ? '結束' : 'Offset',
+        lang === 'zh' ? '峰值時間' : 'Peak times',
+        lang === 'zh' ? '事件信心' : 'Event confidence',
       ],
     ],
-    body: segConfBody,
+    body: timelineEventTableBody(timelineEventRows, lang),
   });
+
+  if (stitchedSpectrogram) {
+    layout.drawSectionHeading(lang === 'zh' ? '全段頻譜圖' : 'Full spectrogram', {
+      compact: true,
+    });
+    const specImg = renderSpectrogramForPdf(stitchedSpectrogram, {
+      lang,
+      durationSec,
+      events: timelineEvents,
+    });
+    if (specImg) {
+      layout.ensureSpace(specImg.heightMm);
+      pdf.addImage(
+        specImg.dataUrl,
+        'PNG',
+        PAGE.marginLeft,
+        layout.y,
+        specImg.widthMm,
+        specImg.heightMm,
+        undefined,
+        'SLOW'
+      );
+      layout.y += specImg.heightMm + 2;
+    }
+  }
 
   if (fieldRecordMode && surveyMetadata?.overview) {
     const o = surveyMetadata.overview;
@@ -429,7 +478,10 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
       { fontSize: 8.5 }
     );
 
-    layout.drawSectionHeading(lang === 'zh' ? '辨識結果' : 'Identification results');
+    layout.drawSectionHeading(
+      lang === 'zh' ? '時間軸事件（此片段）' : 'Timeline events (segment)',
+      { compact: true }
+    );
     if (seg.error) {
       layout.drawTextBlock(seg.error, {
         fontSize: 9,
@@ -437,28 +489,37 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
         marginAfter: 2,
       });
     } else {
+      const segStart = seg.index ?? 0;
+      const segEnd = segStart + windowSec - 1;
+      const segEventRows = mergeDuplicateConsecutiveRows(
+        filterEventsInTimeWindow(timelineEvents, segStart, segEnd)
+      );
       drawTable(pdf, layout, {
         head: [
           [
-            lang === 'zh' ? '物種名稱' : 'Species',
-            lang === 'zh' ? '信心水準' : 'Confidence',
+            lang === 'zh' ? '物種' : 'Species',
+            lang === 'zh' ? '起始' : 'Onset',
+            lang === 'zh' ? '結束' : 'Offset',
+            lang === 'zh' ? '峰值時間' : 'Peak times',
+            lang === 'zh' ? '事件信心' : 'Event confidence',
           ],
         ],
-        body: speciesTableBody(
-          seg.predictions?.top_species ?? [],
-          lang,
-          false,
-          okChunkCount
-        ),
+        body: timelineEventTableBody(segEventRows, lang),
       });
     }
 
     layout.drawSectionHeading(lang === 'zh' ? '片段頻譜圖' : 'Segment spectrogram');
     if (seg.spectrogram) {
+      const segStart = seg.index ?? 0;
+      const segEnd = segStart + windowSec - 1;
+      const segEvents = filterEventsInTimeWindow(timelineEvents, segStart, segEnd);
       const specImg = renderSpectrogramForPdf(seg.spectrogram, {
         lang,
         segmentLabel: String(seg.segmentNum),
         timeRange: seg.timeLabel,
+        durationSec: Math.min(windowSec, Math.max(0.1, durationSec - segStart)),
+        events: segEvents,
+        timeOffsetSec: segStart,
       });
       if (specImg) {
         const imgH = specImg.heightMm;
@@ -535,7 +596,13 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
   layout.markBookmark(lang === 'zh' ? '決策輔助' : 'Decision support');
 
   layout.drawSectionHeading(lang === 'zh' ? '決策輔助' : 'Decision support');
-  const ds = summary?.decision_support;
+  layout.drawTextBlock(
+    lang === 'zh'
+      ? '以下依時間軸事件信心與反卷積結果提供參考，非逐片段模型信心彙整。'
+      : 'Based on timeline event confidence and deconvolution—not per-segment model confidence aggregation.',
+    { fontSize: 8, color: [107, 114, 128], marginAfter: 5 }
+  );
+  const ds = decisionSupport;
   layout.drawStackedFields(
     [
       {

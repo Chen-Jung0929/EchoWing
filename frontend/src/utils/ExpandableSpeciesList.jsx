@@ -11,6 +11,7 @@ export default function ExpandableSpeciesList({
   dict,
   lang,
   isSummary = false,
+  variant = 'default',
   getLocalizedText,
   previewCount = DEFAULT_PREVIEW,
   muted = false,
@@ -47,7 +48,12 @@ export default function ExpandableSpeciesList({
                 {dict.speciesId}: {s.species_id}
               </p>
               <SpeciesWikiLink species={s} lang={lang} dict={dict} />
-              {isSummary && s.vote_count != null && (
+              {variant === 'timeline' && s.peak_time != null && (
+                <p className="mt-1 text-xs text-[var(--c-primary)]/80">
+                  {dict.peakTime}: {s.peak_time}s
+                </p>
+              )}
+              {variant !== 'timeline' && isSummary && s.vote_count != null && (
                 <p className="mt-1 text-xs text-[var(--c-primary)]/80">
                   {dict.voteCount}: {s.vote_count}
                   {s.chunk_indices?.length > 0 && (
@@ -64,7 +70,11 @@ export default function ExpandableSpeciesList({
             </div>
             <div className="shrink-0 text-right">
               <p className="text-xs text-[var(--c-text)]/50">
-                {muted ? dict.referenceOnlyLabel : isSummary ? dict.percent : dict.probability}
+                {muted
+                  ? dict.referenceOnlyLabel
+                  : variant === 'timeline' || isSummary
+                    ? dict.eventConfidence
+                    : dict.probability}
               </p>
               <p
                 className={`text-2xl font-black ${

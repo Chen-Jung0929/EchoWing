@@ -23,7 +23,9 @@ export default function BackendResultPanel({
           chunk={chunk}
           dict={dict}
           lang={lang}
-          isSummary={opts.isSummary}
+          isOverview={opts.isOverview ?? true}
+          speciesVariant={opts.speciesVariant ?? 'timeline'}
+          selectionLabel={opts.selectionLabel ?? ''}
           confidenceThreshold={
             resolveConfidenceThreshold(
               opts.confidenceThreshold ?? result.confidence_threshold
@@ -35,6 +37,8 @@ export default function BackendResultPanel({
             opts.totalDurationSec ?? result.stream_meta?.total_duration_sec ?? 0
           }
           xaiPending={opts.xaiPending ?? result.xai_pending === true}
+          timeline={opts.timeline ?? result.timeline ?? null}
+          hideSpectrogram={opts.hideSpectrogram ?? false}
         />
       )}
     />

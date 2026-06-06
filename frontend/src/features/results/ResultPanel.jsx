@@ -42,7 +42,7 @@ export default function ResultPanel({
         }}
         dict={dict}
         lang={lang}
-        isSummary={false}
+        isOverview
         backendError={predictionResult.backend_error}
         spectrogramByIndex={spectrogramByIndex}
       />

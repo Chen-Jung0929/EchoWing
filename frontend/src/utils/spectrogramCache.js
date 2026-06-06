@@ -78,22 +78,75 @@ export function collectSpectrogramsFromChunks(chunks, cache) {
 }
 
 /**
- * Trim trailing padded frames so the stitched spectrogram matches real audio length.
+ * Trim spectrogram frames so the plot spans exactly durationSec (audio start → end).
  * @param {SpectrogramPayload} spec
  * @param {number} durationSec
  */
 export function trimSpectrogramToDuration(spec, durationSec) {
   if (!spec?.values?.length || !(durationSec > 0)) return spec;
   const estimated = estimateSpectrogramDurationSec(spec);
-  if (estimated <= durationSec + 0.02) return spec;
+  if (estimated <= 0) return spec;
   const keepFrames = Math.max(
     1,
     Math.min(spec.time_frames, Math.round((durationSec / estimated) * spec.time_frames))
   );
+  if (keepFrames === spec.time_frames) return spec;
   return {
     ...spec,
     time_frames: keepFrames,
     values: spec.values.slice(0, keepFrames),
+  };
+}
+
+/**
+ * Stitch display-aligned chunk spectrograms to exactly [0, totalDurationSec).
+ * @param {Array<{ index?: number }>} chunks
+ * @param {Map<number, SpectrogramPayload> | Record<number, SpectrogramPayload>} cache
+ * @param {number} totalDurationSec
+ * @param {number} windowSec
+ * @returns {SpectrogramPayload | null}
+ */
+export function concatSpectrogramsToAudioDuration(
+  chunks,
+  cache,
+  totalDurationSec,
+  windowSec
+) {
+  if (!(totalDurationSec > 0)) {
+    return concatSpectrogramPayloads(collectSpectrogramsFromChunks(chunks, cache));
+  }
+
+  const sorted = (chunks ?? [])
+    .filter((c) => !c.error)
+    .sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
+
+  /** @type {number[][]} */
+  const values = [];
+  let template = null;
+
+  for (const chunk of sorted) {
+    const startSec = chunk.index ?? 0;
+    if (startSec >= totalDurationSec) continue;
+
+    const spec = getSpectrogramFromCache(cache, startSec);
+    if (!spec?.values?.length) continue;
+
+    const segmentSec = Math.min(windowSec, totalDurationSec - startSec);
+    const trimmed = trimSpectrogramToDuration(spec, segmentSec);
+    values.push(...trimmed.values);
+    template = trimmed;
+  }
+
+  if (!values.length || !template) return null;
+
+  return {
+    time_frames: values.length,
+    freq_bins: template.freq_bins,
+    sample_rate: template.sample_rate ?? 32_000,
+    hop_length: template.hop_length ?? 512,
+    n_fft: template.n_fft ?? 2048,
+    fmax_hz: template.fmax_hz ?? 16_000,
+    values,
   };
 }
 

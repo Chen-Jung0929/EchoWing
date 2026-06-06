@@ -18,6 +18,7 @@ export default function SpeciesResultsSection({
   dict,
   lang,
   isSummary = false,
+  variant = 'default',
   getLocalizedText,
   previewCount = 5,
   windowSec = 5,
@@ -36,6 +37,7 @@ export default function SpeciesResultsSection({
         dict={dict}
         lang={lang}
         isSummary={isSummary}
+        variant={variant}
         getLocalizedText={getLocalizedText}
         previewCount={previewCount}
         windowSec={windowSec}
@@ -56,10 +58,14 @@ export default function SpeciesResultsSection({
           />
           <div>
             <p className="font-black text-amber-900 dark:text-amber-100">
-              {formatMessage(dict.lowConfidenceTitle, { threshold: thresholdPct })}
+              {variant === 'timeline'
+                ? dict.timelineLowConfidenceTitle
+                : formatMessage(dict.lowConfidenceTitle, { threshold: thresholdPct })}
             </p>
             <p className="mt-1 text-sm text-amber-900/80 dark:text-amber-100/80">
-              {formatMessage(dict.lowConfidenceBody, { threshold: thresholdPct })}
+              {variant === 'timeline'
+                ? dict.timelineLowConfidenceBody
+                : formatMessage(dict.lowConfidenceBody, { threshold: thresholdPct })}
             </p>
           </div>
         </div>

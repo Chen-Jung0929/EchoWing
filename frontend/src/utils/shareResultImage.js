@@ -1,4 +1,5 @@
 import { drawSpectrogramPayload } from './spectrogramCache';
+import { renderSpectrogramWithLabels } from './spectrogramWithLabels';
 
 /**
  * @param {CanvasRenderingContext2D} ctx
@@ -54,8 +55,46 @@ function roundRect(ctx, x, y, w, h, r) {
 /**
  * @param {CanvasRenderingContext2D} ctx
  * @param {import('./spectrogramCache').SpectrogramPayload} spectrogram
+ * @param {object[]} [events]
+ * @param {number} [durationSec]
+ * @param {(name: object) => string} [resolveName]
+ * @param {number} [timeOffsetSec]
  */
-function drawSpectrogramInset(ctx, spectrogram, x, y, w, h, opacity = 0.42) {
+function drawSpectrogramInset(
+  ctx,
+  spectrogram,
+  x,
+  y,
+  w,
+  h,
+  {
+    opacity = 0.42,
+    events = [],
+    durationSec = 0,
+    resolveName = (name) => name?.zh ?? name?.en ?? '',
+    timeOffsetSec = 0,
+  } = {}
+) {
+  const plotH = Math.max(1, Math.round(h * 0.72));
+  const rendered = renderSpectrogramWithLabels(spectrogram, {
+    events,
+    durationSec: durationSec > 0 ? durationSec : undefined,
+    resolveName,
+    plotWidthPx: Math.max(1, Math.round(w)),
+    plotHeightPx: plotH,
+    showAxes: false,
+    showLegend: false,
+    timeOffsetSec,
+  });
+
+  if (rendered?.canvas) {
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    ctx.drawImage(rendered.canvas, x, y, w, h);
+    ctx.restore();
+    return;
+  }
+
   const off = document.createElement('canvas');
   off.width = Math.max(1, Math.round(w));
   off.height = Math.max(1, Math.round(h));
@@ -79,6 +118,10 @@ function drawSpectrogramInset(ctx, spectrogram, x, y, w, h, opacity = 0.42) {
  * @param {string} opts.url
  * @param {import('../i18n').LocaleMessages} opts.dict
  * @param {import('./spectrogramCache').SpectrogramPayload | null} [opts.spectrogram]
+ * @param {object[]} [opts.events]
+ * @param {number} [opts.durationSec]
+ * @param {(name: object) => string} [opts.resolveName]
+ * @param {number} [opts.timeOffsetSec]
  */
 export function renderShareImageCard({
   title,
@@ -89,6 +132,10 @@ export function renderShareImageCard({
   url,
   dict,
   spectrogram = null,
+  events = [],
+  durationSec = 0,
+  resolveName,
+  timeOffsetSec = 0,
 }) {
   const width = 1080;
   const height = 1080;
@@ -148,7 +195,13 @@ export function renderShareImageCard({
     ctx.save();
     roundRect(ctx, panelX, panelY, panelW, panelH, 28);
     ctx.clip();
-    drawSpectrogramInset(ctx, spectrogram, panelX + 12, panelY + panelH - 168, panelW - 24, 156, 0.28);
+    drawSpectrogramInset(ctx, spectrogram, panelX + 12, panelY + panelH - 168, panelW - 24, 156, {
+      opacity: 0.28,
+      events,
+      durationSec,
+      resolveName,
+      timeOffsetSec,
+    });
     ctx.fillStyle = 'rgba(255, 255, 255, 0.72)';
     ctx.fillRect(panelX + 12, panelY + 12, panelW - 24, panelH - 188);
     ctx.restore();

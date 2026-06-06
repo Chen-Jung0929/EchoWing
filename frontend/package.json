@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test:pdf": "node scripts/validate-pdf-module.mjs"
+    "test:pdf": "node scripts/validate-pdf-module.mjs",
+    "test:timeline": "node scripts/validate-timeline.mjs"
   },
   "dependencies": {
     "jspdf": "^4.2.1",

@@ -2,7 +2,7 @@ import SpectrogramView from '../components/Visualizer/SpectrogramView';
 import { modelWindowSec, segmentNumberFromStart } from './aggregateByVote';
 import {
   collectSpectrogramsFromChunks,
-  concatSpectrogramPayloads,
+  concatSpectrogramsToAudioDuration,
   getSpectrogramFromCache,
   stitchXaiHeatmap,
   trimSpectrogramToDuration,
@@ -17,20 +17,29 @@ export default function ChunkVisualizerSection({
   lang,
   totalDurationSec,
   xaiPending = false,
+  eventMarkers = null,
+  markerDurationSec = 0,
+  selectedEvent = null,
+  onSelectEvent = null,
+  getLocalizedText = null,
+  shellMarginTop = null,
 }) {
   const modelName = resultChunks?.[0]?.model_name ?? chunk?.model_name ?? 'perch';
   const windowSec = modelWindowSec(modelName);
 
   if (isSummary) {
-    const specs = collectSpectrogramsFromChunks(resultChunks, spectrogramCache);
-    let stitched = concatSpectrogramPayloads(specs);
-    if (!stitched) return null;
-
     const durationSec =
       totalDurationSec > 0
         ? totalDurationSec
-        : specs.length * windowSec;
-    stitched = trimSpectrogramToDuration(stitched, durationSec);
+        : collectSpectrogramsFromChunks(resultChunks, spectrogramCache).length * windowSec;
+
+    const stitched = concatSpectrogramsToAudioDuration(
+      resultChunks,
+      spectrogramCache,
+      durationSec,
+      windowSec
+    );
+    if (!stitched) return null;
 
     const stitchedXai = stitchXaiHeatmap(
       resultChunks,
@@ -51,17 +60,30 @@ export default function ChunkVisualizerSection({
       <SpectrogramView
         spectrogram={stitched}
         variant="summary"
-        segmentCount={specs.length}
+        segmentCount={collectSpectrogramsFromChunks(resultChunks, spectrogramCache).length}
         dict={dict}
         lang={lang}
         xaiHeatmap={stitchedXai}
         xaiGenerating={summaryXaiGenerating}
+        eventMarkers={eventMarkers}
+        markerDurationSec={markerDurationSec}
+        selectedEvent={selectedEvent}
+        onSelectEvent={onSelectEvent}
+        getLocalizedText={getLocalizedText}
+        shellMarginTop={shellMarginTop}
       />
     );
   }
 
-  const spec = getSpectrogramFromCache(spectrogramCache, chunk?.index);
-  if (!spec) return null;
+  const specRaw = getSpectrogramFromCache(spectrogramCache, chunk?.index);
+  if (!specRaw) return null;
+
+  const chunkStartSec = chunk?.index ?? 0;
+  const chunkDurationSec =
+    totalDurationSec > 0
+      ? Math.min(windowSec, Math.max(0, totalDurationSec - chunkStartSec))
+      : windowSec;
+  const spec = trimSpectrogramToDuration(specRaw, chunkDurationSec);
 
   const xaiHeatmap = chunk?.predictions?.xai_heatmap ?? null;
   const displaySegmentIndex = segmentNumberFromStart(chunk?.index ?? 0, windowSec) - 1;
@@ -101,11 +123,14 @@ export function buildReportPayload({
       : String((okChunks?.length ?? 1) * windowSec);
 
   if (isSummaryPage && summaryChunk) {
+    const durationNum = totalDurationSec > 0 ? totalDurationSec : 0;
+    const stitched = concatSpectrogramsToAudioDuration(
+      okChunks,
+      spectrogramCache,
+      durationNum,
+      windowSec
+    );
     const specs = collectSpectrogramsFromChunks(okChunks, spectrogramCache);
-    let stitched = concatSpectrogramPayloads(specs);
-    if (stitched && totalDurationSec > 0) {
-      stitched = trimSpectrogramToDuration(stitched, totalDurationSec);
-    }
     return {
       data: {
         analysis_id: `summary_${Date.now()}`,

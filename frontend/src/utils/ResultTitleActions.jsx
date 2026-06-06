@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { MdSave, MdPrint, MdShare, MdClose, MdMoreHoriz, MdPlace } from 'react-icons/md';
+import { MdSave, MdDownload, MdShare, MdClose, MdMoreHoriz, MdPlace } from 'react-icons/md';
 import ShareResultMenu from './ShareResultMenu';
 
 const FAB_BG = {
@@ -49,17 +49,17 @@ function SaveTextButton({ label, labelDone, onSave, saved, className = '' }) {
   );
 }
 
-function PrintButton({ ariaLabel, onPrint, className = '' }) {
+function DownloadButton({ ariaLabel, onDownload, className = '' }) {
   const [busy, setBusy] = useState(false);
 
   const handleClick = async () => {
-    if (!onPrint || busy) return;
+    if (!onDownload || busy) return;
     setBusy(true);
     try {
-      await onPrint();
+      await onDownload();
     } catch (err) {
       if (err?.name !== 'AbortError') {
-        console.error('[Print]', err);
+        console.error('[Download PDF]', err);
       }
     } finally {
       setBusy(false);
@@ -70,12 +70,12 @@ function PrintButton({ ariaLabel, onPrint, className = '' }) {
     <button
       type="button"
       onClick={handleClick}
-      disabled={!onPrint || busy}
+      disabled={!onDownload || busy}
       aria-label={ariaLabel}
       className={`${FAB_BTN} h-12 w-12 ${className}`}
       style={FAB_BG}
     >
-      <MdPrint color={FAB_ICON_COLOR} size={FAB_ICON_SIZE} aria-hidden />
+      <MdDownload color={FAB_ICON_COLOR} size={FAB_ICON_SIZE} aria-hidden />
     </button>
   );
 }
@@ -98,7 +98,7 @@ function ShareFabButton({ ariaLabel, onClick, disabled = false, className = '' }
 export function ResultFloatingActions({
   dict,
   onSave,
-  onPrint,
+  onDownload,
   getSharePayload,
   surveySaved,
   actionsDisabled = false,
@@ -200,7 +200,7 @@ export function ResultFloatingActions({
                 <MdPlace color={FAB_ICON_COLOR} size={FAB_ICON_SIZE} aria-hidden />
               </button>
             ) : null}
-            <PrintButton ariaLabel={dict.printResult} onPrint={onPrint} />
+            <DownloadButton ariaLabel={dict.downloadResult} onDownload={onDownload} />
           </>
         ) : null}
       </div>
@@ -219,7 +219,7 @@ export function ResultFloatingActions({
 export function ResultTitleBar({
   dict,
   onSave,
-  onPrint,
+  onDownload,
   getSharePayload,
   surveySaved,
   actionsDisabled = false,
@@ -239,7 +239,7 @@ export function ResultTitleBar({
       <ResultFloatingActions
         dict={dict}
         onSave={onSave}
-        onPrint={onPrint}
+        onDownload={onDownload}
         getSharePayload={getSharePayload}
         surveySaved={surveySaved}
         actionsDisabled={actionsDisabled}

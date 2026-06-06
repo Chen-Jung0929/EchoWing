@@ -34,6 +34,7 @@ class Settings(BaseSettings):
 
     sample_rate: int = 32_000 # Standard resampling rate
     chunk_duration_sec: int = 5 # Default max chunk. Will be adapted per model.
+    inference_stride_sec: int = 1 # Sliding-window step (seconds)
     batch_size: int = 16
     num_threads: int = min(4, os.cpu_count() or 1)
 

@@ -63,6 +63,18 @@ export default function DownloadMetadataModal({
       .finally(() => setLocating(false));
   }, [dict.locationUnsupported, dict.locationError]);
 
+  const handleMapPickConfirm = useCallback(({ latitude, longitude, location }) => {
+    setLocationError('');
+    setForm((prev) => ({
+      ...prev,
+      overview: {
+        ...prev.overview,
+        coordinates: { latitude, longitude },
+        location,
+      },
+    }));
+  }, []);
+
   useEffect(() => {
     if (!open) {
       wasOpenRef.current = false;
@@ -133,18 +145,6 @@ export default function DownloadMetadataModal({
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [open, onClose]);
-
-  const handleMapPickConfirm = useCallback(({ latitude, longitude, location }) => {
-    setLocationError('');
-    setForm((prev) => ({
-      ...prev,
-      overview: {
-        ...prev.overview,
-        coordinates: { latitude, longitude },
-        location,
-      },
-    }));
-  }, []);
 
   if (!open || typeof document === 'undefined') return null;
 

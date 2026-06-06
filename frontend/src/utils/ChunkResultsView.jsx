@@ -1,16 +1,15 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { formatMessage } from '../i18n';
 import DownloadMetadataModal from '../components/DownloadMetadataModal/DownloadMetadataModal';
 import NearbyRecordsModal from '../components/NearbyRecordsModal/NearbyRecordsModal';
 import ReportGenerator from '../components/ReportGenerator/ReportGenerator';
+import TimelineSection from '../components/Timeline/TimelineSection';
+import ChunkVisualizerSection from './ChunkVisualizerSection';
 import {
   aggregateChunksByVote,
-  chunkTimeRangeLabel,
   displayChunksForModel,
   modelWindowSec,
   resolveConfidenceThreshold,
-  segmentNumberFromStart,
 } from './aggregateByVote';
 import { buildFullReportModel } from './buildFullReportModel';
 import { buildSurveySheetPayload } from './buildSurveySheetPayload';
@@ -18,8 +17,13 @@ import { ResultTitleBar } from './ResultTitleActions';
 import { buildResultShareContent } from './shareResult';
 import { getModelDisplayLabel, resolveResultModelName } from './modelLabel';
 import { isSurveyMetadataSaved } from './surveyMetadata';
-import { chunkIdentity } from './chunkIdentity';
 import { isSurveySheetConfigured, submitSurveyRecord } from '../services/surveySheet';
+import {
+  buildTimelineSpeciesSummary,
+  displayChunkForTime,
+  timelineSelectionLabel,
+} from './timeline/timelineNavigation';
+import { buildTimelineDecisionSupport } from './timeline/buildTimelineDecisionSupport';
 
 function formatAnalyzedAt(isoString, lang) {
   if (!isoString) return '—';
@@ -37,67 +41,6 @@ function formatAnalyzedAt(isoString, lang) {
   }
 }
 
-function SpeciesTooltipPortal({
-  anchorRect,
-  title,
-  items,
-  getLocalizedText,
-  lang,
-  dict,
-  isReference = false,
-}) {
-  if (!anchorRect) return null;
-
-  const top = anchorRect.bottom + 8;
-  const centerX = anchorRect.left + anchorRect.width / 2;
-  const margin = 140;
-  const left = Math.min(
-    Math.max(centerX, margin),
-    typeof window !== 'undefined' ? window.innerWidth - margin : centerX
-  );
-
-  const content = !items?.length ? (
-    <p className="text-[var(--c-text)]/50">{dict.segmentLowConfidenceHint}</p>
-  ) : (
-    <>
-      <p className="font-black text-[var(--c-text)]/70 mb-2 border-b border-[var(--c-text)]/10 pb-1.5">
-        {title}
-        {isReference ? (
-          <span className="ml-1 font-normal text-[var(--c-text)]/45">
-            · {dict.referenceOnlyLabel}
-          </span>
-        ) : null}
-      </p>
-      <ul className="space-y-1.5">
-        {items.slice(0, 5).map((sp) => (
-          <li
-            key={sp.species_id}
-            className="flex justify-between gap-2 text-[var(--c-text)]"
-          >
-            <span className="truncate font-medium">
-              {getLocalizedText(sp.name, lang)}
-            </span>
-            <span className="shrink-0 font-black text-[var(--c-primary)]">
-              {Math.round((sp.probability ?? 0) * 100)}%
-            </span>
-          </li>
-        ))}
-      </ul>
-    </>
-  );
-
-  return createPortal(
-    <div
-      role="tooltip"
-      className="pointer-events-none fixed z-[200] w-64 max-w-[calc(100vw-1.5rem)] -translate-x-1/2 rounded-xl border border-[var(--c-text)]/15 bg-[var(--c-card)] px-3 py-2.5 text-xs shadow-xl"
-      style={{ top, left }}
-    >
-      {content}
-    </div>,
-    document.body
-  );
-}
-
 function ResultBadge({ children }) {
   return (
     <span className="inline-flex items-center rounded-full border border-[var(--c-text)]/15 bg-[var(--c-bg)]/90 px-3 py-1 text-xs font-bold text-[var(--c-text)]/80">
@@ -106,77 +49,8 @@ function ResultBadge({ children }) {
   );
 }
 
-function SegmentTab({
-  label,
-  ariaLabel,
-  isActive,
-  failed,
-  lowConfidence,
-  onClick,
-  hoverTitle,
-  hoverSpecies,
-  hoverIsReference,
-  getLocalizedText,
-  lang,
-  dict,
-}) {
-  const btnRef = useRef(null);
-  const [tipRect, setTipRect] = useState(null);
-
-  const showTip = () => {
-    if (hoverSpecies == null && !lowConfidence) return;
-    if (!btnRef.current) return;
-    setTipRect(btnRef.current.getBoundingClientRect());
-  };
-
-  const hideTip = () => setTipRect(null);
-
-  return (
-    <>
-      <button
-        ref={btnRef}
-        type="button"
-        onClick={onClick}
-        aria-label={ariaLabel ?? label}
-        aria-current={isActive ? 'true' : undefined}
-        onMouseEnter={showTip}
-        onMouseLeave={hideTip}
-        onFocus={showTip}
-        onBlur={hideTip}
-        className={`min-w-0 w-full rounded-md border py-1.5 text-center text-[11px] font-bold leading-tight transition-all sm:text-xs ${
-          isActive
-            ? 'bg-[var(--c-primary)] text-[var(--c-bg)] border-transparent shadow-sm'
-            : failed
-              ? 'bg-red-500/10 text-red-600 border-red-500/30'
-              : lowConfidence
-                ? 'bg-amber-500/10 text-amber-800 border-amber-500/30 dark:text-amber-200'
-                : 'bg-[var(--c-bg)]/80 text-[var(--c-text)]/70 border-[var(--c-text)]/10 hover:border-[var(--c-primary)]/40'
-        }`}
-      >
-        <span className="block truncate px-0.5">{label}</span>
-        {failed ? <span className="text-[10px] opacity-80">!</span> : null}
-        {!failed && lowConfidence ? (
-          <span className="text-[10px] opacity-80">?</span>
-        ) : null}
-      </button>
-      {tipRect && (
-        <SpeciesTooltipPortal
-          anchorRect={tipRect}
-          title={hoverTitle}
-          items={hoverSpecies}
-          getLocalizedText={getLocalizedText}
-          lang={lang}
-          dict={dict}
-          isReference={hoverIsReference}
-        />
-      )}
-    </>
-  );
-}
-
 /**
- * 總覽 + 分段 tab 切換結果視圖。
- * Part A（標題、徽章、tabs）在切換分頁時固定顯示於上方。
+ * 以 Canvas 時間軸 + 事件表導覽結果（取代分段 tab 與投票聚合 UI）。
  */
 export default function ChunkResultsView({
   result,
@@ -195,8 +69,8 @@ export default function ChunkResultsView({
     () => displayChunksForModel(allChunks, modelName),
     [allChunks, modelName]
   );
-  const tabCount = 1 + chunks.length;
-  const [pageIndex, setPageIndex] = useState(0);
+  const timeline = result.timeline ?? null;
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [surveyMetadata, setSurveyMetadata] = useState(null);
   const [saveVersion, setSaveVersion] = useState(0);
@@ -206,11 +80,69 @@ export default function ChunkResultsView({
   const [modalConfirmLabel, setModalConfirmLabel] = useState(null);
   const reportRef = useRef(null);
   const surveyMetadataRef = useRef(null);
-  const pendingPrintRef = useRef(false);
-  const printResolveRef = useRef(null);
-  const printRejectRef = useRef(null);
+  const pendingDownloadRef = useRef(false);
+  const downloadResolveRef = useRef(null);
+  const downloadRejectRef = useRef(null);
 
-  const summary = useMemo(
+  const okChunks = chunks.filter((c) => !c.error);
+  const isOverview = !selectedEvent;
+  const activeChunk = useMemo(() => {
+    const decisionOpts = { windowSec, selectedEvent: selectedEvent ?? null };
+    const decisionSupport = buildTimelineDecisionSupport(timeline, decisionOpts);
+
+    if (selectedEvent) {
+      const chunk = displayChunkForTime(chunks, selectedEvent.peakTime, windowSec);
+      if (!chunk) return null;
+      return {
+        ...chunk,
+        predictions: {
+          top_species: [
+            {
+              species_id: selectedEvent.species_id,
+              name: selectedEvent.name,
+              scientific_name: selectedEvent.scientific_name ?? '',
+              wiki_url_zh: selectedEvent.wiki_url_zh ?? null,
+              wiki_url_en: selectedEvent.wiki_url_en ?? null,
+              probability: selectedEvent.confidence ?? 0,
+              peak_time: selectedEvent.peakTime,
+            },
+          ],
+          top_classes: chunk.predictions?.top_classes ?? [],
+          meets_confidence_threshold: true,
+          reference_species: [],
+        },
+        decision_support: decisionSupport,
+      };
+    }
+    const firstOk = okChunks[0];
+    if (!firstOk) return null;
+    const timelineSpecies = buildTimelineSpeciesSummary(timeline);
+    return {
+      ...firstOk,
+      index: -1,
+      predictions: {
+        top_species: timelineSpecies,
+        top_classes: [],
+        meets_confidence_threshold: timelineSpecies.length > 0,
+        reference_species: [],
+      },
+      decision_support: decisionSupport,
+    };
+  }, [selectedEvent, chunks, windowSec, okChunks, timeline]);
+
+  const filename = result.original_filename?.trim() || '—';
+  const chunkIndices = useMemo(() => chunks.map((c) => c.index), [chunks]);
+  const totalDurationSec = result.stream_meta?.total_duration_sec ?? 0;
+  const eventCount = timeline?.species_events?.length ?? 0;
+  const markerDurationSec = timeline?.duration_sec ?? totalDurationSec;
+
+  const summarySpectrogramChunk = useMemo(() => {
+    const firstOk = okChunks[0];
+    if (!firstOk) return null;
+    return { ...firstOk, index: -1 };
+  }, [okChunks]);
+
+  const summaryForReport = useMemo(
     () =>
       aggregateChunksByVote(chunks, {
         confidenceThreshold: resolveConfidenceThreshold(result.confidence_threshold),
@@ -218,23 +150,6 @@ export default function ChunkResultsView({
       }),
     [chunks, result.confidence_threshold, windowSec]
   );
-  const okChunks = chunks.filter((c) => !c.error);
-
-  const isSummaryPage = pageIndex === 0;
-  const activeChunk = !isSummaryPage ? chunks[pageIndex - 1] : null;
-
-  const filename = result.original_filename?.trim() || '—';
-
-  const summaryChunk = summary
-    ? {
-        index: -1,
-        predictions: summary.predictions,
-        decision_support: summary.decision_support,
-      }
-    : null;
-
-  const chunkIndices = useMemo(() => chunks.map((c) => c.index), [chunks]);
-  const totalDurationSec = result.stream_meta?.total_duration_sec ?? 0;
 
   const fullReportModel = useMemo(
     () =>
@@ -248,6 +163,7 @@ export default function ChunkResultsView({
         modelName,
         windowSec,
         totalDurationSec,
+        timeline,
       }),
     [
       result,
@@ -258,24 +174,34 @@ export default function ChunkResultsView({
       modelName,
       windowSec,
       totalDurationSec,
+      timeline,
     ]
   );
 
-  const runPdfPrint = useCallback(async () => {
+  const selectionLabel = timelineSelectionLabel(
+    selectedEvent,
+    windowSec,
+    dict,
+    getLocalizedText,
+    lang
+  );
+
+  const runPdfDownload = useCallback(async () => {
     await new Promise((resolve) => {
       requestAnimationFrame(() => requestAnimationFrame(resolve));
     });
-    if (!reportRef.current?.printPdf) {
+    if (!reportRef.current?.downloadPdf) {
       throw new Error('PDF report is not ready');
     }
-    await reportRef.current.printPdf();
+    await reportRef.current.downloadPdf();
   }, []);
 
   const getSharePayload = useCallback(
     () =>
       buildResultShareContent({
-        pageIndex,
-        summary,
+        selectedEvent,
+        timeline,
+        summary: summaryForReport,
         chunks,
         filename,
         lang,
@@ -285,10 +211,12 @@ export default function ChunkResultsView({
         spectrogramCache: spectrogramByIndex,
         totalDurationSec,
         modelName,
+        getLocalizedText,
       }),
     [
-      pageIndex,
-      summary,
+      selectedEvent,
+      timeline,
+      summaryForReport,
       chunks,
       filename,
       lang,
@@ -298,23 +226,24 @@ export default function ChunkResultsView({
       spectrogramByIndex,
       totalDurationSec,
       modelName,
+      getLocalizedText,
     ]
   );
 
   const handleSaveRequest = useCallback(() => {
-    pendingPrintRef.current = false;
+    pendingDownloadRef.current = false;
     setModalConfirmLabel(dict.saveModalConfirm);
     setSaveModalOpen(true);
   }, [dict.saveModalConfirm]);
 
   const handleSaveModalClose = useCallback(() => {
     setSaveModalOpen(false);
-    if (pendingPrintRef.current) {
-      printRejectRef.current?.(new DOMException('Cancelled', 'AbortError'));
-      printResolveRef.current = null;
-      printRejectRef.current = null;
+    if (pendingDownloadRef.current) {
+      downloadRejectRef.current?.(new DOMException('Cancelled', 'AbortError'));
+      downloadResolveRef.current = null;
+      downloadRejectRef.current = null;
     }
-    pendingPrintRef.current = false;
+    pendingDownloadRef.current = false;
   }, []);
 
   const uploadSurveyToSheet = useCallback(
@@ -360,59 +289,45 @@ export default function ChunkResultsView({
       setSurveyMetadata(metadata);
       surveyMetadataRef.current = metadata;
       setSaveVersion((v) => v + 1);
-      const shouldPrint = pendingPrintRef.current;
-      pendingPrintRef.current = false;
+      const shouldDownload = pendingDownloadRef.current;
+      pendingDownloadRef.current = false;
       await new Promise((resolve) => {
         requestAnimationFrame(() => requestAnimationFrame(resolve));
       });
-      if (shouldPrint) {
+      if (shouldDownload) {
         try {
-          await runPdfPrint();
-          printResolveRef.current?.();
+          await runPdfDownload();
+          downloadResolveRef.current?.();
         } catch (err) {
-          printRejectRef.current?.(err);
+          downloadRejectRef.current?.(err);
           throw err;
         } finally {
-          printResolveRef.current = null;
-          printRejectRef.current = null;
+          downloadResolveRef.current = null;
+          downloadRejectRef.current = null;
         }
       }
-      uploadSurveyToSheet(metadata).catch(() => {
-        // Error state is stored in sheetUploadStatus / sheetUploadError.
-      });
+      uploadSurveyToSheet(metadata).catch(() => {});
     },
-    [runPdfPrint, uploadSurveyToSheet]
+    [runPdfDownload, uploadSurveyToSheet]
   );
 
-  const handlePrintResult = useCallback(() => {
+  const handleDownloadResult = useCallback(() => {
     if (isSurveyMetadataSaved(surveyMetadata)) {
-      return runPdfPrint();
+      return runPdfDownload();
     }
     return new Promise((resolve, reject) => {
-      printResolveRef.current = resolve;
-      printRejectRef.current = reject;
-      pendingPrintRef.current = true;
-      setModalConfirmLabel(dict.printModalConfirm);
+      downloadResolveRef.current = resolve;
+      downloadRejectRef.current = reject;
+      pendingDownloadRef.current = true;
+      setModalConfirmLabel(dict.downloadModalConfirm);
       setSaveModalOpen(true);
     });
-  }, [surveyMetadata, runPdfPrint, dict.printModalConfirm]);
+  }, [surveyMetadata, runPdfDownload, dict.downloadModalConfirm]);
 
   const confidenceThreshold = resolveConfidenceThreshold(result.confidence_threshold);
   const thresholdPct = Math.round(confidenceThreshold * 100);
   const xaiPending = result.xai_pending === true;
   const actionsDisabled = xaiPending;
-
-  const summaryHoverSpecies = summary?.predictions?.top_species;
-  const summaryLowConfidence = summary?.predictions?.meets_confidence_threshold === false;
-
-  const tabGridStyle = useMemo(
-    () => ({
-      display: 'grid',
-      gridTemplateColumns: `repeat(${tabCount}, minmax(0, 1fr))`,
-      gap: '4px',
-    }),
-    [tabCount]
-  );
 
   const nearbyInitialCoordinates = useMemo(
     () => surveyMetadata?.overview?.coordinates ?? null,
@@ -420,6 +335,19 @@ export default function ChunkResultsView({
   );
 
   const showNearbyFab = isSurveySheetConfigured();
+
+  const handleSelectEvent = useCallback((ev) => {
+    setSelectedEvent((prev) => {
+      if (!ev) return null;
+      if (!prev) return ev;
+      const sameSpecies = prev.species_id === ev.species_id;
+      const prevInEv = ev.peakTimes?.includes(prev.peakTime);
+      const evInPrev = prev.peakTimes?.includes(ev.peakTime);
+      const samePeak = prev.peakTime === ev.peakTime;
+      if (sameSpecies && (samePeak || prevInEv || evInPrev)) return null;
+      return ev;
+    });
+  }, []);
 
   return (
     <div className="w-full max-w-4xl bg-[var(--c-card)]/82 backdrop-blur-md p-8 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-[var(--c-text)]/5">
@@ -449,13 +377,12 @@ export default function ChunkResultsView({
         onClose={() => setNearbyModalOpen(false)}
       />
 
-      {/* Part A — overflow-visible 避免裁切 tooltip */}
       <div className="sticky top-24 z-10 -mx-2 px-2 py-4 mb-2 overflow-visible bg-[var(--c-card)]/95 backdrop-blur-md border-b border-[var(--c-text)]/10">
-        <header className="mb-4 mt-2">
+        <header className="mb-2 mt-2">
           <ResultTitleBar
             dict={dict}
             onSave={handleSaveRequest}
-            onPrint={handlePrintResult}
+            onDownload={handleDownloadResult}
             getSharePayload={getSharePayload}
             surveySaved={saveVersion}
             actionsDisabled={actionsDisabled}
@@ -485,13 +412,12 @@ export default function ChunkResultsView({
             </p>
           </details>
 
-
           <div className="flex flex-wrap items-center justify-center gap-2 mt-4">
             <ResultBadge>
-              {dict.chunksCount} · {chunks.length}
+              {dict.timelineEventCount} · {eventCount}
             </ResultBadge>
             <ResultBadge>
-              {dict.validChunks} · {summary?.validChunkCount ?? okChunks.length}
+              {dict.validChunks} · {okChunks.length}
             </ResultBadge>
             <ResultBadge>
               {formatMessage(dict.confidenceThresholdBadge, { threshold: thresholdPct })}
@@ -512,97 +438,68 @@ export default function ChunkResultsView({
             </ul>
           </section>
         )}
+      </div>
 
-        <nav
-          className="w-full overflow-visible pb-1"
-          style={tabGridStyle}
-          aria-label={dict.resultTitle}
-        >
-          <SegmentTab
-            key="summary"
-            label={dict.summaryTabShort}
-            ariaLabel={dict.summaryLabel}
-            isActive={pageIndex === 0}
-            failed={false}
-            lowConfidence={summaryLowConfidence}
-            onClick={() => setPageIndex(0)}
-            hoverTitle={dict.topSpecies}
-            hoverSpecies={summaryHoverSpecies}
-            hoverIsReference={false}
+      {summarySpectrogramChunk ? (
+        <ChunkVisualizerSection
+          chunk={summarySpectrogramChunk}
+          isSummary
+          resultChunks={chunks}
+          spectrogramCache={spectrogramByIndex}
+          dict={dict}
+          lang={lang}
+          totalDurationSec={totalDurationSec > 0 ? totalDurationSec : 0}
+          xaiPending={xaiPending}
+          eventMarkers={timeline?.species_events ?? []}
+          markerDurationSec={markerDurationSec}
+          selectedEvent={selectedEvent}
+          onSelectEvent={handleSelectEvent}
+          getLocalizedText={getLocalizedText}
+          shellMarginTop={0}
+        />
+      ) : null}
+
+      <div className="mb-4">
+        {timeline ? (
+          <TimelineSection
+            timeline={timeline}
+            dict={dict}
             getLocalizedText={getLocalizedText}
             lang={lang}
-            dict={dict}
+            selectedEvent={selectedEvent}
+            onSelectEvent={handleSelectEvent}
           />
-          {chunks.map((chunk, i) => {
-            const page = i + 1;
-            const segNum = segmentNumberFromStart(chunk.index, windowSec);
-            const timeRange = chunkTimeRangeLabel(chunk.index, windowSec);
-            const fullLabel = `${dict.chunkLabel} ${segNum}`;
-            const preds = chunk.predictions;
-            const meets = preds?.meets_confidence_threshold ?? (preds?.top_species?.length > 0);
-            const hoverSpecies = chunk.error
-              ? []
-              : meets
-                ? preds?.top_species
-                : preds?.reference_species;
-            return (
-              <SegmentTab
-                key={`segment-${i}-${chunkIdentity(chunk, i)}`}
-                label={String(segNum)}
-                ariaLabel={`${fullLabel} · ${timeRange}`}
-                isActive={pageIndex === page}
-                failed={Boolean(chunk.error)}
-                lowConfidence={!chunk.error && preds && !meets}
-                onClick={() => setPageIndex(page)}
-                hoverTitle={`${fullLabel} · ${timeRange}`}
-                hoverSpecies={hoverSpecies}
-                hoverIsReference={!chunk.error && preds && !meets}
-                getLocalizedText={getLocalizedText}
-                lang={lang}
-                dict={dict}
-              />
-            );
-          })}
-        </nav>
+        ) : (
+          <p className="text-sm text-center text-[var(--c-text)]/50 py-4">
+            {dict.timelineNoData}
+          </p>
+        )}
+
         <p className="mt-2 text-center text-[10px] text-[var(--c-text)]/40">
-          {dict.tabHoverHint}
+          {dict.timelineNavHint}
         </p>
       </div>
 
-      {/* Part B */}
       <div className="mt-4 min-h-[12rem]">
-        {isSummaryPage ? (
-          summaryChunk ? (
-            <div>
-              <p className="text-xs text-[var(--c-text)]/50 mb-4 text-center">
-                {dict.voteModeHint}
-              </p>
-              {renderChunkBody(summaryChunk, {
-                isSummary: true,
-                confidenceThreshold,
-                spectrogramByIndex,
-                resultChunks: chunks,
-                totalDurationSec,
-                xaiPending,
-              })}
-            </div>
-          ) : (
-            <p className="text-center text-red-500 py-8">{dict.errorTitle}</p>
-          )
-        ) : activeChunk?.error ? (
+        {activeChunk?.error ? (
           <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-6 text-center">
             <p className="text-red-500 font-bold">{dict.decodeFailed}</p>
             <p className="text-sm text-[var(--c-text)]/60 mt-2">{activeChunk.error}</p>
           </div>
-        ) : (
+        ) : activeChunk ? (
           renderChunkBody(activeChunk, {
-            isSummary: false,
+            isOverview,
             confidenceThreshold,
             spectrogramByIndex,
             resultChunks: chunks,
             totalDurationSec,
             xaiPending,
+            speciesVariant: timeline ? 'timeline' : 'default',
+            selectionLabel,
+            hideSpectrogram: true,
           })
+        ) : (
+          <p className="text-center text-red-500 py-8">{dict.errorTitle}</p>
         )}
       </div>
 

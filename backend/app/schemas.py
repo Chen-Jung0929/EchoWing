@@ -10,7 +10,7 @@ Each chunk entry matches a single perch_result object (without status / chunk_du
 
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -79,3 +79,22 @@ class PredictResponse(BaseModel):
 class ErrorBody(BaseModel):
     message: str
     detail: Any | None = None
+
+
+class TimelineSpeciesCurve(BaseModel):
+    species_id: str
+    name: ZhAndEn
+    scientific_name: str = ""
+    observed_evidence: list[float]
+    latent_activity: list[float]
+
+
+class TimelineDeconvPayload(BaseModel):
+    event: Literal["timeline_deconv"] = "timeline_deconv"
+    duration_sec: float
+    window_sec: int
+    stride_sec: int
+    window_starts: list[int]
+    coverage: list[float]
+    boundary_low_sec: int
+    species_curves: list[TimelineSpeciesCurve]

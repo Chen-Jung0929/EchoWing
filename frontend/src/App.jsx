@@ -10,6 +10,8 @@ import {
 } from './config/confidenceThreshold';
 import { buildSpectrogramCache } from './utils/spectrogramCache';
 import { mergeChunkXai, upsertChunk } from './utils/chunkIdentity';
+import { buildTimelineModel } from './utils/timeline/buildTimelineModel';
+import { ensureTimeline } from './utils/timeline/ensureTimeline';
 import ResultPanel from './features/results/ResultPanel';
 import {
   MdClose,
@@ -284,23 +286,26 @@ export default function App() {
       setPredictionResult(baseResult);
       
       let receivedAnyChunk = false;
-      
+      let xaiPending = false;
+
       await analyzeAudioStream(selectedFile, { name: selectedFile.name }, {
         modelSelection: selectedModel,
         signal,
         onChunk: (chunkData) => {
           if (chunkData.event === 'init') {
+            xaiPending = Boolean(chunkData.xai_pending);
             setPredictionResult((prev) => ({
               ...prev,
               stream_meta: {
                 total_duration_sec: chunkData.total_duration_sec,
                 model: chunkData.model,
                 window_sec: chunkData.window_sec,
+                stride_sec: chunkData.stride_sec,
               },
               confidence_threshold: resolveConfidenceThreshold(
                 chunkData.confidence_threshold ?? prev.confidence_threshold
               ),
-              xai_pending: Boolean(chunkData.xai_pending),
+              xai_pending: xaiPending,
             }));
             return;
           }
@@ -314,10 +319,28 @@ export default function App() {
           }
 
           if (chunkData.event === 'xai_done') {
+            xaiPending = false;
             setPredictionResult((prev) => ({
               ...prev,
               xai_pending: false,
             }));
+            setLoadingHint('');
+            setViewState('result');
+            return;
+          }
+
+          if (chunkData.event === 'timeline_deconv') {
+            if (xaiPending) {
+              setLoadingHint(dict.xaiGenerating);
+            }
+            setPredictionResult((prev) => {
+              const fromServer = buildTimelineModel(chunkData);
+              const timeline =
+                fromServer?.species?.length
+                  ? fromServer
+                  : ensureTimeline({ ...prev, timeline: fromServer });
+              return { ...prev, timeline };
+            });
             return;
           }
 
@@ -327,9 +350,9 @@ export default function App() {
             return;
           }
 
-          if (!receivedAnyChunk) {
-            setViewState('result');
-            receivedAnyChunk = true;
+          receivedAnyChunk = true;
+          if (xaiPending) {
+            setLoadingHint(dict.xaiGenerating);
           }
 
           setPredictionResult((prev) => ({
@@ -349,9 +372,18 @@ export default function App() {
         },
       });
 
-      setPredictionResult((prev) =>
-        prev?.xai_pending ? { ...prev, xai_pending: false } : prev
-      );
+      setPredictionResult((prev) => {
+        const next = prev?.xai_pending ? { ...prev, xai_pending: false } : { ...prev };
+        const timeline = ensureTimeline(next);
+        if (timeline && !next.timeline?.species?.length) {
+          return { ...next, timeline };
+        }
+        return next;
+      });
+
+      if (receivedAnyChunk) {
+        setViewState('result');
+      }
       
       
     } catch (backendError) {

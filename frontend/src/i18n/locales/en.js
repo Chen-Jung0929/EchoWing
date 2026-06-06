@@ -87,7 +87,7 @@ const en = {
   spectrogramXaiHint:
     'Time vs Mel frequency; orange spikes on the semi-transparent strip below show XAI time importance (taller = more influential)',
   xaiGenerating: 'Generating XAI…',
-  xaiGeneratingHint: 'Computing explainability heatmaps; save, share, and print unlock when done',
+  xaiGeneratingHint: 'Computing explainability heatmaps; save, share, and download unlock when done',
   attentionBinsLabel: 'time windows',
   collapseAttention: 'Collapse attention weights',
   expandAttention: 'Expand attention weights',
@@ -129,6 +129,29 @@ const en = {
   confidenceThresholdBadge: 'Threshold {threshold}%',
   segmentLowConfidence: 'Low',
   segmentLowConfidenceHint: 'Below confidence threshold',
+  timelineTitle: 'Species activity timeline',
+  timelineHint:
+    'Latent activity from sparse deconvolution; only species with event confidence ≥10% are shown (≥20% in boundary zones). Hatched edges have lower timing confidence.',
+  timelineNoData: 'No timeline data yet',
+  eventTableTitle: 'Species events',
+  eventTableNoData: 'No distinct species events detected',
+  onset: 'Onset',
+  offset: 'Offset',
+  peakTime: 'Peak time',
+  eventConfidence: 'Event confidence',
+  boundaryLowConfidence: 'Boundary low confidence',
+  boundaryZoneHint:
+    'Hatched edge zones have fewer overlapping analysis windows; timing confidence is lower there.',
+  timelinePanHint: 'Drag horizontally to pan',
+  timelineOverviewLabel: 'Full recording',
+  timelineNavHint:
+    'Click an event row or timeline peak to inspect that time range; click again to clear.',
+  timelineEventCount: 'Events',
+  timelineLowConfidenceTitle: 'No clear species events detected',
+  timelineLowConfidenceBody:
+    'Timeline events did not meet confidence thresholds (general ≥10%, recording boundary ≥20%). Review the spectrogram or try re-recording.',
+  shareTimelineLine: 'Timeline: {species} and {events} detected events',
+  shareEventLine: 'Event: {species} · peak {peak}s · confidence {confidence}%',
   expandSpeciesList: 'Show {count} more species',
   collapseSpeciesList: 'Show top 5 only',
   wikiLink: 'Search on iNaturalist',

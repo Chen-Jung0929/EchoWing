@@ -1,4 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  buildEventRangeSegments,
+  segmentMatchesSelection,
+} from '../../utils/timeline/eventRangeSegments.js';
 import { createPortal } from 'react-dom';
 import { MdClose, MdZoomIn } from 'react-icons/md';
 import {
@@ -17,6 +21,105 @@ const ENLARGE_CANVAS_HEIGHT = 420;
 const ENLARGE_XAI_STRIP_HEIGHT = 48;
 const ENLARGE_PX_PER_FRAME = 3;
 
+function splitHintBySemicolon(text) {
+  return String(text ?? '')
+    .split(/[;；]/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function buildSpectrogramHintLines(hint, { enlargePrefix = '' } = {}) {
+  const segments = splitHintBySemicolon(hint);
+  if (!enlargePrefix) return segments.length ? segments : [hint].filter(Boolean);
+  if (segments.length === 0) return [enlargePrefix];
+  if (segments.length === 1) return [`${enlargePrefix} · ${segments[0]}`];
+  return [`${enlargePrefix} · ${segments[0]}`, ...segments.slice(1)];
+}
+
+function SpectrogramHintText({ lines, className, style }) {
+  if (!lines?.length) return null;
+  return (
+    <p className={className} style={style}>
+      {lines.map((line, index) => (
+        <span key={line}>
+          {index > 0 ? <br /> : null}
+          {line}
+        </span>
+      ))}
+    </p>
+  );
+}
+
+function SpectrogramEventSegmentLabels({
+  events,
+  durationSec,
+  selectedEvent,
+  onSelectEvent,
+  getLocalizedText,
+  lang,
+}) {
+  const segments = useMemo(() => buildEventRangeSegments(events), [events]);
+  if (!segments.length || durationSec <= 0) return null;
+
+  const laneCount = Math.max(...segments.map((seg) => seg.lane)) + 1;
+  const laneHeight = 22;
+  const height = laneCount * laneHeight + 8;
+
+  return (
+    <div
+      className="relative w-full border-b border-[var(--c-text)]/10 bg-[var(--c-bg)]/55"
+      style={{ height }}
+      role="list"
+      aria-label={lang === 'zh' ? '物種事件時間標籤' : 'Species event time labels'}
+    >
+      {segments.map((seg) => {
+        const spanSec = seg.end - seg.start + 1;
+        const leftPct = (seg.start / durationSec) * 100;
+        const widthPct = (spanSec / durationSec) * 100;
+        const centerPct = leftPct + widthPct / 2;
+        const name = getLocalizedText?.(seg.name, lang) ?? seg.species_id ?? '';
+        const shortName = name.length > 10 ? `${name.slice(0, 9)}…` : name;
+        const isSelected = segmentMatchesSelection(selectedEvent, seg);
+
+        return (
+          <button
+            key={`${seg.species_id}-${seg.start}-${seg.end}`}
+            type="button"
+            role="listitem"
+            className={`absolute flex max-w-[9rem] -translate-x-1/2 flex-col items-center border-0 bg-transparent p-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--c-primary)] rounded-sm ${
+              onSelectEvent ? 'cursor-pointer' : 'cursor-default'
+            }`}
+            style={{
+              left: `${centerPct}%`,
+              top: seg.lane * laneHeight + 4,
+              width: `${Math.max(widthPct, 100 / durationSec)}%`,
+              minWidth: '2.75rem',
+            }}
+            title={`${name} · ${seg.rangeLabel}`}
+            onClick={() => onSelectEvent?.({ ...seg.event, peakTime: seg.start })}
+          >
+            <span
+              className="w-full truncate rounded px-1 py-0.5 text-center text-[9px] font-bold leading-tight text-white"
+              style={{
+                backgroundColor: seg.color,
+                outline: isSelected ? '2px solid #f59e0b' : undefined,
+                outlineOffset: 1,
+              }}
+            >
+              {shortName} · {seg.rangeLabel}
+            </span>
+            <span
+              className="block h-0 w-0 border-x-[5px] border-t-[6px] border-x-transparent"
+              style={{ borderTopColor: seg.color }}
+              aria-hidden
+            />
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function SpectrogramPlot({
   spectrogram,
   alignedXai,
@@ -29,6 +132,7 @@ function SpectrogramPlot({
   generatingLabel,
   onEnlarge,
   enlargeLabel,
+  borderless = false,
 }) {
   const canvasRef = useRef(null);
   const xaiCanvasRef = useRef(null);
@@ -51,8 +155,8 @@ function SpectrogramPlot({
 
   const plotWrapStyle = {
     width: '100%',
-    border: '1px solid rgba(57, 77, 101, 0.15)',
-    borderRadius: '0.75rem',
+    border: borderless ? 'none' : '1px solid rgba(57, 77, 101, 0.15)',
+    borderRadius: borderless ? 0 : '0.75rem',
     overflow: 'hidden',
     background: '#f8fafc',
     position: 'relative',
@@ -156,6 +260,7 @@ function SpectrogramEnlargeModal({
   title,
   meta,
   hint,
+  hintLines,
   generatingLabel,
   generatingHint,
   dict,
@@ -233,9 +338,10 @@ function SpectrogramEnlargeModal({
           />
         </div>
 
-        <p className="border-t border-[var(--c-text)]/10 px-4 py-3 text-right text-xs text-[var(--c-text)]/55">
-          {xaiGenerating ? generatingHint : hint}
-        </p>
+        <SpectrogramHintText
+          className="border-t border-[var(--c-text)]/10 px-4 py-3 text-right text-xs text-[var(--c-text)]/55"
+          lines={xaiGenerating ? [generatingHint] : hintLines ?? splitHintBySemicolon(hint)}
+        />
       </div>
     </>,
     document.body
@@ -252,6 +358,12 @@ export default function SpectrogramView({
   compact = false,
   xaiHeatmap = null,
   xaiGenerating = false,
+  eventMarkers = null,
+  markerDurationSec = 0,
+  selectedEvent = null,
+  onSelectEvent = null,
+  getLocalizedText = null,
+  shellMarginTop = null,
 }) {
   const containerRef = useRef(null);
   const [containerWidth, setContainerWidth] = useState(0);
@@ -337,6 +449,14 @@ export default function SpectrogramView({
       : 'Time vs Mel frequency; white spikes on the semi-transparent strip below show XAI time importance (taller = more important)');
   const durationSec = estimateSpectrogramDurationSec(spectrogram).toFixed(1);
 
+  const enlargePrefix =
+    dict?.spectrogramEnlargeHint ??
+    (lang === 'zh' ? '點擊頻譜圖可放大檢視' : 'Click the spectrogram to enlarge');
+
+  const hintLines = compact
+    ? splitHintBySemicolon(hint)
+    : buildSpectrogramHintLines(hint, { enlargePrefix });
+
   const meta =
     isSummary
       ? lang === 'zh'
@@ -352,8 +472,13 @@ export default function SpectrogramView({
         backgroundColor: 'var(--c-bg)',
         borderRadius: '1rem',
         padding: '1.5rem',
-        marginTop: '1.5rem',
+        marginTop: shellMarginTop ?? '1.5rem',
       };
+
+  const markerDuration =
+    markerDurationSec > 0
+      ? markerDurationSec
+      : estimateSpectrogramDurationSec(spectrogram);
 
   const plotOuterStyle = isSummary
     ? { width: '100%', borderRadius: '0.75rem' }
@@ -396,28 +521,54 @@ export default function SpectrogramView({
       </div>
 
       <div ref={isSummary && !compact ? containerRef : undefined} style={plotOuterStyle}>
-        <SpectrogramPlot
-          spectrogram={spectrogram}
-          alignedXai={alignedXai}
-          hasXai={hasXai}
-          xaiGenerating={xaiGenerating}
-          canvasSize={canvasSize}
-          displayHeight={displayHeight}
-          xaiStripDisplayPx={xaiStripDisplayPx}
-          xaiStripCanvasH={xaiStripCanvasH}
-          generatingLabel={generatingLabel}
-          onEnlarge={compact ? undefined : () => setEnlarged(true)}
-          enlargeLabel={enlargeLabel}
-        />
+        {eventMarkers?.length ? (
+          <div
+            className="overflow-hidden rounded-[0.75rem] border border-[var(--c-text)]/15 bg-[#f8fafc]"
+          >
+            <SpectrogramEventSegmentLabels
+              events={eventMarkers}
+              durationSec={markerDuration}
+              selectedEvent={selectedEvent}
+              onSelectEvent={onSelectEvent}
+              getLocalizedText={getLocalizedText}
+              lang={lang}
+            />
+            <SpectrogramPlot
+              spectrogram={spectrogram}
+              alignedXai={alignedXai}
+              hasXai={hasXai}
+              xaiGenerating={xaiGenerating}
+              canvasSize={canvasSize}
+              displayHeight={displayHeight}
+              xaiStripDisplayPx={xaiStripDisplayPx}
+              xaiStripCanvasH={xaiStripCanvasH}
+              generatingLabel={generatingLabel}
+              onEnlarge={compact ? undefined : () => setEnlarged(true)}
+              enlargeLabel={enlargeLabel}
+              borderless
+            />
+          </div>
+        ) : (
+          <SpectrogramPlot
+            spectrogram={spectrogram}
+            alignedXai={alignedXai}
+            hasXai={hasXai}
+            xaiGenerating={xaiGenerating}
+            canvasSize={canvasSize}
+            displayHeight={displayHeight}
+            xaiStripDisplayPx={xaiStripDisplayPx}
+            xaiStripCanvasH={xaiStripCanvasH}
+            generatingLabel={generatingLabel}
+            onEnlarge={compact ? undefined : () => setEnlarged(true)}
+            enlargeLabel={enlargeLabel}
+          />
+        )}
       </div>
 
-      <p style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.75rem', textAlign: 'right' }}>
-        {xaiGenerating
-          ? generatingHint
-          : compact
-            ? hint
-            : `${dict?.spectrogramEnlargeHint ?? (lang === 'zh' ? '點擊頻譜圖可放大檢視' : 'Click the spectrogram to enlarge')} · ${hint}`}
-      </p>
+      <SpectrogramHintText
+        style={{ fontSize: '0.875rem', color: '#64748b', marginTop: '0.75rem', textAlign: 'right' }}
+        lines={xaiGenerating ? [generatingHint] : hintLines}
+      />
 
       <SpectrogramEnlargeModal
         open={enlarged}
@@ -429,6 +580,7 @@ export default function SpectrogramView({
         title={title}
         meta={meta}
         hint={hint}
+        hintLines={splitHintBySemicolon(hint)}
         generatingLabel={generatingLabel}
         generatingHint={generatingHint}
         dict={dict}

@@ -1,13 +1,18 @@
-import { chunkTimeRangeLabel, segmentNumberFromStart } from './aggregateByVote';
+import {
+  buildTimelineSpeciesSummary,
+  displayChunkForTime,
+  timelineSelectionLabel,
+} from './timeline/timelineNavigation';
 import { formatMessage } from '../i18n';
 import { getLocalizedText } from '../i18n/getLocalizedText';
 import { getModelDisplayLabel } from './modelLabel';
 import {
   collectSpectrogramsFromChunks,
-  concatSpectrogramPayloads,
+  concatSpectrogramsToAudioDuration,
   getSpectrogramFromCache,
   trimSpectrogramToDuration,
 } from './spectrogramCache';
+import { filterEventsInTimeWindow } from './spectrogramWithLabels';
 import {
   downloadShareImage,
   imageDataUrlToFile,
@@ -38,62 +43,105 @@ function extractSpecies(predictions, lang, dict) {
 }
 
 /**
+ * @returns {{ spectrogram: object | null, durationSec: number, events: object[], timeOffsetSec: number }}
+ */
+export function resolveShareSpectrogramContext({
+  selectedEvent,
+  timeline,
+  chunks,
+  spectrogramCache,
+  windowSec,
+  totalDurationSec,
+}) {
+  const events = timeline?.species_events ?? [];
+
+  if (!selectedEvent) {
+    const durationSec =
+      totalDurationSec > 0
+        ? totalDurationSec
+        : collectSpectrogramsFromChunks(chunks, spectrogramCache).length * windowSec;
+    const spectrogram = concatSpectrogramsToAudioDuration(
+      chunks,
+      spectrogramCache,
+      durationSec,
+      windowSec
+    );
+    return { spectrogram, durationSec, events, timeOffsetSec: 0 };
+  }
+
+  const chunk = displayChunkForTime(chunks, selectedEvent.peakTime, windowSec);
+  if (!chunk || chunk.error) {
+    return { spectrogram: null, durationSec: 0, events: [], timeOffsetSec: 0 };
+  }
+  const spec = getSpectrogramFromCache(spectrogramCache, chunk.index);
+  if (!spec) {
+    return { spectrogram: null, durationSec: 0, events: [], timeOffsetSec: 0 };
+  }
+  const chunkStartSec = chunk.index ?? 0;
+  const durationSec =
+    totalDurationSec > 0
+      ? Math.min(windowSec, Math.max(0, totalDurationSec - chunkStartSec))
+      : windowSec;
+  const spectrogram = trimSpectrogramToDuration(spec, durationSec);
+  const segEvents = filterEventsInTimeWindow(
+    events,
+    chunkStartSec,
+    chunkStartSec + windowSec - 1
+  );
+  return { spectrogram, durationSec, events: segEvents, timeOffsetSec: chunkStartSec };
+}
+
+/**
  * @param {object} opts
- * @param {number} opts.pageIndex
+ * @param {object | null} [opts.selectedEvent]
  * @param {object[]} opts.chunks
  * @param {Map<number, object> | Record<number, object>} opts.spectrogramCache
  * @param {number} opts.windowSec
  * @param {number} opts.totalDurationSec
  */
 export function resolveShareSpectrogram({
-  pageIndex,
+  selectedEvent,
   chunks,
   spectrogramCache,
   windowSec,
   totalDurationSec,
 }) {
-  if (pageIndex === 0) {
-    const specs = collectSpectrogramsFromChunks(chunks, spectrogramCache);
-    let stitched = concatSpectrogramPayloads(specs);
-    if (!stitched) return null;
-    const durationSec =
-      totalDurationSec > 0 ? totalDurationSec : specs.length * windowSec;
-    return trimSpectrogramToDuration(stitched, durationSec);
-  }
-
-  const chunk = chunks[pageIndex - 1];
-  if (!chunk || chunk.error) return null;
-  return getSpectrogramFromCache(spectrogramCache, chunk.index);
-}
-
-function buildTabLabel(pageIndex, chunk, windowSec, dict) {
-  if (pageIndex === 0) return dict.summaryLabel;
-  const segNum = segmentNumberFromStart(chunk?.index, windowSec);
-  return `${dict.chunkLabel} ${segNum} · ${chunkTimeRangeLabel(chunk?.index, windowSec)}`;
+  return resolveShareSpectrogramContext({
+    selectedEvent,
+    timeline: null,
+    chunks,
+    spectrogramCache,
+    windowSec,
+    totalDurationSec,
+  }).spectrogram;
 }
 
 /**
  * @param {object} opts
- * @param {number} opts.pageIndex
- * @param {object | null} opts.summary
+ * @param {object | null} [opts.selectedEvent]
+ * @param {object | null} [opts.timeline]
+ * @param {object | null} [opts.summary]
  * @param {object[]} opts.chunks
  * @param {string} opts.filename
  * @param {string} opts.lang
  * @param {import('../i18n').LocaleMessages} opts.dict
  * @param {number} opts.windowSec
+ * @param {(name: object, lang: string) => string} opts.getLocalizedText
  * @param {string} [opts.processedAt]
  * @param {Map<number, object> | Record<number, object>} [opts.spectrogramCache]
  * @param {number} [opts.totalDurationSec]
  * @param {string} [opts.modelName]
  */
 export function buildResultShareContent({
-  pageIndex,
+  selectedEvent,
+  timeline,
   summary,
   chunks,
   filename,
   lang,
   dict,
   windowSec,
+  getLocalizedText,
   processedAt,
   spectrogramCache,
   totalDurationSec = 0,
@@ -103,30 +151,20 @@ export function buildResultShareContent({
   const title = `${dict.title} · ${dict.resultTitle}`;
   const modelLabel = getModelDisplayLabel(modelName, dict);
 
-  let tabLabel;
+  const tabLabel = timelineSelectionLabel(
+    selectedEvent,
+    windowSec,
+    dict,
+    getLocalizedText,
+    lang
+  );
+
   let speciesItems;
   let speciesText;
-  let voteLine = '';
+  let contextLine = '';
 
-  if (pageIndex === 0) {
-    tabLabel = buildTabLabel(0, null, windowSec, dict);
-    const extracted = extractSpecies(summary?.predictions, lang, dict);
-    speciesItems = extracted.items;
-    speciesText = extracted.text;
-
-    const validCount = summary?.validChunkCount ?? 0;
-    if (speciesItems[0] && validCount > 0) {
-      const top = summary?.predictions?.top_species?.[0];
-      const votes = top?.vote_count ?? 0;
-      voteLine = formatMessage(dict.shareVoteLine, {
-        species: speciesItems[0].name,
-        votes,
-        total: validCount,
-      });
-    }
-  } else {
-    const chunk = chunks[pageIndex - 1];
-    tabLabel = buildTabLabel(pageIndex, chunk, windowSec, dict);
+  if (selectedEvent) {
+    const chunk = displayChunkForTime(chunks, selectedEvent.peakTime, windowSec);
     if (chunk?.error) {
       speciesItems = [];
       speciesText = dict.decodeFailed;
@@ -134,6 +172,26 @@ export function buildResultShareContent({
       const extracted = extractSpecies(chunk?.predictions, lang, dict);
       speciesItems = extracted.items;
       speciesText = extracted.text;
+    }
+    contextLine = formatMessage(dict.shareEventLine, {
+      species: getLocalizedText(selectedEvent.name, lang),
+      peak: selectedEvent.peakTime,
+      confidence: Math.round((selectedEvent.confidence ?? 0) * 100),
+    });
+  } else {
+    const timelineSpecies = buildTimelineSpeciesSummary(timeline);
+    const predictions =
+      timelineSpecies.length > 0
+        ? { top_species: timelineSpecies, meets_confidence_threshold: true }
+        : summary?.predictions;
+    const extracted = extractSpecies(predictions, lang, dict);
+    speciesItems = extracted.items;
+    speciesText = extracted.text;
+    if (speciesItems[0] && timeline?.species_events?.length) {
+      contextLine = formatMessage(dict.shareTimelineLine, {
+        species: speciesItems[0].name,
+        events: timeline.species_events.length,
+      });
     }
   }
 
@@ -154,7 +212,7 @@ export function buildResultShareContent({
       processedAt ? `${dict.analyzedAt}: ${processedAt}` : null,
       `${dict.modelUsed}: ${modelLabel}`,
       `${dict.sourceFile}: ${filename}`,
-      voteLine || null,
+      contextLine || null,
       dict.topSpecies,
       speciesLines || speciesText,
       url,
@@ -163,15 +221,16 @@ export function buildResultShareContent({
       .join('\n'),
   };
 
-  const spectrogram = spectrogramCache
-    ? resolveShareSpectrogram({
-        pageIndex,
+  const specContext = spectrogramCache
+    ? resolveShareSpectrogramContext({
+        selectedEvent,
+        timeline,
         chunks,
         spectrogramCache,
         windowSec,
         totalDurationSec,
       })
-    : null;
+    : { spectrogram: null, durationSec: 0, events: [], timeOffsetSec: 0 };
 
   const imageDataUrl = renderShareImageCard({
     title: dict.title,
@@ -181,7 +240,11 @@ export function buildResultShareContent({
     speciesItems,
     url,
     dict,
-    spectrogram,
+    spectrogram: specContext.spectrogram,
+    events: specContext.events,
+    durationSec: specContext.durationSec,
+    resolveName: (name) => getLocalizedText(name, lang),
+    timeOffsetSec: specContext.timeOffsetSec,
   });
 
   return {
