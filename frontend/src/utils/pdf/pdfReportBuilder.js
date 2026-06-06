@@ -10,16 +10,13 @@ import {
   PDF_GENERATOR,
   WATERMARK_COVER_OPACITY,
 } from './pdfConstants';
-import { applyPdfFont, ensurePdfFonts, pickLocalized } from './pdfFonts';
+import { applyPdfFont, ensurePdfFonts, pickLocalized, formatPdfTimeRangeSec, sanitizePdfText } from './pdfFonts';
 import { renderSpectrogramForPdf } from './pdfSpectrogram';
 import { resolveConfidenceThreshold } from '../../config/confidenceThreshold';
 import { getDict } from '../../i18n';
 import { getModelDisplayLabel } from '../modelLabel';
-import { segmentNumberFromStart } from '../aggregateByVote';
 import { validatePdfQuality } from './pdfQualityCheck';
 import { formatPeakTimeRange } from '../timeline/mergeConsecutiveEvents';
-import { filterEventsInTimeWindow } from '../spectrogramWithLabels';
-import { mergeDuplicateConsecutiveRows } from '../timeline/mergeConsecutiveEvents';
 
 const LOGO_SRC = '/logo.png';
 
@@ -95,11 +92,6 @@ function hasOverviewNotes(overview) {
   );
 }
 
-function hasSegmentNotes(seg) {
-  if (!seg) return false;
-  return Boolean(seg.fieldConfirmation?.trim() || seg.segmentNotes?.trim());
-}
-
 /**
  * @param {import('jspdf').jsPDF} pdf
  * @param {PdfLayoutEngine} layout
@@ -108,10 +100,14 @@ function hasSegmentNotes(seg) {
  */
 function drawTable(pdf, layout, tableOpts) {
   const startY = tableOpts.startY ?? layout.y;
+  const lang = layout.lang ?? 'zh';
+  const body = (tableOpts.body ?? []).map((row) =>
+    row.map((cell) => sanitizePdfText(String(cell ?? ''), lang))
+  );
   applyPdfFont(pdf, 9);
   autoTable(pdf, {
     head: tableOpts.head,
-    body: tableOpts.body,
+    body,
     startY,
     margin: { left: PAGE.marginLeft, right: PAGE.marginRight, top: PAGE.marginTop },
     tableWidth: CONTENT_WIDTH,
@@ -183,53 +179,53 @@ function timelineEventTableBody(eventRows, lang) {
     pickLocalized(row.name, lang),
     `${row.onset}s`,
     `${row.offset}s`,
-    formatPeakTimeRange(row),
+    sanitizePdfText(formatPeakTimeRange(row), lang),
     `${Math.round((row.confidence ?? 0) * 100)}%`,
   ]);
 }
 
-function speciesTableBody(speciesRows, lang, isSummary, validChunkCount, windowSec = 5) {
-  if (!speciesRows?.length) {
-    const msg =
-      lang === 'zh'
-        ? '無達信心門檻的物種預測。'
-        : 'No species met the confidence threshold.';
-    return isSummary ? [[msg, '—', '—']] : [[msg, '—']];
-  }
-  return speciesRows.map((s) => {
-    const name = pickLocalized(s.name, lang);
-    const pct = `${Math.round((s.probability ?? 0) * 100)}%`;
-    if (isSummary) {
-      const segs = (s.chunk_indices ?? [])
-        .map((startSec) => segmentNumberFromStart(startSec, windowSec))
-        .join(lang === 'zh' ? '、' : ', ');
-      const vote =
-        s.vote_count != null
-          ? ` (${s.vote_count}/${validChunkCount ?? '—'})`
-          : '';
-      return [name, `${pct}${vote}`, segs || '—'];
-    }
-    return [name, pct];
-  });
+function speciesTimeSpanLabel(events, lang) {
+  if (!events?.length) return '—';
+  const starts = events.map((ev) => ev.onset ?? ev.peakTime ?? 0);
+  const ends = events.map((ev) => ev.offset ?? ev.peakTime ?? 0);
+  const min = Math.min(...starts);
+  const max = Math.max(...ends);
+  if (min === max) return lang === 'zh' ? `${min} 秒` : `${min} s`;
+  return formatPdfTimeRangeSec(min, max, lang);
 }
 
-function measureSegmentBlock(reportModel, seg, lang, fieldRecordMode) {
-  let h = 14 + 22;
-  const segStart = seg.index ?? 0;
-  const segEnd = segStart + (reportModel.windowSec ?? 5) - 1;
-  const segEvents = mergeDuplicateConsecutiveRows(
-    filterEventsInTimeWindow(reportModel.timelineEvents ?? [], segStart, segEnd)
-  );
-  const rows = seg.error ? 1 : Math.max(segEvents.length, 1);
+function measureSpeciesBlock(speciesReport) {
+  let h = 14 + 22 + 14;
+  const rows = Math.max(speciesReport.events?.length ?? 0, 1);
   h += estimateTableHeight(rows);
   h += 52;
-  const segMeta = reportModel.surveyMetadata?.segments?.[seg.index];
-  if (fieldRecordMode) {
-    h += hasSegmentNotes(segMeta) ? 18 : 28;
-  } else if (hasSegmentNotes(segMeta)) {
-    h += 14;
-  }
   return h;
+}
+
+/** @param {object} reportModel */
+function resolveSpeciesReports(reportModel) {
+  if (Array.isArray(reportModel.speciesReports)) {
+    return reportModel.speciesReports;
+  }
+  const summary = reportModel.timelineSpeciesSummary;
+  if (!Array.isArray(summary)) {
+    return [];
+  }
+  const eventRows = Array.isArray(reportModel.timelineEventRows)
+    ? reportModel.timelineEventRows
+    : Array.isArray(reportModel.timeline?.species_events)
+      ? reportModel.timeline.species_events
+      : [];
+  return summary.map((species, index) => ({
+    rank: index + 1,
+    species_id: species.species_id,
+    name: species.name,
+    scientific_name: species.scientific_name ?? '',
+    probability: species.probability ?? 0,
+    peak_time: species.peak_time,
+    events: eventRows.filter((row) => row.species_id === species.species_id),
+    eventSegments: [],
+  }));
 }
 
 /**
@@ -244,19 +240,17 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
     analysisId,
     generatedAt,
     decisionSupport,
-    okChunkCount,
-    totalChunkCount,
     durationSec,
     windowSec,
     confidenceThreshold,
     modelName = 'perch',
-    segmentReports,
     surveyMetadata,
     stitchedSpectrogram,
     timelineEventRows,
     timelineSpeciesSummary,
     timelineEvents,
   } = reportModel;
+  const speciesReports = resolveSpeciesReports(reportModel);
 
   const thresholdPct = Math.round(resolveConfidenceThreshold(confidenceThreshold) * 100);
   const dict = getDict(lang);
@@ -317,12 +311,8 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
     [
       { label: lang === 'zh' ? '原始檔名' : 'Source file', value: sourceName },
       {
-        label: lang === 'zh' ? '有效片段' : 'Valid segments',
-        value: `${okChunkCount} / ${totalChunkCount}`,
-      },
-      {
         label: lang === 'zh' ? '總時長' : 'Total duration',
-        value: `~${durationSec} s`,
+        value: lang === 'zh' ? `約 ${durationSec} 秒` : `~${durationSec} s`,
       },
       { label: lang === 'zh' ? '採樣率' : 'Sample rate', value: '32,000 Hz' },
       {
@@ -442,84 +432,79 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
     }
   }
 
-  // —— 各片段（每片段新頁） ——
-  for (const seg of segmentReports) {
+  // —— 主要預測物種（各物種一節：時間軸事件 + 全段頻譜標籤） ——
+  for (const sp of speciesReports) {
     layout.addPage();
-    const blockH = measureSegmentBlock(reportModel, seg, lang, fieldRecordMode);
+    const blockH = measureSpeciesBlock(sp);
     const minWithTitle = 14 + 22 + estimateTableHeight(1) + 20;
     layout.keepTogether(Math.max(blockH, minWithTitle));
 
+    const speciesName = pickLocalized(sp.name, lang);
     layout.markBookmark(
-      lang === 'zh' ? `片段 ${seg.segmentNum}` : `Segment ${seg.segmentNum}`
+      lang === 'zh' ? `物種 ${sp.rank} · ${speciesName}` : `Species ${sp.rank} · ${speciesName}`
     );
 
-    const segTitle = lang === 'zh' ? `片段 ${seg.segmentNum}` : `Segment ${seg.segmentNum}`;
-    layout.drawSegmentTitle(segTitle, seg.timeLabel);
+    const spTitle =
+      lang === 'zh'
+        ? `主要預測物種 ${sp.rank} · ${speciesName}`
+        : `Primary species ${sp.rank} · ${speciesName}`;
+    layout.drawSegmentTitle(spTitle, speciesTimeSpanLabel(sp.events, lang));
 
-    layout.drawSectionHeading(lang === 'zh' ? '樣本資訊' : 'Sample information', {
+    layout.drawSectionHeading(lang === 'zh' ? '物種資訊' : 'Species information', {
       compact: true,
     });
     layout.drawFieldGrid(
       [
         {
-          label: lang === 'zh' ? '片段編號' : 'Segment',
-          value: String(seg.segmentNum),
+          label: lang === 'zh' ? '學名' : 'Scientific name',
+          value: sp.scientific_name?.trim() || '—',
         },
         {
-          label: lang === 'zh' ? '時間範圍' : 'Time range',
-          value: seg.timeLabel,
+          label: lang === 'zh' ? '最高事件信心' : 'Peak event confidence',
+          value: `${Math.round((sp.probability ?? 0) * 100)}%`,
         },
         {
-          label: lang === 'zh' ? '分析 ID' : 'Analysis ID',
-          value: seg.analysisId || '—',
+          label: lang === 'zh' ? '峰值時間' : 'Peak time',
+          value: sp.peak_time != null ? `${sp.peak_time}s` : '—',
         },
-        { label: lang === 'zh' ? '片段時長' : 'Duration', value: '5.0 s' },
+        {
+          label: lang === 'zh' ? '活動時間範圍' : 'Activity span',
+          value: speciesTimeSpanLabel(sp.events, lang),
+        },
       ],
       { fontSize: 8.5 }
     );
 
     layout.drawSectionHeading(
-      lang === 'zh' ? '時間軸事件（此片段）' : 'Timeline events (segment)',
+      lang === 'zh' ? '時間軸事件' : 'Timeline events',
       { compact: true }
     );
-    if (seg.error) {
-      layout.drawTextBlock(seg.error, {
-        fontSize: 9,
-        color: [185, 28, 28],
-        marginAfter: 2,
-      });
-    } else {
-      const segStart = seg.index ?? 0;
-      const segEnd = segStart + windowSec - 1;
-      const segEventRows = mergeDuplicateConsecutiveRows(
-        filterEventsInTimeWindow(timelineEvents, segStart, segEnd)
-      );
-      drawTable(pdf, layout, {
-        head: [
-          [
-            lang === 'zh' ? '物種' : 'Species',
-            lang === 'zh' ? '起始' : 'Onset',
-            lang === 'zh' ? '結束' : 'Offset',
-            lang === 'zh' ? '峰值時間' : 'Peak times',
-            lang === 'zh' ? '事件信心' : 'Event confidence',
-          ],
+    drawTable(pdf, layout, {
+      head: [
+        [
+          lang === 'zh' ? '起始' : 'Onset',
+          lang === 'zh' ? '結束' : 'Offset',
+          lang === 'zh' ? '峰值時間' : 'Peak times',
+          lang === 'zh' ? '事件信心' : 'Event confidence',
         ],
-        body: timelineEventTableBody(segEventRows, lang),
-      });
-    }
+      ],
+      body: timelineEventTableBody(sp.events, lang).map((row) => row.slice(1)),
+    });
 
-    layout.drawSectionHeading(lang === 'zh' ? '片段頻譜圖' : 'Segment spectrogram');
-    if (seg.spectrogram) {
-      const segStart = seg.index ?? 0;
-      const segEnd = segStart + windowSec - 1;
-      const segEvents = filterEventsInTimeWindow(timelineEvents, segStart, segEnd);
-      const specImg = renderSpectrogramForPdf(seg.spectrogram, {
+    layout.drawSectionHeading(
+      lang === 'zh' ? '全段頻譜圖（物種標籤）' : 'Full spectrogram (species labels)',
+      { compact: true }
+    );
+    if (stitchedSpectrogram) {
+      const specImg = renderSpectrogramForPdf(stitchedSpectrogram, {
         lang,
-        segmentLabel: String(seg.segmentNum),
-        timeRange: seg.timeLabel,
-        durationSec: Math.min(windowSec, Math.max(0.1, durationSec - segStart)),
-        events: segEvents,
-        timeOffsetSec: segStart,
+        title:
+          lang === 'zh'
+            ? `${speciesName} · 全段頻譜標籤`
+            : `${speciesName} · full recording labels`,
+        durationSec,
+        events: sp.events,
+        timeOffsetSec: 0,
       });
       if (specImg) {
         const imgH = specImg.heightMm;
@@ -540,52 +525,6 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
       layout.drawTextBlock(
         lang === 'zh' ? '無可用頻譜資料' : 'No spectrogram',
         { fontSize: 9, color: [156, 163, 175], marginAfter: 2 }
-      );
-    }
-
-    const segNotes = surveyMetadata?.segments?.[seg.index];
-    if (fieldRecordMode) {
-      layout.drawSectionHeading(
-        lang === 'zh' ? '田野備註（片段）' : 'Field notes (segment)',
-        { compact: !hasSegmentNotes(segNotes) }
-      );
-      const conf = segNotes?.fieldConfirmation?.trim() || '';
-      const notes = segNotes?.segmentNotes?.trim() || '';
-      layout.drawStackedFields(
-        [
-          {
-            label: lang === 'zh' ? '確認結果' : 'Confirmation',
-            value:
-              fieldRecordMode && !conf && !notes ? '________________' : conf || '—',
-          },
-          {
-            label: lang === 'zh' ? '片段專屬備註' : 'Segment notes',
-            value:
-              fieldRecordMode && !conf && !notes ? '________________' : notes || '—',
-          },
-        ],
-        {
-          fontSize: 8.5,
-          rowGapMm: 6,
-          color:
-            fieldRecordMode && !conf && !notes
-              ? [107, 114, 128]
-              : [31, 41, 55],
-        }
-      );
-    } else if (hasSegmentNotes(segNotes)) {
-      layout.drawStackedFields(
-        [
-          {
-            label: lang === 'zh' ? '確認結果' : 'Confirmation',
-            value: segNotes.fieldConfirmation.trim(),
-          },
-          {
-            label: lang === 'zh' ? '備註' : 'Notes',
-            value: segNotes.segmentNotes.trim(),
-          },
-        ],
-        { fontSize: 8, rowGapMm: 5 }
       );
     }
   }
@@ -628,7 +567,7 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
 
   const arrayBuffer = pdf.output('arraybuffer');
   const qa = await validatePdfQuality(arrayBuffer, {
-    segmentCount: segmentReports.length,
+    speciesCount: speciesReports.length,
     lang,
   });
 

@@ -412,15 +412,12 @@ export default function App() {
                 )
               )
             );
-            setLoadingHint('');
-            setViewState('result');
             return;
           }
 
           if (chunkData.event === 'timeline_deconv') {
             if (xaiPending) {
               phase2StartedAtRef.current = Date.now();
-              setLoadingHint(dict.xaiGenerating);
             }
             setPredictionResult((prev) => {
               const fromServer = buildTimelineModel(chunkData);
@@ -432,8 +429,13 @@ export default function App() {
               if (!xaiPending && chunkData.phase2_ms != null) {
                 timingPayload.phase2_ms = chunkData.phase2_ms;
               }
-              return mergePhaseTimings({ ...prev, timeline }, timingPayload);
+              return mergePhaseTimings(
+                { ...prev, timeline, xai_pending: xaiPending },
+                timingPayload
+              );
             });
+            setLoadingHint('');
+            setViewState('result');
             return;
           }
 
@@ -444,9 +446,6 @@ export default function App() {
           }
 
           receivedAnyChunk = true;
-          if (xaiPending) {
-            setLoadingHint(dict.xaiGenerating);
-          }
 
           setPredictionResult((prev) => ({
             ...prev,

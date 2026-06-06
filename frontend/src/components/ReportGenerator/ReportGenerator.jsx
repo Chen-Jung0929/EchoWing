@@ -8,18 +8,22 @@ const ReportGenerator = forwardRef(function ReportGenerator(
   { reportModel, lang = 'zh' },
   ref
 ) {
-  useImperativeHandle(ref, () => ({
-    downloadPdf: async () => {
-      if (!reportModel) {
-        throw new Error('Report data is not ready');
-      }
-      const { pdf, filename, qa } = await buildBirdReportPdf(reportModel, { lang });
-      if (qa?.warnings?.length) {
-        console.warn('[PDF QA]', qa.warnings);
-      }
-      pdf.save(filename);
-    },
-  }));
+  useImperativeHandle(
+    ref,
+    () => ({
+      downloadPdf: async () => {
+        if (!reportModel) {
+          throw new Error('Report data is not ready');
+        }
+        const { pdf, filename, qa } = await buildBirdReportPdf(reportModel, { lang });
+        if (qa?.warnings?.length) {
+          console.warn('[PDF QA]', qa.warnings);
+        }
+        pdf.save(filename);
+      },
+    }),
+    [reportModel, lang]
+  );
 
   return null;
 });

@@ -69,10 +69,36 @@ export function normalizeFieldLabel(label) {
   return String(label ?? '').replace(/[：:]\s*$/, '').trim();
 }
 
-export function normalizeFieldValue(value) {
+/**
+ * jsPDF 內嵌 NotoSansTC 常無 ~ / ～ 字形，時間範圍改為「至」避免 27~29 → 2729。
+ */
+export function sanitizePdfText(text, lang = 'zh') {
+  if (text == null) return '';
+  let s = String(text);
+  if (lang === 'zh') {
+    s = s
+      .replace(/(\d+)～(\d+)/g, '$1 至 $2')
+      .replace(/(\d+)~(\d+)/g, '$1 至 $2');
+  } else {
+    s = s.replace(/(\d+)~(\d+)/g, '$1 to $2');
+  }
+  return s;
+}
+
+/** @param {number} minSec @param {number} maxSec @param {'zh'|'en'} [lang] */
+export function formatPdfTimeRangeSec(minSec, maxSec, lang = 'zh') {
+  const min = Number(minSec);
+  const max = Number(maxSec);
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return '—';
+  if (min === max) return lang === 'zh' ? `${min} 秒` : `${min} s`;
+  return lang === 'zh' ? `${min} 至 ${max} 秒` : `${min} to ${max} s`;
+}
+
+export function normalizeFieldValue(value, lang = 'zh') {
   if (value == null) return '—';
   const s = typeof value === 'string' ? value.trim() : String(value);
-  return s === '' ? '—' : s;
+  if (s === '') return '—';
+  return sanitizePdfText(s, lang);
 }
 
 /** label + 冒號 + value（字串組合，供量測寬度） */

@@ -12,6 +12,7 @@ import { pickLocalized } from './pdfFonts';
  *   durationSec?: number,
  *   events?: object[],
  *   timeOffsetSec?: number,
+ *   title?: string,
  * }} meta
  */
 export function renderSpectrogramForPdf(spectrogram, meta) {
@@ -20,13 +21,14 @@ export function renderSpectrogramForPdf(spectrogram, meta) {
   const plotWidthPx = Math.round((widthMm / 25.4) * 96 * pixelScale);
 
   const title =
-    meta.segmentLabel && meta.timeRange
+    meta.title ??
+    (meta.segmentLabel && meta.timeRange
       ? meta.lang === 'zh'
         ? `片段 ${meta.segmentLabel} · ${meta.timeRange}`
         : `Segment ${meta.segmentLabel} · ${meta.timeRange}`
       : meta.lang === 'zh'
         ? '全段頻譜圖'
-        : 'Full recording spectrogram';
+        : 'Full recording spectrogram');
 
   const rendered = renderSpectrogramWithLabels(spectrogram, {
     lang: meta.lang,

@@ -447,6 +447,11 @@ export default function ChunkResultsView({
             <ResultBadge>
               {dict.totalPredictionDuration} · {predictionDurationLabel}
             </ResultBadge>
+            {xaiPending ? (
+              <ResultBadge>
+                {dict.xaiGenerating}
+              </ResultBadge>
+            ) : null}
           </div>
         </header>
 

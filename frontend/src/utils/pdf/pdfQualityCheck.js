@@ -10,6 +10,22 @@ pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 const BLANK_PAGE_THRESHOLD = 0.012;
 const MAX_EXPECTED_PAGES_FACTOR = 1.35;
 
+/** Cover (tables + full spectrogram) may span several pages. */
+const COVER_PAGE_BUDGET = 3;
+/** Decision support section. */
+const DECISION_PAGE_BUDGET = 1;
+/** Per-species events table + labeled full spectrogram may overflow to two pages. */
+const MAX_PAGES_PER_SPECIES = 2;
+
+/**
+ * Upper-bound page budget aligned with buildBirdReportPdf layout.
+ * @param {number} speciesCount
+ */
+export function estimateMaxPdfPages(speciesCount) {
+  const species = Math.max(0, Number(speciesCount) || 0);
+  return COVER_PAGE_BUDGET + species * MAX_PAGES_PER_SPECIES + DECISION_PAGE_BUDGET;
+}
+
 /**
  * @typedef {{
  *   ok: boolean,
@@ -22,7 +38,7 @@ const MAX_EXPECTED_PAGES_FACTOR = 1.35;
 
 /**
  * @param {ArrayBuffer} pdfBuffer
- * @param {{ segmentCount: number, lang: string }} context
+ * @param {{ speciesCount?: number, segmentCount?: number, lang: string }} context
  * @returns {Promise<PdfQaResult>}
  */
 export async function validatePdfQuality(pdfBuffer, context) {
@@ -95,12 +111,14 @@ export async function validatePdfQuality(pdfBuffer, context) {
     );
   }
 
-  const expectedMax = 1 + context.segmentCount + 1;
-  if (pageCount > expectedMax * MAX_EXPECTED_PAGES_FACTOR) {
+  const detailCount = context.speciesCount ?? context.segmentCount ?? 0;
+  const expectedMax = estimateMaxPdfPages(detailCount);
+  const allowedMax = Math.ceil(expectedMax * MAX_EXPECTED_PAGES_FACTOR);
+  if (pageCount > allowedMax) {
     errors.push(
       context.lang === 'zh'
-        ? `頁數異常：${pageCount} 頁（預期約 ≤ ${Math.ceil(expectedMax * MAX_EXPECTED_PAGES_FACTOR)}）`
-        : `Abnormal page count: ${pageCount} (expected ≈ ≤ ${Math.ceil(expectedMax * MAX_EXPECTED_PAGES_FACTOR)})`
+        ? `頁數異常：${pageCount} 頁（預期約 ≤ ${allowedMax}）`
+        : `Abnormal page count: ${pageCount} (expected ≈ ≤ ${allowedMax})`
     );
   }
 

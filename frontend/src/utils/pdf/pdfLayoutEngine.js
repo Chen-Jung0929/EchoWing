@@ -11,6 +11,7 @@ import {
   fieldColon,
   normalizeFieldLabel,
   normalizeFieldValue,
+  sanitizePdfText,
   lineLeadingMm,
 } from './pdfFonts';
 
@@ -93,7 +94,7 @@ export class PdfLayoutEngine {
   drawInlineFieldAt(x, baselineY, maxWidth, label, value, fontSize) {
     applyPdfFont(this.pdf, fontSize);
     const prefix = `${normalizeFieldLabel(label)}${fieldColon()}`;
-    const valueText = normalizeFieldValue(value);
+    const valueText = normalizeFieldValue(value, this.lang);
     const prefixW = this.pdf.getTextWidth(prefix);
     const valueLines = this.pdf.splitTextToSize(valueText, Math.max(8, maxWidth - prefixW));
     const leading = lineLeadingMm(fontSize, 1.45);
@@ -177,7 +178,7 @@ export class PdfLayoutEngine {
       rowFields.forEach((field) => {
         applyPdfFont(this.pdf, fontSize);
         const prefix = `${normalizeFieldLabel(field.label)}${fieldColon()}`;
-        const valueText = normalizeFieldValue(field.value);
+        const valueText = normalizeFieldValue(field.value, this.lang);
         const prefixW = this.pdf.getTextWidth(prefix);
         const valueLines = this.pdf.splitTextToSize(
           valueText,
@@ -223,7 +224,7 @@ export class PdfLayoutEngine {
     for (const field of fields) {
       applyPdfFont(this.pdf, fontSize);
       const prefix = `${normalizeFieldLabel(field.label)}${fieldColon()}`;
-      const valueText = normalizeFieldValue(field.value);
+      const valueText = normalizeFieldValue(field.value, this.lang);
       const prefixW = this.pdf.getTextWidth(prefix);
       const valueLines = this.pdf.splitTextToSize(
         valueText,
@@ -280,7 +281,7 @@ export class PdfLayoutEngine {
       applyPdfFont(this.pdf, subSize);
       this.pdf.setTextColor(107, 114, 128);
       this.y += subLead;
-      this.pdf.text(subtitle, PAGE.marginLeft, this.y);
+      this.pdf.text(sanitizePdfText(subtitle, this.lang), PAGE.marginLeft, this.y);
     }
 
     this.y += 2;

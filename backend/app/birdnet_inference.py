@@ -1,4 +1,5 @@
 import logging
+import threading
 
 import numpy as np
 import torch
@@ -108,6 +109,8 @@ class BirdNetPredictor:
                 )
 
         self.baseline = np.zeros(len(self.labels), dtype=np.float32)
+        # TFLite Interpreter is not thread-safe; stream Phase 1 may run batches in parallel.
+        self._invoke_lock = threading.Lock()
 
     def _logits_to_confidence(self, logits: np.ndarray) -> np.ndarray:
         return logits_to_birdnet_confidence(
@@ -131,18 +134,19 @@ class BirdNetPredictor:
         expected_samples = int(input_shape[-1])
 
         probs_parts = []
-        for i in range(n):
-            wave = _resample_waveform(waveforms[i], src_sr, BIRDNET_SAMPLE_RATE)
-            if len(wave) < expected_samples:
-                wave = np.pad(wave, (0, expected_samples - len(wave)))
-            elif len(wave) > expected_samples:
-                wave = wave[:expected_samples]
+        with self._invoke_lock:
+            for i in range(n):
+                wave = _resample_waveform(waveforms[i], src_sr, BIRDNET_SAMPLE_RATE)
+                if len(wave) < expected_samples:
+                    wave = np.pad(wave, (0, expected_samples - len(wave)))
+                elif len(wave) > expected_samples:
+                    wave = wave[:expected_samples]
 
-            input_tensor = wave.reshape(input_shape).astype(np.float32)
-            self.interpreter.set_tensor(self.input_details[0]["index"], input_tensor)
-            self.interpreter.invoke()
-            logits = self.interpreter.get_tensor(self.output_details[0]["index"])[0]
-            probs_parts.append(self._logits_to_confidence(logits))
+                input_tensor = np.array(wave.reshape(input_shape), dtype=np.float32, copy=True)
+                self.interpreter.set_tensor(self.input_details[0]["index"], input_tensor)
+                self.interpreter.invoke()
+                logits = np.copy(self.interpreter.get_tensor(self.output_details[0]["index"])[0])
+                probs_parts.append(self._logits_to_confidence(logits))
 
         out = np.stack(probs_parts, axis=0)
         return out, None
