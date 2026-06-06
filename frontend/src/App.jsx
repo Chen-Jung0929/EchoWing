@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import {
   isRemoteApiBase,
   waitForBackendReady,
@@ -842,7 +843,7 @@ export default function App() {
         <GuideModal open={guideOpen} dict={dict} onClose={() => setGuideOpen(false)} />
       </main>
 
+      <SpeedInsights />
     </div>
   );
 }
-
