@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import {
   isRemoteApiBase,
   waitForBackendReady,
@@ -749,7 +750,7 @@ export default function App() {
         )}
       </main>
 
+      <SpeedInsights />
     </div>
   );
 }
-
