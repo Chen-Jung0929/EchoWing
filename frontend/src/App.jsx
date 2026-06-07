@@ -10,6 +10,7 @@ import PrivacyNotice from './components/PrivacyNotice/PrivacyNotice';
 import DayHeroScene from './features/hero/DayHeroScene';
 import NightHeroScene from './features/hero/NightHeroScene';
 import { AudioAnalysisProvider } from './context/AudioAnalysisContext';
+import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
 
 // Dynamic Imports
 const LandingPage = React.lazy(() => import('./pages/LandingPage'));
@@ -17,6 +18,7 @@ const LoadingPage = React.lazy(() => import('./pages/LoadingPage'));
 const ResultPage = React.lazy(() => import('./pages/ResultPage'));
 const ErrorPage = React.lazy(() => import('./pages/ErrorPage'));
 const XaiEducationPage = React.lazy(() => import('./pages/XaiEducationPage/XaiEducationPage'));
+const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 
 const LANGUAGE_STORAGE_KEY = 'echowing-language';
 const THEME_STORAGE_KEY = 'echowing-theme';
@@ -206,16 +208,18 @@ function AppLayout() {
         </nav>
 
         <main className="relative z-10 min-h-screen">
-          <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
-            <Routes>
-              <Route path="/" element={<LandingPage dict={dict} openGuide={openGuide} />} />
-              <Route path="/loading" element={<LoadingPage dict={dict} isDarkMode={isDarkMode} />} />
-              <Route path="/result" element={<ResultPage dict={dict} lang={lang} isDarkMode={isDarkMode} />} />
-              <Route path="/error" element={<ErrorPage dict={dict} isDarkMode={isDarkMode} />} />
-              <Route path="/how-it-works" element={<XaiEducationPage dict={dict} />} />
-              <Route path="*" element={<NotFoundPage dict={dict} />} />
-            </Routes>
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
+              <Routes>
+                <Route path="/" element={<LandingPage dict={dict} openGuide={openGuide} />} />
+                <Route path="/loading" element={<LoadingPage dict={dict} isDarkMode={isDarkMode} />} />
+                <Route path="/result" element={<ResultPage dict={dict} lang={lang} isDarkMode={isDarkMode} />} />
+                <Route path="/error" element={<ErrorPage dict={dict} isDarkMode={isDarkMode} />} />
+                <Route path="/how-it-works" element={<XaiEducationPage dict={dict} />} />
+                <Route path="*" element={<NotFoundPage dict={dict} />} />
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
         </main>
 
         
