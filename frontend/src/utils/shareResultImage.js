@@ -210,7 +210,7 @@ export function renderShareImageCard({
   const sourceLine = `${dict.sourceFile}: ${filename}`;
   let metaY = wrapText(ctx, sourceLine, 80, 230, width - 160, 36);
   if (modelLabel) {
-    metaY = wrapText(
+    wrapText(
       ctx,
       `${dict.modelUsed}: ${modelLabel}`,
       80,

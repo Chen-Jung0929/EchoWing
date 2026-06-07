@@ -23,7 +23,7 @@ function parseErrorBody(body) {
 
 async function fetchJson(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, options);
-  let body = null;
+  let body;
   try {
     body = await response.json();
   } catch {
@@ -227,7 +227,9 @@ export const analyzeAudioStream = async (
       try {
         const errorData = await response.json();
         msg = parseErrorBody(errorData) || msg;
-      } catch (e) {}
+      } catch {
+        // Ignored
+      }
       throw new Error(msg);
     }
 

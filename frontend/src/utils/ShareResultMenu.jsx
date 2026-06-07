@@ -54,18 +54,23 @@ export default function ShareResultMenu({ open, onClose, getSharePayload, dict }
   const canNativeShare = typeof navigator !== 'undefined' && Boolean(navigator.share);
 
   useEffect(() => {
-    if (!open || !payload) return;
-    setTemplateKey('social');
-    setShareText(payload.templates.social);
-    setCopied(false);
-    setPublishStatus('');
-  }, [open, payload?.templates.social]);
+    if (!open || !payload) return undefined;
+    const t = setTimeout(() => {
+      setTemplateKey('social');
+      setShareText(payload.templates.social);
+      setCopied(false);
+      setPublishStatus('');
+    }, 0);
+    return () => clearTimeout(t);
+  }, [open, payload]);
 
   useEffect(() => {
     if (!open) {
-      setCopied(false);
-      setPublishStatus('');
-      return undefined;
+      const t = setTimeout(() => {
+        setCopied(false);
+        setPublishStatus('');
+      }, 0);
+      return () => clearTimeout(t);
     }
     const onKeyDown = (e) => {
       if (e.key === 'Escape') onClose();

@@ -75,12 +75,14 @@ export default function NearbyRecordsModal({
 
   useEffect(() => {
     if (!open) {
-      setStatus('idle');
-      setError('');
-      setRecords([]);
-      setCoords(null);
-      setRadiusKm(5);
-      return undefined;
+      const t = setTimeout(() => {
+        setStatus('idle');
+        setError('');
+        setRecords([]);
+        setCoords(null);
+        setRadiusKm(5);
+      }, 0);
+      return () => clearTimeout(t);
     }
 
     let cancelled = false;

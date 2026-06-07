@@ -13,7 +13,7 @@ import {
 import { applyPdfFont, ensurePdfFonts, pickLocalized, formatPdfTimeRangeSec, sanitizePdfText } from './pdfFonts';
 import { renderSpectrogramForPdf } from './pdfSpectrogram';
 import { resolveConfidenceThreshold } from '../../config/confidenceThreshold';
-import { getDict } from '../../i18n';
+import { getDict, formatMessage } from '../../i18n';
 import { getModelDisplayLabel } from '../modelLabel';
 import { validatePdfQuality } from './pdfQualityCheck';
 import { formatPeakTimeRange } from '../timeline/mergeConsecutiveEvents';
@@ -146,11 +146,11 @@ function estimateTableHeight(rowCount, hasHead = true) {
   return (headRows + rowCount) * 6.5 + 4;
 }
 
-function timelineSpeciesTableBody(speciesRows, lang) {
+function timelineSpeciesTableBody(speciesRows, lang, dict) {
   if (!speciesRows?.length) {
     return [
       [
-        lang === 'zh' ? '無達事件信心門檻的物種。' : 'No species met the event confidence threshold.',
+        dict.pdfNoSpeciesEvents,
         '—',
         '—',
       ],
@@ -163,11 +163,11 @@ function timelineSpeciesTableBody(speciesRows, lang) {
   ]);
 }
 
-function timelineEventTableBody(eventRows, lang) {
+function timelineEventTableBody(eventRows, lang, dict) {
   if (!eventRows?.length) {
     return [
       [
-        lang === 'zh' ? '尚無偵測到明顯物種事件。' : 'No distinct species events detected.',
+        dict.pdfNoEventsDetected,
         '—',
         '—',
         '—',
@@ -184,14 +184,14 @@ function timelineEventTableBody(eventRows, lang) {
   ]);
 }
 
-function speciesTimeSpanLabel(events, lang) {
+function speciesTimeSpanLabel(events, dict) {
   if (!events?.length) return '—';
   const starts = events.map((ev) => ev.onset ?? ev.peakTime ?? 0);
   const ends = events.map((ev) => ev.offset ?? ev.peakTime ?? 0);
   const min = Math.min(...starts);
   const max = Math.max(...ends);
-  if (min === max) return lang === 'zh' ? `${min} 秒` : `${min} s`;
-  return formatPdfTimeRangeSec(min, max, lang);
+  if (min === max) return formatMessage(dict.pdfTimeSec, { sec: min });
+  return formatPdfTimeRangeSec(min, max, dict);
 }
 
 function measureSpeciesBlock(speciesReport) {
@@ -241,7 +241,6 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
     generatedAt,
     decisionSupport,
     durationSec,
-    windowSec,
     confidenceThreshold,
     modelName = 'perch',
     surveyMetadata,
@@ -256,8 +255,7 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
   const thresholdPct = Math.round(resolveConfidenceThreshold(confidenceThreshold) * 100);
   const dict = getDict(lang);
   const modelLabel = getModelDisplayLabel(modelName, dict);
-  const reportTitle =
-    lang === 'zh' ? '鳥類聲學辨識分析報告' : 'Bird Acoustic Analysis Report';
+  const reportTitle = dict.pdfReportTitle;
   const generatedLabel = new Date(generatedAt).toLocaleString(
     lang === 'zh' ? 'zh-TW' : 'en-US'
   );
@@ -283,7 +281,7 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
   const logo = await loadLogoDataUrl(LOGO_SRC).catch(() => null);
 
   // —— 封面／總覽（單一區塊，與原 HTML 報告結構一致） ——
-  layout.markBookmark(lang === 'zh' ? '封面／總覽' : 'Cover / Overview');
+  layout.markBookmark(dict.pdfCoverOverview);
   if (logo) drawCoverWatermark(pdf, logo);
 
   layout.drawTextBlock(reportTitle, {
@@ -292,7 +290,7 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
     lineHeight: 1.35,
     indent: false,
   });
-  layout.drawTextBlock(lang === 'zh' ? '封面／總覽' : 'Cover / Overview', {
+  layout.drawTextBlock(dict.pdfCoverOverview, {
     fontSize: 12,
     color: [21, 128, 61],
     lineHeight: 1.35,
@@ -301,27 +299,27 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
   layout.advance(2);
   layout.drawStackedFields(
     [
-      { label: lang === 'zh' ? '報告編號' : 'Report ID', value: analysisId },
-      { label: lang === 'zh' ? '產生時間' : 'Generated', value: generatedLabel },
+      { label: dict.pdfReportId, value: analysisId },
+      { label: dict.pdfGeneratedAt, value: generatedLabel },
     ],
     { fontSize: 9, indentMm: 0, rowGapMm: 2, color: [107, 114, 128] }
   );
   layout.advance(2);
-  layout.drawSectionHeading(lang === 'zh' ? '樣本資訊' : 'Sample information');
+  layout.drawSectionHeading(dict.pdfSampleInfo);
   layout.drawFieldGrid(
     [
-      { label: lang === 'zh' ? '原始檔名' : 'Source file', value: sourceName },
+      { label: dict.sourceFile, value: sourceName },
       {
-        label: lang === 'zh' ? '總時長' : 'Total duration',
-        value: lang === 'zh' ? `約 ${durationSec} 秒` : `~${durationSec} s`,
+        label: dict.pdfTotalDuration,
+        value: formatMessage(dict.pdfApproxSec, { sec: durationSec }),
       },
-      { label: lang === 'zh' ? '採樣率' : 'Sample rate', value: '32,000 Hz' },
+      { label: dict.pdfSampleRate, value: '32,000 Hz' },
       {
-        label: lang === 'zh' ? '音訊通道' : 'Channels',
-        value: lang === 'zh' ? '單聲道' : 'Mono',
+        label: dict.pdfChannels,
+        value: dict.pdfChannelMono,
       },
       {
-        label: lang === 'zh' ? '信心門檻' : 'Threshold',
+        label: dict.pdfThreshold,
         value: `${thresholdPct}%`,
       },
       {
@@ -336,49 +334,48 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
     { fontSize: 9 }
   );
 
-  layout.drawSectionHeading(lang === 'zh' ? '物種活動摘要' : 'Species activity summary');
+  layout.drawSectionHeading(dict.pdfSpeciesActivitySummary);
   layout.drawTextBlock(
-    lang === 'zh'
-      ? '以下依時間軸反卷積與事件信心門檻彙整（非投票聚合）。'
-      : 'Timeline deconvolution with event-confidence filtering (not vote aggregation).',
+    dict.pdfActivitySummaryHint,
     { fontSize: 8, color: [107, 114, 128], marginAfter: 5 }
   );
 
   drawTable(pdf, layout, {
     head: [
       [
-        lang === 'zh' ? '物種名稱' : 'Species',
-        lang === 'zh' ? '最高事件信心' : 'Peak event confidence',
-        lang === 'zh' ? '峰值時間' : 'Peak time',
+        dict.pdfSpeciesName,
+        dict.pdfPeakEventConfidence,
+        dict.pdfPeakTimeSingle,
       ],
     ],
-    body: timelineSpeciesTableBody(timelineSpeciesSummary, lang),
+    body: timelineSpeciesTableBody(timelineSpeciesSummary, lang, dict),
   });
 
-  layout.drawSectionHeading(lang === 'zh' ? '物種事件一覽' : 'Species events', {
+  layout.drawSectionHeading(dict.pdfSpeciesEvents, {
     compact: true,
   });
   drawTable(pdf, layout, {
     head: [
       [
-        lang === 'zh' ? '物種' : 'Species',
-        lang === 'zh' ? '起始' : 'Onset',
-        lang === 'zh' ? '結束' : 'Offset',
-        lang === 'zh' ? '峰值時間' : 'Peak times',
-        lang === 'zh' ? '事件信心' : 'Event confidence',
+        dict.pdfSpecies,
+        dict.pdfOnset,
+        dict.pdfOffset,
+        dict.pdfPeakTimesPlural,
+        dict.pdfEventConfidenceLabel,
       ],
     ],
-    body: timelineEventTableBody(timelineEventRows, lang),
+    body: timelineEventTableBody(timelineEventRows, lang, dict),
   });
 
   if (stitchedSpectrogram) {
-    layout.drawSectionHeading(lang === 'zh' ? '全段頻譜圖' : 'Full spectrogram', {
+    layout.drawSectionHeading(dict.pdfFullSpectrogram, {
       compact: true,
     });
     const specImg = renderSpectrogramForPdf(stitchedSpectrogram, {
       lang,
       durationSec,
       events: timelineEvents,
+      dict,
     });
     if (specImg) {
       layout.ensureSpace(specImg.heightMm);
@@ -399,9 +396,7 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
   if (fieldRecordMode && surveyMetadata?.overview) {
     const o = surveyMetadata.overview;
     if (fieldRecordMode || hasOverviewNotes(o)) {
-      layout.drawSectionHeading(
-        lang === 'zh' ? '田野備註（總覽）' : 'Field notes (overview)'
-      );
+      layout.drawSectionHeading(dict.pdfFieldNotesOverview);
       const locationText = o.location?.trim()
         ? o.location.trim()
         : o.coordinates
@@ -410,16 +405,16 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
       layout.drawFieldGrid(
         [
           {
-            label: lang === 'zh' ? '觀察時間' : 'Observation time',
+            label: dict.pdfObservationTime,
             value: formatObservedAtForDisplay(o.observedAt, lang),
           },
           {
-            label: lang === 'zh' ? '觀察者' : 'Observer',
+            label: dict.pdfObserver,
             value: o.observerName?.trim() || '—',
           },
-          { label: lang === 'zh' ? '地點' : 'Location', value: locationText },
+          { label: dict.pdfLocation, value: locationText },
           {
-            label: lang === 'zh' ? '環境描述' : 'Environment',
+            label: dict.pdfEnvironment,
             value: o.environmentDescription?.trim() || '—',
           },
         ],
@@ -428,7 +423,7 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
       layout.drawStackedFields(
         [
           {
-            label: lang === 'zh' ? '整體結論' : 'Overall conclusion',
+            label: dict.pdfOverallConclusion,
             value: o.overallConclusion?.trim() || '—',
           },
         ],
@@ -446,70 +441,65 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
 
     const speciesName = pickLocalized(sp.name, lang);
     layout.markBookmark(
-      lang === 'zh' ? `物種 ${sp.rank} · ${speciesName}` : `Species ${sp.rank} · ${speciesName}`
+      formatMessage(dict.pdfSpeciesRankBookmark, { rank: sp.rank, species: speciesName })
     );
 
-    const spTitle =
-      lang === 'zh'
-        ? `主要預測物種 ${sp.rank} · ${speciesName}`
-        : `Primary species ${sp.rank} · ${speciesName}`;
-    layout.drawSegmentTitle(spTitle, speciesTimeSpanLabel(sp.events, lang));
+    const spTitle = formatMessage(dict.pdfPrimarySpeciesTitle, { rank: sp.rank, species: speciesName });
+    layout.drawSegmentTitle(spTitle, speciesTimeSpanLabel(sp.events, dict));
 
-    layout.drawSectionHeading(lang === 'zh' ? '物種資訊' : 'Species information', {
+    layout.drawSectionHeading(dict.pdfSpeciesInfo, {
       compact: true,
     });
     layout.drawFieldGrid(
       [
         {
-          label: lang === 'zh' ? '學名' : 'Scientific name',
+          label: dict.pdfScientificName,
           value: sp.scientific_name?.trim() || '—',
         },
         {
-          label: lang === 'zh' ? '最高事件信心' : 'Peak event confidence',
+          label: dict.pdfPeakEventConfidence,
           value: `${Math.round((sp.probability ?? 0) * 100)}%`,
         },
         {
-          label: lang === 'zh' ? '峰值時間' : 'Peak time',
+          label: dict.pdfPeakTimeSingle,
           value: sp.peak_time != null ? `${sp.peak_time}s` : '—',
         },
         {
-          label: lang === 'zh' ? '活動時間範圍' : 'Activity span',
-          value: speciesTimeSpanLabel(sp.events, lang),
+          label: dict.pdfActivitySpan,
+          value: speciesTimeSpanLabel(sp.events, dict),
         },
       ],
       { fontSize: 8.5 }
     );
 
     layout.drawSectionHeading(
-      lang === 'zh' ? '時間軸事件' : 'Timeline events',
+      dict.pdfTimelineEvents,
       { compact: true }
     );
     drawTable(pdf, layout, {
       head: [
         [
-          lang === 'zh' ? '起始' : 'Onset',
-          lang === 'zh' ? '結束' : 'Offset',
-          lang === 'zh' ? '峰值時間' : 'Peak times',
-          lang === 'zh' ? '事件信心' : 'Event confidence',
+          dict.pdfOnset,
+          dict.pdfOffset,
+          dict.pdfPeakTimesPlural,
+          dict.pdfEventConfidenceLabel,
         ],
       ],
-      body: timelineEventTableBody(sp.events, lang).map((row) => row.slice(1)),
+      body: timelineEventTableBody(sp.events, lang, dict).map((row) => row.slice(1)),
     });
 
     layout.drawSectionHeading(
-      lang === 'zh' ? '全段頻譜圖（物種標籤）' : 'Full spectrogram (species labels)',
+      dict.pdfFullSpecSpeciesLabels,
       { compact: true }
     );
     if (stitchedSpectrogram) {
       const specImg = renderSpectrogramForPdf(stitchedSpectrogram, {
         lang,
-        title:
-          lang === 'zh'
-            ? `${speciesName} · 全段頻譜標籤`
-            : `${speciesName} · full recording labels`,
+        title: formatMessage(dict.pdfSpecSpeciesTitle, { species: speciesName }),
         durationSec,
         events: sp.events,
         timeOffsetSec: 0,
+        dict,
       });
       if (specImg) {
         const imgH = specImg.heightMm;
@@ -528,7 +518,7 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
       }
     } else {
       layout.drawTextBlock(
-        lang === 'zh' ? '無可用頻譜資料' : 'No spectrogram',
+        dict.pdfNoSpectrogramData,
         { fontSize: 9, color: [156, 163, 175], marginAfter: 2 }
       );
     }
@@ -537,24 +527,22 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
   // —— 決策輔助 ——
   layout.addPage();
   layout.keepTogether(40);
-  layout.markBookmark(lang === 'zh' ? '決策輔助' : 'Decision support');
+  layout.markBookmark(dict.pdfDecisionSupport);
 
-  layout.drawSectionHeading(lang === 'zh' ? '決策輔助' : 'Decision support');
+  layout.drawSectionHeading(dict.pdfDecisionSupport);
   layout.drawTextBlock(
-    lang === 'zh'
-      ? '以下依時間軸事件信心與反卷積結果提供參考，非逐片段模型信心彙整。'
-      : 'Based on timeline event confidence and deconvolution—not per-segment model confidence aggregation.',
+    dict.pdfDecisionSupportHint,
     { fontSize: 8, color: [107, 114, 128], marginAfter: 5 }
   );
   const ds = decisionSupport;
   layout.drawStackedFields(
     [
       {
-        label: lang === 'zh' ? '風險分析' : 'Risk analysis',
+        label: dict.pdfRiskAnalysis,
         value: pickLocalized(ds?.risk_analysis, lang),
       },
       {
-        label: lang === 'zh' ? '行動建議' : 'Recommendation',
+        label: dict.pdfRecommendation,
         value: pickLocalized(ds?.action_recommendation, lang),
       },
     ],

@@ -378,7 +378,7 @@ export default function SpectrogramView({
   const alignedXai = useMemo(() => {
     if (!xaiHeatmap?.length || !spectrogram?.time_frames) return null;
     return resampleHeatmapToFrames(xaiHeatmap, spectrogram.time_frames);
-  }, [xaiHeatmap, spectrogram?.time_frames]);
+  }, [xaiHeatmap, spectrogram]);
 
   const hasXai = Boolean(alignedXai?.length) && !xaiGenerating;
   const generatingLabel =

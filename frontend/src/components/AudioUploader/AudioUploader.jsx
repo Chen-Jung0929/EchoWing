@@ -1,18 +1,14 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useAudioProcessor } from '../../hooks/useAudioProcessor';
 import { MEDIA_FILE_ACCEPT } from '../../utils/supportedMedia';
 
 export default function AudioUploader({ onChunksProcessed }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const { processAudio, isProcessing, error } = useAudioProcessor();
-  
-  // 新增 1：建立一個 State 來儲存準備預覽的音檔
-  const [previewChunks, setPreviewChunks] = useState([]);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       setSelectedFile(e.target.files[0]);
-      setPreviewChunks([]); // 選擇新檔案時清空舊預覽
     }
   };
 

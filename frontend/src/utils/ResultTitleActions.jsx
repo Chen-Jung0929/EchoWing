@@ -33,13 +33,14 @@ function SaveTextButton({ label, labelDone, onSave, saved, className = '' }) {
 
   useEffect(() => {
     if (!saved) return undefined;
-    setFlashDone(true);
+    const t1 = setTimeout(() => setFlashDone(true), 0);
     if (timerRef.current) clearTimeout(timerRef.current);
     timerRef.current = setTimeout(() => {
       setFlashDone(false);
       timerRef.current = null;
     }, DONE_MS);
     return () => {
+      clearTimeout(t1);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
   }, [saved]);
@@ -120,8 +121,11 @@ export function ResultFloatingActions({
   const [shareOpen, setShareOpen] = useState(false);
   useEffect(() => {
     if (!actionsDisabled) return undefined;
-    setShareOpen(false);
-    setMenuOpen(false);
+    const t = setTimeout(() => {
+      setShareOpen(false);
+      setMenuOpen(false);
+    }, 0);
+    return () => clearTimeout(t);
   }, [actionsDisabled]);
 
   useEffect(() => {

@@ -34,13 +34,15 @@ export default function LocationPickerModal({
 
   useEffect(() => {
     if (!open) {
-      setStatus('idle');
-      setError('');
-      setPicked(null);
-      setConfirming(false);
-      mapRef.current = null;
-      markerRef.current = null;
-      return undefined;
+      const t = setTimeout(() => {
+        setStatus('idle');
+        setError('');
+        setPicked(null);
+        setConfirming(false);
+        mapRef.current = null;
+        markerRef.current = null;
+      }, 0);
+      return () => clearTimeout(t);
     }
 
     let cancelled = false;

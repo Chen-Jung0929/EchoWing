@@ -1,6 +1,7 @@
 import { SPECTROGRAM_DISPLAY } from './pdfConstants';
 import { renderSpectrogramWithLabels } from '../spectrogramWithLabels';
 import { pickLocalized } from './pdfFonts';
+import { formatMessage } from '../../i18n';
 
 /**
  * 依 PDF 輸出尺寸產生高解析度頻譜圖（含物種事件標籤、軸標籤與色階說明）。
@@ -13,6 +14,7 @@ import { pickLocalized } from './pdfFonts';
  *   events?: object[],
  *   timeOffsetSec?: number,
  *   title?: string,
+ *   dict: object,
  * }} meta
  */
 export function renderSpectrogramForPdf(spectrogram, meta) {
@@ -23,12 +25,8 @@ export function renderSpectrogramForPdf(spectrogram, meta) {
   const title =
     meta.title ??
     (meta.segmentLabel && meta.timeRange
-      ? meta.lang === 'zh'
-        ? `片段 ${meta.segmentLabel} · ${meta.timeRange}`
-        : `Segment ${meta.segmentLabel} · ${meta.timeRange}`
-      : meta.lang === 'zh'
-        ? '全段頻譜圖'
-        : 'Full recording spectrogram');
+      ? formatMessage(meta.dict.pdfSegmentTitle, { label: meta.segmentLabel, timeRange: meta.timeRange })
+      : meta.dict.pdfFullRecordingSpectrogram);
 
   const rendered = renderSpectrogramWithLabels(spectrogram, {
     lang: meta.lang,

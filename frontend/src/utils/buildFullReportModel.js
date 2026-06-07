@@ -12,7 +12,6 @@ import { buildEventRangeSegments } from './timeline/eventRangeSegments';
 import { buildTimelineDecisionSupport } from './timeline/buildTimelineDecisionSupport';
 
 export function buildFullReportModel({
-  result,
   chunks,
   filename,
   spectrogramByIndex,

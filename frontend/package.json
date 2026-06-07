@@ -8,6 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "test:locales": "node scripts/validate-locales.mjs",
     "test:pdf": "node scripts/validate-pdf-module.mjs",
     "test:timeline": "node scripts/validate-timeline.mjs"
   },

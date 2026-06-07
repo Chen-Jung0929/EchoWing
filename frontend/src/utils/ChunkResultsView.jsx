@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatMessage } from '../i18n';
 import DownloadMetadataModal from '../components/DownloadMetadataModal/DownloadMetadataModal';
 import NearbyRecordsModal from '../components/NearbyRecordsModal/NearbyRecordsModal';
@@ -64,13 +64,12 @@ export default function ChunkResultsView({
   resetToLanding,
   spectrogramByIndex = {},
 }) {
-  const allChunks = result.chunks ?? [];
   const modelName = resolveResultModelName(result);
   const modelLabel = getModelDisplayLabel(modelName, dict);
   const windowSec = modelWindowSec(modelName);
   const chunks = useMemo(
-    () => displayChunksForModel(allChunks, modelName),
-    [allChunks, modelName]
+    () => displayChunksForModel(result.chunks ?? [], modelName),
+    [result.chunks, modelName]
   );
   const timeline = result.timeline ?? null;
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -287,7 +286,9 @@ export default function ChunkResultsView({
     [result, dict, lang]
   );
 
-  surveyMetadataRef.current = surveyMetadata;
+  useEffect(() => {
+    surveyMetadataRef.current = surveyMetadata;
+  }, [surveyMetadata]);
 
   const handleSaveConfirm = useCallback(
     async (metadata) => {

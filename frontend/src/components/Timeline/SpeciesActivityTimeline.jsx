@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { getSpeciesMarkerColor } from '../../utils/timeline/eventRangeSegments.js';
 import { eventsMatchSelection, getEventPeakTimes } from '../../utils/timeline/mergeConsecutiveEvents.js';
@@ -109,7 +109,7 @@ export default function SpeciesActivityTimeline({
   const dragRef = useRef(null);
   const [viewportWidth, setViewportWidth] = useState(0);
 
-  const species = timeline?.species ?? [];
+  const species = useMemo(() => timeline?.species ?? [], [timeline?.species]);
   const durationSec = timeline?.duration_sec ?? 30;
   const boundaryLowSec = timeline?.boundary_low_sec ?? 0;
   const speciesOrder = species.map((sp) => sp.species_id);
