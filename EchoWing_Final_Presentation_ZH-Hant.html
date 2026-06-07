@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EchoWing 期末成果簡報</title>
+  
+  <!-- Google Fonts: Outfit (headings/numbers) & Noto Sans TC (Traditional Chinese body text) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&family=Noto+Sans+TC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    /* RESET & CORE VARIABLES */
+    :root {
+      --c-bg-viewport: #EFE9DF;      /* Warm paper border */
+      --c-bg-stage: #FAF6F0;         /* Slide stage warm paper */
+      --c-text-primary: #2C3E50;     /* Navy charcoal */
+      --c-text-muted: #6C7A89;       /* Medium grey-blue */
+      --c-brand: #C06C53;            /* Terracotta / Coral wood */
+      --c-brand-light: #F4DFD8;      /* Terracotta light accent */
+      --c-card-bg: rgba(255, 253, 251, 0.85); /* Semi-transparent warm card */
+      --c-card-border: rgba(47, 74, 95, 0.08);
+      --font-heading: 'Outfit', 'Noto Sans TC', -apple-system, sans-serif;
+      --font-body: 'Noto Sans TC', -apple-system, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--c-bg-viewport);
+      font-family: var(--font-body);
+      color: var(--c-text-primary);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      user-select: none;
+    }
+
+    /* VIEWPORT CONTAINER */
+    .viewport {
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* 16:9 FIXED STAGE CONTAINER */
+    .slide-stage {
+      width: 1920px;
+      height: 1080px;
+      position: relative;
+      overflow: hidden;
+      background-color: var(--c-bg-stage);
+      box-shadow: 0 30px 100px rgba(0, 0, 0, 0.12), 0 5px 20px rgba(0, 0, 0, 0.05);
+      border-radius: 12px;
+      transform-origin: center center;
+      flex-shrink: 0;
+    }
+
+    /* SLIDE LAYOUT & ANIMATIONS */
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1920px;
+      height: 1080px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+      padding: 80px 120px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: flex-start;
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* PROGRESSIVE DISCLOSURE SYSTEM */
+    .slide-up {
+      transform: translateY(30px);
+      opacity: 0;
+      transition: transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.8s ease;
+    }
+
+    .active .slide-up {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .fade-in {
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+
+    .active .fade-in {
+      opacity: 1;
+    }
+
+    .mask-reveal {
+      clip-path: inset(0 100% 0 0);
+      transition: clip-path 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    .active .mask-reveal {
+      clip-path: inset(0 0 0 0);
+    }
+
+    /* STAGGERED TRANSITIONS */
+    .stagger-1 { transition-delay: 0.1s; }
+    .stagger-2 { transition-delay: 0.2s; }
+    .stagger-3 { transition-delay: 0.35s; }
+    .stagger-4 { transition-delay: 0.5s; }
+    .stagger-5 { transition-delay: 0.65s; }
+    .stagger-6 { transition-delay: 0.8s; }
+    .stagger-7 { transition-delay: 0.95s; }
+    .stagger-8 { transition-delay: 1.1s; }
+
+    /* CORE ELEMENTS */
+    h2.slide-title {
+      font-family: var(--font-heading);
+      font-size: 56px;
+      font-weight: 900;
+      color: var(--c-text-primary);
+      margin-bottom: 8px;
+      letter-spacing: -1px;
+    }
+
+    p.slide-subtitle {
+      font-size: 24px;
+      color: var(--c-brand);
+      font-weight: 500;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: var(--c-card-bg);
+      border: 1px solid var(--c-card-border);
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 10px 40px -10px rgba(47, 74, 95, 0.05);
+      backdrop-filter: blur(8px);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    /* BROWSER FRAME MOCKUP */
+    .browser-frame {
+      border: 1px solid var(--c-card-border);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+      overflow: hidden;
+      background: #FFFDFB;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .browser-header {
+      height: 40px;
+      background: #F2EBE1;
+      border-b: 1px solid var(--c-card-border);
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      gap: 8px;
+    }
+
+    .browser-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: rgba(47, 74, 95, 0.2);
+    }
+    
+    .browser-address {
+      flex: 1;
+      max-width: 400px;
+      height: 24px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 6px;
+      margin: 0 auto;
+      font-family: var(--font-heading);
+      font-size: 12px;
+      color: var(--c-text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .browser-content {
+      flex: 1;
+      position: relative;
+      background: #FAF6F0;
+    }
+
+    .browser-content img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* SPECIFIC SLIDE STYLES */
+
+    /* Slide 1: Opening */
+    .opening-logo {
+      animation: logo-float 4s ease-in-out infinite alternate;
+    }
+    @keyframes logo-float {
+      from { transform: translateY(0); }
+      to { transform: translateY(-10px); }
+    }
+    .opening-title {
+      font-family: var(--font-heading);
+      font-size: 88px;
+      font-weight: 900;
+      letter-spacing: -2px;
+      color: var(--c-text-primary);
+      margin-top: 24px;
+    }
+    .opening-subtitle {
+      font-size: 24px;
+      font-weight: 500;
+      letter-spacing: 12px;
+      color: var(--c-brand);
+      margin-top: 16px;
+      margin-left: 12px;
+    }
+
+    /* Slide 2: languages */
+    .huge-number {
+      font-family: var(--font-heading);
+      font-size: 340px;
+      font-weight: 900;
+      color: var(--c-brand);
+      line-height: 0.9;
+      letter-spacing: -10px;
+    }
+    .huge-number-label {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--c-text-primary);
+      margin-top: 16px;
+    }
+    .lang-chip {
+      position: absolute;
+      padding: 12px 24px;
+      border-radius: 99px;
+      background: #FFFDFB;
+      border: 1px solid var(--c-card-border);
+      box-shadow: 0 6px 20px -5px rgba(47, 74, 95, 0.08);
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--c-text-primary);
+      transition: transform 0.3s ease;
+    }
+    .lang-chip:hover {
+      transform: scale(1.08);
+      border-color: var(--c-brand);
+    }
+    .search-mockup {
+      position: absolute;
+      right: 120px;
+      bottom: 110px;
+      background: var(--c-card-bg);
+      border: 1px solid var(--c-card-border);
+      border-radius: 12px;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+    }
+
+    /* Slide 3: Roadmap */
+    .roadmap-line {
+      position: absolute;
+      top: 520px;
+      left: 160px;
+      width: 1600px;
+      height: 6px;
+      background: var(--c-brand-light);
+      border-radius: 3px;
+    }
+    .roadmap-node {
+      position: absolute;
+      top: 513px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--c-brand);
+      box-shadow: 0 0 0 6px rgba(192, 108, 83, 0.2);
+    }
+    .roadmap-card {
+      position: absolute;
+      width: 280px;
+      height: 210px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .roadmap-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+      color: var(--c-brand);
+    }
+    .roadmap-title {
+      font-size: 22px;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+    .roadmap-desc {
+      font-size: 15px;
+      color: var(--c-text-muted);
+      line-height: 1.4;
+    }
+
+    /* Slide 4: Capture */
+    .capture-card {
+      width: 580px;
+      height: 520px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 40px;
+    }
+    .capture-icon {
+      font-size: 64px;
+      margin-bottom: 24px;
+      color: var(--c-brand);
+    }
+    .capture-title {
+      font-size: 32px;
+      font-weight: 900;
+      margin-bottom: 16px;
+    }
+    .capture-desc {
+      font-size: 18px;
+      color: var(--c-text-muted);
+      line-height: 1.6;
+      max-width: 420px;
+    }
+
+    /* Slide 5: Models */
+    .model-card {
+      width: 440px;
+      height: 480px;
+      display: flex;
+      flex-direction: column;
+      padding: 40px 30px;
+      justify-content: flex-start;
+    }
+    .model-logo {
+      height: 60px;
+      margin-bottom: 30px;
+      align-self: flex-start;
+      object-fit: contain;
+    }
+    .model-title {
+      font-family: var(--font-heading);
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 8px;
+    }
+    .model-type {
+      font-size: 18px;
+      color: var(--c-brand);
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+    .model-desc {
+      font-size: 16px;
+      color: var(--c-text-muted);
+      line-height: 1.6;
+      border-top: 1px solid var(--c-card-border);
+      padding-top: 20px;
+    }
+    .model-footer-text {
+      font-size: 26px;
+      font-weight: 500;
+      color: var(--c-brand);
+      text-align: center;
+      width: 100%;
+      margin-top: 60px;
+    }
+
+    /* Slide 6: Results Pointer */
+    .callout-card {
+      width: 460px;
+      height: 140px;
+      padding: 16px 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .callout-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--c-brand);
+      margin-bottom: 4px;
+    }
+    .callout-desc {
+      font-size: 15px;
+      color: var(--c-text-muted);
+      line-height: 1.4;
+    }
+    
+    /* Callout Lines SVG Overlay */
+    .callout-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .callout-svg path {
+      stroke: var(--c-brand);
+      stroke-width: 2px;
+      fill: none;
+      stroke-dasharray: 6 4;
+      opacity: 0.6;
+    }
+    .callout-svg circle {
+      fill: var(--c-brand);
+    }
+
+    /* Slide 7: Explainable XAI */
+    .xai-detail-card {
+      width: 680px;
+      height: 160px;
+      padding: 24px 30px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .xai-detail-title {
+      font-family: var(--font-heading);
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--c-brand);
+      margin-bottom: 6px;
+    }
+    .xai-detail-desc {
+      font-size: 16px;
+      color: var(--c-text-muted);
+      line-height: 1.5;
+    }
+
+    /* Slide 8: Timeline & Events */
+    .timeline-badge {
+      width: 380px;
+      height: 110px;
+      padding: 16px 24px;
+      text-align: center;
+    }
+    .timeline-badge-title {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--c-brand);
+      margin-bottom: 4px;
+    }
+    .timeline-badge-desc {
+      font-size: 15px;
+      color: var(--c-text-muted);
+    }
+
+    /* Slide 9: Field Record Note Paper */
+    .note-paper {
+      background: #FFFDFB;
+      border: 1px solid #E8DFD0;
+      border-radius: 8px;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.05);
+      padding: 50px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+    .note-paper::before {
+      content: '';
+      position: absolute;
+      left: 60px;
+      top: 0;
+      bottom: 0;
+      width: 1px;
+      background: rgba(192, 108, 83, 0.3); /* Lined paper red line */
+    }
+    .note-title {
+      font-size: 28px;
+      font-weight: 900;
+      margin-bottom: 30px;
+      color: var(--c-text-primary);
+      padding-left: 40px;
+    }
+    .note-row {
+      font-size: 20px;
+      line-height: 2;
+      border-bottom: 1px dashed rgba(47, 74, 95, 0.12); /* Lined paper line */
+      margin-bottom: 16px;
+      padding-left: 40px;
+      color: #34495E;
+    }
+    .note-label {
+      font-weight: 900;
+      color: var(--c-brand);
+    }
+
+    /* Slide 10: Ending */
+    .ending-kicker {
+      font-family: var(--font-heading);
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--c-brand);
+      letter-spacing: 4px;
+      margin-bottom: 16px;
+    }
+    .ending-main {
+      font-size: 56px;
+      font-weight: 900;
+      line-height: 1.5;
+      color: var(--c-text-primary);
+      max-width: 1500px;
+      margin-bottom: 60px;
+    }
+    .ending-core-values {
+      display: flex;
+      gap: 100px;
+    }
+    .ending-value {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      border-left: 4px solid var(--c-brand);
+      padding-left: 20px;
+    }
+    .ending-value-title {
+      font-size: 32px;
+      font-weight: 900;
+      color: var(--c-text-primary);
+      margin-bottom: 8px;
+    }
+    .ending-value-desc {
+      font-size: 18px;
+      color: var(--c-text-muted);
+    }
+
+    /* UTILITY GLOBAL NAV ELEMENTS */
+    .slide-counter {
+      position: absolute;
+      bottom: 40px;
+      right: 60px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--c-brand);
+      letter-spacing: 2px;
+    }
+
+    .slide-footer-nav {
+      position: absolute;
+      bottom: 42px;
+      left: 60px;
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(47, 74, 95, 0.4);
+      letter-spacing: 1px;
+    }
+
+    /* PROGRESS BAR */
+    .progress-bar-container {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 5px;
+      background: rgba(47, 74, 95, 0.05);
+      z-index: 10;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 10%;
+      background: var(--c-brand);
+      transition: width 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="viewport">
+    
+    <div class="slide-stage">
+
+      <!-- ==================== SLIDE 1: OPENING ==================== -->
+      <section class="slide active" id="slide-1">
+        <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;">
+          
+          <!-- Stylized Wing + Soundwave SVG logo -->
+          <svg class="opening-logo fade-in" width="240" height="240" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Stylized wing and wave -->
+            <path d="M15,50 C25,20 60,15 85,35 C65,40 50,55 45,75 C40,55 25,50 15,50 Z" fill="#C06C53" />
+            <path d="M35,60 C42,45 62,40 78,52 C65,58 55,68 52,80 C48,68 40,62 35,60 Z" fill="#DCA392" opacity="0.8" />
+            <!-- Wave lines overlapping -->
+            <path d="M55,30 C65,25 75,32 85,28" stroke="#C06C53" stroke-width="3" stroke-linecap="round" />
+            <path d="M62,42 C70,37 78,44 86,40" stroke="#C06C53" stroke-width="2.5" stroke-linecap="round" />
+            <path d="M68,54 C74,50 80,56 87,52" stroke="#C06C53" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          
+          <h1 class="opening-title slide-up stagger-1">EchoWing</h1>
+          <p class="opening-subtitle slide-up stagger-2">錄音。辨識。理解。紀錄。</p>
+          
+        </div>
+      </section>
+
+
+      <!-- ==================== SLIDE 2: MULTI-LANGUAGE ==================== -->
+      <section class="slide" id="slide-2">
+        <div style="position: relative; width: 100%; height: 100%;">
+          <div style="position: absolute; left: 0; top: 120px;" class="slide-up">
+            <h2 class="slide-title">打破疆界的聲學探索</h2>
+            <p class="slide-subtitle" style="margin-bottom: 0;">多語言支援與深度搜尋整合</p>
+          </div>
+          
+          <!-- Central huge visual -->
+          <div style="position: absolute; left: 810px; top: 320px; text-align: center; display: flex; flex-direction: column; align-items: center;" class="slide-up stagger-1">
+            <h3 class="huge-number">20</h3>
+            <span class="huge-number-label">支援 20 種介面語言</span>
+          </div>
+
+          <!-- Language Chips constellation -->
+          <div class="lang-chip slide-up stagger-2" style="left: 480px; top: 300px;">中文</div>
+          <div class="lang-chip slide-up stagger-3" style="left: 400px; top: 420px;">台語</div>
+          <div class="lang-chip slide-up stagger-4" style="left: 440px; top: 540px;">客語</div>
+          <div class="lang-chip slide-up stagger-5" style="left: 480px; top: 660px;">粵語</div>
+          <div class="lang-chip slide-up stagger-6" style="left: 410px; top: 780px;">文言文</div>
+
+          <div class="lang-chip slide-up stagger-2" style="left: 1300px; top: 300px;">English</div>
+          <div class="lang-chip slide-up stagger-3" style="left: 1380px; top: 420px;">日本語</div>
+          <div class="lang-chip slide-up stagger-4" style="left: 1340px; top: 540px;">한국어</div>
+          <div class="lang-chip slide-up stagger-5" style="left: 1280px; top: 660px;">Tiếng Việt</div>
+          <div class="lang-chip slide-up stagger-6" style="left: 1360px; top: 780px;">ภาษาไทย</div>
+
+          <div class="lang-chip slide-up stagger-7" style="left: 650px; top: 220px;">Français</div>
+          <div class="lang-chip slide-up stagger-8" style="left: 860px; top: 190px;">Español</div>
+          <div class="lang-chip slide-up stagger-7" style="left: 1080px; top: 220px;">Deutsch</div>
+
+          <div class="lang-chip slide-up stagger-7" style="left: 610px; top: 850px;">Italiano</div>
+          <div class="lang-chip slide-up stagger-8" style="left: 810px; top: 880px;">Português</div>
+          <div class="lang-chip slide-up stagger-7" style="left: 1010px; top: 880px;">Nederlands</div>
+          <div class="lang-chip slide-up stagger-8" style="left: 1210px; top: 850px;">Bahasa Melayu</div>
+
+          <div class="lang-chip slide-up stagger-8" style="left: 540px; top: 140px;">Bahasa Indonesia</div>
+          <div class="lang-chip slide-up stagger-8" style="left: 1200px; top: 140px;">हिन्दी (Hindi)</div>
+          <div class="lang-chip slide-up stagger-8" style="left: 910px; top: 800px;">Tagalog</div>
+
+          <!-- Small Search Mockup -->
+          <div class="search-mockup slide-up stagger-8">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-brand)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <span style="font-size: 16px; font-weight: 700; color: var(--c-text-primary);">可被搜尋的網站</span>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ==================== SLIDE 3: ROADMAP ==================== -->
+      <section class="slide" id="slide-3">
+        <div style="position: relative; width: 100%; height: 100%;">
+          <div class="slide-up">
+            <h2 class="slide-title">使用者旅程總覽</h2>
+            <p class="slide-subtitle">EchoWing 鳥聲分析的五個主要節點</p>
+          </div>
+
+          <!-- Horizontal Timeline line -->
+          <div class="roadmap-line mask-reveal stagger-1"></div>
+
+          <!-- Node 1: 聽見鳥聲 (Above) -->
+          <div class="roadmap-node" style="left: 250px;"></div>
+          <div class="roadmap-card card slide-up stagger-2" style="left: 120px; top: 250px;">
+            <div class="roadmap-icon">🐦</div>
+            <h4 class="roadmap-title">1. 聽見鳥聲</h4>
+            <p class="roadmap-desc">身處大自然與田野間，聆聽並感受周遭鳥類的聲學訊號。</p>
+          </div>
+
+          <!-- Node 2: 捕捉聲音 (Below) -->
+          <div class="roadmap-node" style="left: 600px;"></div>
+          <div class="roadmap-card card slide-up stagger-3" style="left: 470px; top: 580px;">
+            <div class="roadmap-icon">🎙️</div>
+            <h4 class="roadmap-title">2. 捕捉聲音</h4>
+            <p class="roadmap-desc">利用瀏覽器即時錄音，或直接上傳包含鳥鳴的音訊/影片檔案。</p>
+          </div>
+
+          <!-- Node 3: AI 分析 (Above) -->
+          <div class="roadmap-node" style="left: 960px;"></div>
+          <div class="roadmap-card card slide-up stagger-4" style="left: 830px; top: 250px;">
+            <div class="roadmap-icon">🧠</div>
+            <h4 class="roadmap-title">3. AI 分析</h4>
+            <p class="roadmap-desc">將音訊切段降採樣，送往後端透過 Perch 或 BirdNET 模型進行分類。</p>
+          </div>
+
+          <!-- Node 4: 看懂結果 (Below) -->
+          <div class="roadmap-node" style="left: 1320px;"></div>
+          <div class="roadmap-card card slide-up stagger-5" style="left: 1190px; top: 580px;">
+            <div class="roadmap-icon">📊</div>
+            <h4 class="roadmap-title">4. 看懂結果</h4>
+            <p class="roadmap-desc">呈現物種預測與 confidence 分數，並藉由頻譜及 XAI 檢視依賴特徵。</p>
+          </div>
+
+          <!-- Node 5: 轉為紀錄 (Above) -->
+          <div class="roadmap-node" style="left: 1670px;"></div>
+          <div class="roadmap-card card slide-up stagger-6" style="left: 1540px; top: 250px;">
+            <div class="roadmap-icon">📝</div>
+            <h4 class="roadmap-title">5. 轉為紀錄</h4>
+            <p class="roadmap-desc">記錄田野筆記與 GPS 位置，儲存為 PDF 或同步整合至雲端試算表。</p>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ==================== SLIDE 4: STEP 1 CAPTURE ==================== -->
+      <section class="slide" id="slide-4">
+        <div class="slide-up">
+          <h2 class="slide-title">Step 1 捕捉聲音</h2>
+          <p class="slide-subtitle">極簡靈活的音訊與影片輸入管道</p>
+        </div>
+
+        <div style="display: flex; gap: 80px; width: 100%; justify-content: center; margin-top: 40px;">
+          <!-- Card 1: Upload -->
+          <div class="capture-card card slide-up stagger-1">
+            <div class="capture-icon">📤</div>
+            <h3 class="capture-title">上傳音訊或影片</h3>
+            <p class="capture-desc">支援播放與解析 WAV, MP3, FLAC, OGG, M4A, AAC, WEBM。上傳影片檔時，瀏覽器會自動擷取其中音軌，限制單檔 30 秒與 20MB。</p>
+          </div>
+
+          <!-- Card 2: Record -->
+          <div class="capture-card card slide-up stagger-2">
+            <div class="capture-icon">🎙️</div>
+            <h3 class="capture-title">瀏覽器錄音</h3>
+            <p class="capture-desc">利用 HTML5 MediaRecorder API 設計直接錄音。整合即時麥克風輸入音量計（dB），限制錄音區間為 5 至 30 秒以維護推論品質。</p>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ==================== SLIDE 5: STEP 2 MODELS ==================== -->
+      <section class="slide" id="slide-5">
+        <div class="slide-up">
+          <h2 class="slide-title">Step 2 選擇 AI 模型</h2>
+          <p class="slide-subtitle">同一段聲音，來自不同模型的判斷視角</p>
+        </div>
+
+        <div style="display: flex; gap: 60px; width: 100%; justify-content: center; margin-top: 40px;">
+          <!-- Model 1: Perch -->
+          <div class="model-card card slide-up stagger-1">
+            <img class="model-logo" src="assets/presentation/homepage.png" style="display:none;" alt="">
+            <!-- Inline Google Perch representation -->
+            <div style="font-size: 32px; font-weight: 900; color: #4285F4; margin-bottom: 20px;">G</div>
+            <h3 class="model-title">Perch v2</h3>
+            <p class="model-type">Google Research</p>
+            <p class="model-desc">基於 EfficientNet 架構開發的通用鳥類聲學 Embedding 模型，使用 5 秒滑動分析窗，專為大規模生態辨識設計。</p>
+          </div>
+
+          <!-- Model 2: BirdNET -->
+          <div class="model-card card slide-up stagger-2">
+            <div style="font-size: 32px; font-weight: 900; color: #B31B1B; margin-bottom: 20px;">C</div>
+            <h3 class="model-title">BirdNET v2.4</h3>
+            <p class="model-type">Cornell Lab of Ornithology</p>
+            <p class="model-desc">全球最具代表性的鳥音分類模型。使用 3 秒滑動分析窗，具備極強的物種覆蓋率與精細的分數校準演算法。</p>
+          </div>
+
+          <!-- Model 3: SILIC -->
+          <div class="model-card card slide-up stagger-3">
+            <div style="font-size: 32px; font-weight: 900; color: #16A085; margin-bottom: 20px;">S</div>
+            <h3 class="model-title">SILIC</h3>
+            <p class="model-type">Academia Sinica</p>
+            <p class="model-desc">中央研究院團隊開發之生物聲學模型，採用 5 秒分析窗，針對臺灣本土及特有種鳥音提供優化與特定辨識支援。</p>
+          </div>
+        </div>
+
+        <p class="model-footer-text slide-up stagger-4">「不同模型以互補的時間視窗，還原聲學多維特徵」</p>
+      </section>
+
+
+      <!-- ==================== SLIDE 6: STEP 3 RESULTS ==================== -->
+      <section class="slide" id="slide-6">
+        <div class="slide-up">
+          <h2 class="slide-title">Step 3 看見 AI 聽到了什麼</h2>
+          <p class="slide-subtitle">模型預測、音訊頻譜與可解釋性熱圖的直觀解析</p>
+        </div>
+
+        <div style="position: relative; width: 100%; height: 650px; margin-top: 10px;">
+          <!-- Browser Frame Mockup -->
+          <div class="browser-frame slide-up stagger-1" style="position: absolute; left: 40px; top: 10px; width: 1050px; height: 600px;">
+            <div class="browser-header">
+              <div class="browser-dot"></div>
+              <div class="browser-dot"></div>
+              <div class="browser-dot"></div>
+              <div class="browser-address">https://echo-wing.vercel.app/result</div>
+            </div>
+            <div class="browser-content">
+              <!-- Real result screenshot showing candidate list & spectrogram -->
+              <img src="assets/presentation/result_summary.png" alt="EchoWing Result Panel Screenshot">
+            </div>
+          </div>
+
+          <!-- SVG Lines Overlay connecting calls to screenshot parts -->
+          <svg class="callout-svg fade-in stagger-2" viewBox="0 0 1680 650" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;">
+            <!-- 1. Species List: species list in screenshot is approx at x=180, y=280 inside browser. Screen offset is left=40, top=10. -->
+            <path d="M 1160,80 L 1020,80 C 850,80 650,220 280,260" />
+            <circle cx="280" cy="260" r="6" />
+
+            <!-- 2. Confidence: confidence score badge is approx at x=500, y=280. -->
+            <path d="M 1160,220 L 1000,220 C 800,220 700,280 640,290" />
+            <circle cx="640" cy="290" r="6" />
+
+            <!-- 3. Spectrogram: spectrogram canvas starts at x=140, y=410. -->
+            <path d="M 1160,370 L 1000,370 C 800,370 650,420 540,430" />
+            <circle cx="540" cy="430" r="6" />
+
+            <!-- 4. XAI Heatmap: attention bar/heat is at x=140, y=550. -->
+            <path d="M 1160,520 L 1020,520 C 800,520 600,530 500,530" />
+            <circle cx="500" cy="530" r="6" />
+          </svg>
+
+          <!-- Right Callout Stack -->
+          <!-- Callout 1 -->
+          <div class="callout-card card slide-up stagger-3" style="position: absolute; left: 1160px; top: 20px;">
+            <h4 class="callout-title">1. 候選物種列表</h4>
+            <p class="callout-desc">整合滑動時間窗的預測，排除低信心雜訊，列出主要候選鳥類。</p>
+          </div>
+
+          <!-- Callout 2 -->
+          <div class="callout-card card slide-up stagger-4" style="position: absolute; left: 1160px; top: 170px;">
+            <h4 class="callout-title">2. 信心分數 (Confidence)</h4>
+            <p class="callout-desc">顯示模型推論信心度，引導觀察者客觀評估 AI 的辨識可靠度。</p>
+          </div>
+
+          <!-- Callout 3 -->
+          <div class="callout-card card slide-up stagger-5" style="position: absolute; left: 1160px; top: 320px;">
+            <h4 class="callout-title">3. 音訊頻譜圖 (Spectrogram)</h4>
+            <p class="callout-desc">在網頁端重繪時間-頻率強度，呈現清晰的鳥叫聲學指紋。</p>
+          </div>
+
+          <!-- Callout 4 -->
+          <div class="callout-card card slide-up stagger-6" style="position: absolute; left: 1160px; top: 470px;">
+            <h4 class="callout-title">4. XAI 熱圖 (Heatmap)</h4>
+            <p class="callout-desc">展示可解釋 AI 的時間特徵歸因，直觀呈現模型判斷的依賴區間。</p>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ==================== SLIDE 7: XAI EXPLANABILITY ==================== -->
+      <section class="slide" id="slide-7">
+        <div class="slide-up">
+          <h2 class="slide-title">不只顯示結果，也解釋結果</h2>
+          <p class="slide-subtitle">內建可解釋性 AI 運作機制教育頁面</p>
+        </div>
+
+        <div style="display: flex; gap: 80px; width: 100%; align-items: center; margin-top: 20px;">
+          <!-- Left: How it works screenshot in Browser -->
+          <div class="browser-frame slide-up stagger-1" style="width: 780px; height: 600px;">
+            <div class="browser-header">
+              <div class="browser-dot"></div>
+              <div class="browser-dot"></div>
+              <div class="browser-dot"></div>
+              <div class="browser-address">https://echo-wing.vercel.app/how-it-works</div>
+            </div>
+            <div class="browser-content" style="height: 558px;">
+              <img src="assets/presentation/how-it-works.png" alt="EchoWing XAI Education Page">
+            </div>
+          </div>
+
+          <!-- Right: Key Terminology cards -->
+          <div style="display: flex; flex-direction: column; gap: 30px; flex: 1;">
+            
+            <div class="xai-detail-card card slide-up stagger-2">
+              <h4 class="xai-detail-title">Occlusion-based Explanation</h4>
+              <p class="xai-detail-desc">透過在時間軸上依序「遮蔽」局部聲音訊號，重新送入模型，觀察信心分數的下跌幅度，從而回推判斷所依賴的關鍵時段。</p>
+            </div>
+
+            <div class="xai-detail-card card slide-up stagger-3">
+              <h4 class="xai-detail-title">Mel Spectrogram Mapping</h4>
+              <p class="xai-detail-desc">將一維聲學訊號進行傅立葉轉換與 Mel 頻率尺度映射，轉化成模型理解的二維時間-頻率特徵圖，保留頻率變化細節。</p>
+            </div>
+
+            <div class="xai-detail-card card slide-up stagger-4">
+              <h4 class="xai-detail-title">Progressive Heatmap Reveal</h4>
+              <p class="xai-detail-desc">以半透明的橘紅色調將權重疊加在頻譜下方，清楚呈現關注程度波形峰值，幫助生態愛好者深入理解 AI 的決策脈絡。</p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ==================== SLIDE 8: STEP 4 TIMELINE ==================== -->
+      <section class="slide" id="slide-8">
+        <div class="slide-up">
+          <h2 class="slide-title">Step 4 定位鳥聲出現的時間</h2>
+          <p class="slide-subtitle">物種活動時間軸與事件反卷積重構</p>
+        </div>
+
+        <div style="display: flex; flex-direction: column; align-items: center; width: 100%; margin-top: 10px;">
+          <!-- Center: Timeline Screenshot in Browser -->
+          <div class="browser-frame slide-up stagger-1" style="width: 1200px; height: 520px; margin-bottom: 30px;">
+            <div class="browser-header">
+              <div class="browser-dot"></div>
+              <div class="browser-dot"></div>
+              <div class="browser-dot"></div>
+              <div class="browser-address">https://echo-wing.vercel.app/result#timeline</div>
+            </div>
+            <div class="browser-content" style="height: 478px;">
+              <!-- Timeline and events screenshot -->
+              <img src="assets/presentation/result_timeline.png" style="object-position: top; object-fit: cover;" alt="EchoWing Timeline Screenshot">
+            </div>
+          </div>
+
+          <!-- Bottom: 3 tags / badges -->
+          <div style="display: flex; gap: 40px; justify-content: center; width: 100%;">
+            
+            <div class="timeline-badge card slide-up stagger-2">
+              <h4 class="timeline-badge-title">開始 (Onset)</h4>
+              <p class="timeline-badge-desc">自動分析相鄰時間窗之預測累積，定位聲音事件出現的起點。</p>
+            </div>
+
+            <div class="timeline-badge card slide-up stagger-3">
+              <h4 class="timeline-badge-title">峰值 (Peak)</h4>
+              <p class="timeline-badge-desc">反卷積估計出該聲音事件最強烈、模型信心最高的主峰區間。</p>
+            </div>
+
+            <div class="timeline-badge card slide-up stagger-4">
+              <h4 class="timeline-badge-title">結束 (Offset)</h4>
+              <p class="timeline-badge-desc">標定鳥叫特徵減弱、淡出並低於信心門檻的終結時刻。</p>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ==================== SLIDE 9: STEP 5 FIELD RECORD ==================== -->
+      <section class="slide" id="slide-9">
+        <div class="slide-up">
+          <h2 class="slide-title">Step 5 轉為野外紀錄</h2>
+          <p class="slide-subtitle">將聲學分析成果無縫寫入個人生態紀錄庫</p>
+        </div>
+
+        <div style="display: flex; gap: 80px; width: 100%; align-items: center; margin-top: 30px;">
+          <!-- Left: Field Record Card (Paper look) -->
+          <div class="note-paper slide-up stagger-1" style="width: 680px; height: 560px;">
+            <h3 class="note-title">📝 田野觀察紀錄</h3>
+            <div class="note-row"><span class="note-label">觀察者：</span> 林小明 (Y. M. Lin)</div>
+            <div class="note-row"><span class="note-label">時間：</span> 2026年6月8日 07:05</div>
+            <div class="note-row"><span class="note-label">地點：</span> 陽明山國家公園 (25.1558, 121.5476)</div>
+            <div class="note-row"><span class="note-label">環境：</span> 晨間開闊雜木林，有些微風，偶有背景雜噪</div>
+            <div class="note-row"><span class="note-label">實地結論：</span> 親眼目擊 Robin 於枝頭鳴叫，AI 熱圖標定極準</div>
+          </div>
+
+          <!-- Right: Action / Output cards -->
+          <div style="display: flex; flex-direction: column; gap: 24px; flex: 1;">
+            
+            <div class="card slide-up stagger-2" style="display: flex; align-items: center; gap: 24px;">
+              <div style="font-size: 40px;">🗒️</div>
+              <div>
+                <h4 style="font-size: 20px; font-weight: 900; color: var(--c-brand); margin-bottom: 4px;">觀察筆記與 GPS 紀錄</h4>
+                <p style="font-size: 15px; color: var(--c-text-muted); line-height: 1.4;">允許直接調用瀏覽器 GPS 座標，並在總覽與片段中隨手添加地標、天氣、環境與實地確認備註。</p>
+              </div>
+            </div>
+
+            <div class="card slide-up stagger-3" style="display: flex; align-items: center; gap: 24px;">
+              <div style="font-size: 40px;">📄</div>
+              <div>
+                <h4 style="font-size: 20px; font-weight: 900; color: var(--c-brand); margin-bottom: 4px;">匯出專業 PDF 報告</h4>
+                <p style="font-size: 15px; color: var(--c-text-muted); line-height: 1.4;">整合 jsPDF 程式庫，一鍵編排包含原始音訊、主要物種排名、頻譜、反卷積時間軸與田野筆記的正式分析報告。</p>
+              </div>
+            </div>
+
+            <div class="card slide-up stagger-4" style="display: flex; align-items: center; gap: 24px;">
+              <div style="font-size: 40px;">🔗</div>
+              <div>
+                <h4 style="font-size: 20px; font-weight: 900; color: var(--c-brand); margin-bottom: 4px;">社群媒體輕鬆分享</h4>
+                <p style="font-size: 15px; color: var(--c-text-muted); line-height: 1.4;">自動在剪貼簿中生成含標籤的精美格式短文，並自動在前端合成繪有浮水印的頻譜結果圖，方便貼上分享。</p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ==================== SLIDE 10: ENDING ==================== -->
+      <section class="slide" id="slide-10">
+        <div style="width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding-left: 80px;">
+          
+          <span class="ending-kicker slide-up stagger-1">ECHOWING CLOSING</span>
+          
+          <h2 class="ending-main slide-up stagger-2">
+            EchoWing 將鳥音辨識轉化為<br>
+            <span style="color: var(--c-brand);">可理解</span>、<span style="color: var(--c-brand);">可定位</span>、<span style="color: var(--c-brand);">可保存</span>的生態學習流程。
+          </h2>
+
+          <div class="ending-core-values slide-up stagger-3">
+            
+            <div class="ending-value">
+              <h4 class="ending-value-title">可解釋 AI</h4>
+              <p class="ending-value-desc">透過 Occlusion 讓黑盒子模型變透明，促進科學教育與信任。</p>
+            </div>
+
+            <div class="ending-value">
+              <h4 class="ending-value-title">多語言支持</h4>
+              <p class="ending-value-desc">內建 20 種在地語言包，消弭數位生態探索的語言隔閡。</p>
+            </div>
+
+            <div class="ending-value">
+              <h4 class="ending-value-title">田野數位化</h4>
+              <p class="ending-value-desc">一鍵產生正式 PDF 與同步雲端，加速野外調查數位化。</p>
+            </div>
+
+          </div>
+          
+        </div>
+      </section>
+
+      <!-- UTILITY FOOTER ELEMENTS -->
+      <div class="slide-footer-nav">
+        使用左右方向鍵或空白鍵切換 · EchoWing 114-2 期末成果發表
+      </div>
+      
+      <div class="slide-counter">
+        01 / 10
+      </div>
+
+    </div>
+
+    <!-- PERSISTENT PROGRESS BAR -->
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill"></div>
+    </div>
+
+  </div>
+
+  <script>
+    // FIXED STAGE DYNAMIC SCALING FOR WIDESCREEN 16:9 PROJECTION
+    function resizeStage() {
+      const stage = document.querySelector('.slide-stage');
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      
+      // Calculate scaling factor to fit 1920x1080 to current viewport
+      const scale = Math.min(width / 1920, height / 1080);
+      
+      // Apply scaling
+      stage.style.transform = `scale(${scale})`;
+    }
+
+    // Trigger scaling on resize and load
+    window.addEventListener('resize', resizeStage);
+    window.addEventListener('load', resizeStage);
+    
+    // NAVIGATION STATE
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const totalSlides = slides.length;
+    const progressBar = document.querySelector('.progress-bar-fill');
+    const counterLabel = document.querySelector('.slide-counter');
+
+    function showSlide(index) {
+      if (index < 0) index = 0;
+      if (index >= totalSlides) index = totalSlides - 1;
+
+      // Transition slide class
+      slides[currentSlide].classList.remove('active');
+      currentSlide = index;
+      slides[currentSlide].classList.add('active');
+
+      // Update low-profile progress bar
+      const progressPercent = ((currentSlide + 1) / totalSlides) * 100;
+      if (progressBar) {
+        progressBar.style.width = `${progressPercent}%`;
+      }
+
+      // Update slide index label (e.g. 03 / 10)
+      if (counterLabel) {
+        const pad = (n) => String(n).padStart(2, '0');
+        counterLabel.textContent = `${pad(currentSlide + 1)} / ${pad(totalSlides)}`;
+      }
+    }
+
+    // KEYBOARD NAVIGATION HANDLERS
+    document.addEventListener('keydown', (e) => {
+      // Forward keys: Right, Space, Enter, PageDown
+      if (e.key === 'ArrowRight' || e.key === 'Space' || e.key === ' ' || e.key === 'Enter' || e.key === 'PageDown') {
+        showSlide(currentSlide + 1);
+        e.preventDefault();
+      } 
+      // Backward keys: Left, Backspace, PageUp
+      else if (e.key === 'ArrowLeft' || e.key === 'Backspace' || e.key === 'PageUp') {
+        showSlide(currentSlide - 1);
+        e.preventDefault();
+      } 
+      // Home & End shortcuts
+      else if (e.key === 'Home') {
+        showSlide(0);
+        e.preventDefault();
+      } else if (e.key === 'End') {
+        showSlide(totalSlides - 1);
+        e.preventDefault();
+      }
+    });
+
+    // MOUSE CLICK NAVIGATION (Right half = Next, Left half = Prev)
+    document.addEventListener('click', (e) => {
+      // Ignore clicks on links, details/summary, or buttons
+      if (e.target.closest('button, a, input, select, details, summary')) return;
+
+      const halfWidth = window.innerWidth / 2;
+      if (e.clientX > halfWidth) {
+        showSlide(currentSlide + 1);
+      } else {
+        showSlide(currentSlide - 1);
+      }
+    });
+
+    // INITIALIZATION
+    resizeStage();
+    showSlide(0);
+  </script>
+</body>
+</html>
