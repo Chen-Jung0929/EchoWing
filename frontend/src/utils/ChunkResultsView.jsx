@@ -453,6 +453,16 @@ export default function ChunkResultsView({
               </ResultBadge>
             ) : null}
           </div>
+          <details className="mx-auto mt-3 max-w-2xl rounded-xl border border-[var(--c-text)]/10 bg-[var(--c-bg)]/45 px-4 py-2 text-xs text-[var(--c-text)]/65">
+            <summary className="cursor-pointer font-black text-[var(--c-primary)]">
+              {dict.resultInterpretationTitle}
+            </summary>
+            <ul className="mt-2 list-disc space-y-1.5 pl-4 leading-relaxed">
+              <li>{dict.confidenceInterpretation}</li>
+              <li>{dict.xaiInterpretation}</li>
+              <li>{dict.timelineInterpretation}</li>
+            </ul>
+          </details>
         </header>
 
         {result.warnings?.length > 0 && (

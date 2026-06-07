@@ -24,24 +24,32 @@ import {
   MdHelpOutline,
 } from 'react-icons/md';
 import AudioRecorder from './components/AudioRecorder/AudioRecorder';
-import { getDict } from './i18n';
 import { isSupportedMediaFile, MEDIA_FILE_ACCEPT } from './utils/supportedMedia';
 import { isInAppBrowser } from './utils/inAppBrowser';
 import DayHeroScene from './features/hero/DayHeroScene';
 import NightHeroScene from './features/hero/NightHeroScene';
 import KiwiAnimation from './features/loading/KiwiAnimation';
 import GuideModal from './components/GuideModal/GuideModal';
+import PrivacyNotice from './components/PrivacyNotice/PrivacyNotice';
+import Tooltip from './components/Tooltip/Tooltip';
 import {
   DEFAULT_MODEL_SELECTION,
   formatLandingModelOption,
   LANDING_MODEL_OPTIONS,
 } from './utils/modelLabel';
+import {
+  decodeAudioDuration,
+  MAX_AUDIO_DURATION_SEC,
+  MIN_AUDIO_DURATION_SEC,
+} from './utils/audioDuration';
+import { detectBrowserLanguage, getDict } from './i18n';
 
 const USE_MOCK_FALLBACK = false;
 const MOCK_RESULT_URL = '/mock_data/perch_result.json';
-const MOCK_LOADING_DURATION_MS = 6000;
-const LOADING_DURATION_MS = 6000;
 const MIN_SERVER_WAKING_HINT_MS = 3000;
+const LANGUAGE_STORAGE_KEY = 'echowing-language';
+const THEME_STORAGE_KEY = 'echowing-theme';
+const PRIVACY_STORAGE_KEY = 'echowing-privacy-notice-accepted';
 
 
 function wait(ms) {
@@ -72,15 +80,15 @@ async function loadMockPredictionResult(file) {
 
 export default function App() {
   const [lang, setLang] = useState(() => {
-    if (typeof navigator === 'undefined') return 'zh';
-
-    const systemLang = navigator.languages?.[0] ?? navigator.language ?? 'zh';
-    return systemLang.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    if (typeof window === 'undefined') return 'en';
+    return window.localStorage.getItem(LANGUAGE_STORAGE_KEY) || detectBrowserLanguage();
   });
-  const [themeMode, setThemeMode] = useState('system');
+  const [themeMode, setThemeMode] = useState(() => {
+    if (typeof window === 'undefined') return 'system';
+    return window.localStorage.getItem(THEME_STORAGE_KEY) || 'system';
+  });
   const [viewState, setViewState] = useState('landing');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [systemIsDark, setSystemIsDark] = useState(false);
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -93,6 +101,11 @@ export default function App() {
   const [selectedModel, setSelectedModel] = useState(DEFAULT_MODEL_SELECTION);
   const [isProcessing, setIsProcessing] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [guideSection, setGuideSection] = useState('usage');
+  const [privacyNoticeOpen, setPrivacyNoticeOpen] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.localStorage.getItem(PRIVACY_STORAGE_KEY) !== 'true';
+  });
 
   const fileRef = useRef(null);
   const abortControllerRef = useRef(null);
@@ -102,6 +115,15 @@ export default function App() {
 
   const dict = getDict(lang);
   const recordingBlocked = useMemo(() => isInAppBrowser(), []);
+
+  useEffect(() => {
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
+    document.documentElement.lang = lang === 'zh' ? 'zh-TW' : lang;
+  }, [lang]);
+
+  useEffect(() => {
+    window.localStorage.setItem(THEME_STORAGE_KEY, themeMode);
+  }, [themeMode]);
 
   // --- 寫入 html.light / html.dark ---
   useEffect(() => {
@@ -152,9 +174,20 @@ export default function App() {
 
   const showHeroScene = viewState === 'landing';
 
-  const openGuide = () => {
+  const openGuide = (section = 'usage') => {
     setIsMenuOpen(false);
+    setGuideSection(section);
     setGuideOpen(true);
+  };
+
+  const acceptPrivacyNotice = () => {
+    window.localStorage.setItem(PRIVACY_STORAGE_KEY, 'true');
+    setPrivacyNoticeOpen(false);
+  };
+
+  const openPrivacyGuide = () => {
+    setPrivacyNoticeOpen(false);
+    openGuide('privacy');
   };
 
   const resolvePhase2Ms = (timing = {}, prev) => {
@@ -294,10 +327,12 @@ export default function App() {
     }
 
     try {
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const arrayBuffer = await file.arrayBuffer();
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-      if (audioBuffer.duration > 30.5) { // 30s limit (allow small margin)
+      const duration = await decodeAudioDuration(file);
+      if (duration != null && duration < MIN_AUDIO_DURATION_SEC) {
+        setErrorMessage(dict.fileTooShort);
+        return;
+      }
+      if (duration != null && duration > MAX_AUDIO_DURATION_SEC + 0.5) {
         setErrorMessage(dict.fileTooLong || 'File too long (max 30 seconds)');
         return;
       }
@@ -309,7 +344,7 @@ export default function App() {
     const serverWakingStartedAt = remoteApi ? Date.now() : null;
 
     setViewState('loading');
-    setLoadingHint(remoteApi ? dict.serverWakingText : '');
+    setLoadingHint(remoteApi ? dict.serverWakingText : dict.loadingPreparing);
     setErrorMessage('');
     setPredictionResult(null);
     setSpectrogramByIndex({});
@@ -349,9 +384,10 @@ export default function App() {
         }
       }
       if (!showBusyHint) {
-        setLoadingHint('');
+        setLoadingHint(dict.loadingPreparing);
       }
       setIsProcessing(true);
+      setLoadingHint(dict.loadingPredicting);
       
       const baseResult = {
         chunks: [],
@@ -373,6 +409,7 @@ export default function App() {
           if (chunkData.event === 'init') {
             phase1StartedAtRef.current = Date.now();
             xaiPending = Boolean(chunkData.xai_pending);
+            setLoadingHint(dict.loadingPredicting);
             setPredictionResult((prev) => ({
               ...prev,
               stream_meta: {
@@ -434,7 +471,7 @@ export default function App() {
                 timingPayload
               );
             });
-            setLoadingHint('');
+            setLoadingHint(xaiPending ? dict.loadingXai : '');
             setViewState('result');
             return;
           }
@@ -565,38 +602,46 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-1">
-            <button
+            <Tooltip label={isDarkMode ? dict.themeLight : dict.themeDark}>
+              <button
               type="button"
               onClick={handleThemeToggle}
               className="p-2 rounded-lg hover:bg-[var(--c-card)]/40 transition-colors focus:outline-none"
               aria-label={isDarkMode ? dict.themeLight : dict.themeDark}
+              title={isDarkMode ? dict.themeLight : dict.themeDark}
             >
               {isDarkMode ? (
                 <MdDarkMode className="w-6 h-6 text-[var(--c-text)]" />
               ) : (
                 <MdLightMode className="w-6 h-6 text-[var(--c-text)]" />
               )}
-            </button>
+              </button>
+            </Tooltip>
 
-            <button
+            <Tooltip label={dict.languageMenuLabel}>
+              <button
               type="button"
               onClick={() => setIsMenuOpen((prev) => !prev)}
               className="p-2 rounded-lg hover:bg-[var(--c-card)]/40 transition-colors focus:outline-none"
-              aria-label="Language"
+              aria-label={dict.languageMenuLabel}
+              title={dict.languageMenuLabel}
               aria-expanded={isMenuOpen}
             >
               <MdLanguage className="w-6 h-6 text-[var(--c-text)]" />
-            </button>
+              </button>
+            </Tooltip>
 
-            <button
+            <Tooltip label={dict.navGuide}>
+              <button
               type="button"
-              onClick={openGuide}
+              onClick={() => openGuide('usage')}
               className="p-2 rounded-lg hover:bg-[var(--c-card)]/40 transition-colors focus:outline-none"
               aria-label={dict.navGuide}
               title={dict.navGuide}
             >
               <MdHelpOutline className="w-6 h-6 text-[var(--c-text)]" />
-            </button>
+              </button>
+            </Tooltip>
 
             
             {/* <button
@@ -618,10 +663,12 @@ export default function App() {
 
         {isMenuOpen && (
           <div className="absolute top-full right-0 w-full md:w-48 bg-[var(--c-card)]/90 backdrop-blur-md border-b md:border-l md:border-b md:rounded-bl-2xl border-[var(--c-text)]/10 shadow-2xl p-4">
-            <div className="flex gap-2" role="listbox" aria-label="Language">
+            <div className="grid grid-cols-2 gap-2" role="listbox" aria-label={dict.languageMenuLabel}>
               {[
                 { code: 'zh', label: '中文' },
                 { code: 'en', label: 'English' },
+                { code: 'ja', label: '日本語' },
+                { code: 'ko', label: '한국어' },
               ].map(({ code, label }) => (
                 <button
                   key={code}
@@ -664,7 +711,10 @@ export default function App() {
                 
                 <div className="flex w-full min-w-0 flex-col gap-2">
                   <div className="flex w-full min-w-0 items-stretch gap-3">
-                    <label className="flex min-h-[5.5rem] min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-[var(--c-primary)] py-4 text-lg font-bold text-[var(--c-primary)] transition-all duration-300 hover:bg-[var(--c-primary)] hover:text-[var(--c-muted)]">
+                    <label
+                      className="flex min-h-[5.5rem] min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-[var(--c-primary)] py-4 text-lg font-bold text-[var(--c-primary)] transition-all duration-300 hover:bg-[var(--c-primary)] hover:text-[var(--c-muted)]"
+                      title={dict.tooltipUpload}
+                    >
                       <MdCloudUpload className="h-10 w-10 text-[var(--c-primary)]" />
                       <span className="px-1 text-center leading-tight">{dict.uploadBtn}</span>
                       <input
@@ -721,6 +771,8 @@ export default function App() {
                       type="button"
                       onClick={handleFileClear}
                       className="shrink-0 rounded-lg p-1 text-[var(--c-text)] transition-colors hover:bg-[var(--c-card)]"
+                      aria-label={dict.clearSelectedFile}
+                      title={dict.clearSelectedFile}
                     >
                       <MdClose className="h-5 w-5" aria-hidden />
                     </button>
@@ -745,6 +797,8 @@ export default function App() {
                     value={selectedModel}
                     onChange={(e) => setSelectedModel(e.target.value)}
                     className="bg-[var(--c-bg)]/70 text-[var(--c-text)] border-none rounded-xl px-4 py-3 font-bold cursor-pointer"
+                    aria-label={dict.tooltipModelSelection}
+                    title={dict.tooltipModelSelection}
                   >
                     {LANDING_MODEL_OPTIONS.map(({ value }) => (
                       <option key={value} value={value}>
@@ -752,11 +806,23 @@ export default function App() {
                       </option>
                     ))}
                   </select>
+                  <div className="flex items-center justify-between gap-3 px-1 text-xs text-[var(--c-text)]/55">
+                    <span>{dict.modelHints[selectedModel]}</span>
+                    <button
+                      type="button"
+                      onClick={() => openGuide('models')}
+                      className="shrink-0 font-black text-[var(--c-primary)] underline decoration-dotted underline-offset-4"
+                    >
+                      {dict.modelHintLearnMore}
+                    </button>
+                  </div>
                 </div>
 
                 <button
                   onClick={handleProcess}
                   disabled={!selectedFile || isProcessing}
+                  aria-label={dict.tooltipProcess}
+                  title={dict.tooltipProcess}
                   className={`w-full py-4 rounded-xl font-black text-lg shadow-lg transition-all duration-300 ${
                     selectedFile && !isProcessing
                       ? 'bg-[var(--c-primary)] text-[var(--c-bg)] hover:shadow-xl hover:-translate-y-1 hover:brightness-110'
@@ -839,7 +905,23 @@ export default function App() {
         )}
 
         {/* 5. 使用說明與模型宣告（彈窗） */}
-        <GuideModal open={guideOpen} dict={dict} onClose={() => setGuideOpen(false)} />
+        <GuideModal
+          key={`${guideOpen}-${guideSection}`}
+          open={guideOpen}
+          dict={dict}
+          initialSection={guideSection}
+          onClose={() => setGuideOpen(false)}
+          onReopenPrivacy={() => {
+            setGuideOpen(false);
+            setPrivacyNoticeOpen(true);
+          }}
+        />
+        <PrivacyNotice
+          open={privacyNoticeOpen}
+          dict={dict}
+          onAccept={acceptPrivacyNotice}
+          onOpenPrivacy={openPrivacyGuide}
+        />
       </main>
 
       <SpeedInsights />
