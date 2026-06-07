@@ -5,7 +5,7 @@
  */
 export function chunkIdentity(chunk, fallbackIndex = 0) {
   if (chunk?.analysis_id) return String(chunk.analysis_id);
-  const model = chunk?.model_name ?? 'chunk';
+  const model = chunk?.model_name || 'chunk';
   const index = chunk?.index ?? fallbackIndex;
   return `${model}-${index}`;
 }

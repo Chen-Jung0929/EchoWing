@@ -12,7 +12,6 @@ import { buildEventRangeSegments } from './timeline/eventRangeSegments';
 import { buildTimelineDecisionSupport } from './timeline/buildTimelineDecisionSupport';
 
 export function buildFullReportModel({
-  result,
   chunks,
   filename,
   spectrogramByIndex,
@@ -23,6 +22,7 @@ export function buildFullReportModel({
   totalDurationSec = 0,
   timeline = null,
   xaiAvailable = false,
+  dict = null,
 }) {
   const resolvedThreshold = resolveConfidenceThreshold(confidenceThreshold);
   const okChunks = (chunks ?? []).filter((c) => !c.error);
@@ -76,9 +76,9 @@ export function buildFullReportModel({
     sourceName,
     modelName,
     confidenceThreshold: resolvedThreshold,
-    analysisId: firstOk?.analysis_id ?? chunks[0]?.analysis_id ?? 'report',
+    analysisId: firstOk?.analysis_id || chunks[0]?.analysis_id || 'report',
     generatedAt: new Date().toISOString(),
-    decisionSupport: buildTimelineDecisionSupport(timeline, { windowSec }),
+    decisionSupport: buildTimelineDecisionSupport(timeline, { windowSec, dict }),
     okChunkCount: okChunks.length,
     totalChunkCount: chunks.length,
     durationSec,

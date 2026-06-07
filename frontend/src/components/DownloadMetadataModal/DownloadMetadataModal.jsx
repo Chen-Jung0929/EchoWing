@@ -36,7 +36,9 @@ export default function DownloadMetadataModal({
   const chunkKey = useMemo(() => chunkIndices.join(','), [chunkIndices]);
   const defaultObserver = dict.defaultObserverName;
   const initialMetadataRef = useRef(initialMetadata);
-  initialMetadataRef.current = initialMetadata;
+  useEffect(() => {
+    initialMetadataRef.current = initialMetadata;
+  }, [initialMetadata]);
   const wasOpenRef = useRef(false);
 
   const applyGeolocationToForm = useCallback(() => {

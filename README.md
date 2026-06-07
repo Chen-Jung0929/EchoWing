@@ -37,8 +37,9 @@ npm run dev
 
 | 區塊 | 功能 |
 |------|------|
-| **首頁** | 上傳音訊／影片、錄音、日／夜主題、中／英、模型下拉 |
-| **推論流程** | 整檔上傳 → `POST /api/stream-predict`（SSE） |
+| **首頁** | 上傳音檔／影片、錄音、日／夜主題、17國語言支援 |
+| **XAI 教學頁** | 獨立的運作原理與 XAI 頁面，包含視覺動畫與數學推導解說流程 |
+| **推論流程** | 音檔上傳 -> `POST /api/stream-predict`（SSE） |
 | **串流階段** | ① 各窗推論 + 頻譜 → ② 各窗 XAI → `xai_done` |
 | **辨識結果** | 總覽投票彙整 + 各分析窗分頁、信心門檻、低信心候選 |
 | **視覺化** | Mel 頻譜、XAI 時間條、維基連結 |
@@ -161,7 +162,7 @@ BirdCLEF/
         │   ├── shareResult.js          # 分享文字模板、平台／系統分享
         │   ├── ShareResultMenu.jsx
         │   └── pdf/
-        └── i18n/locales/zh.js · en.js
+        └── i18n/locales/zh.js · en.js 等 17 國語系
 ```
 
 ---
@@ -386,3 +387,16 @@ python backend/scripts/hf_warmup.py --url https://<帳號>-<space>.hf.space
 ## 相關競賽
 
 本應用對應 [BirdCLEF](https://www.kaggle.com/competitions/birdclef-2026) 聲學辨識任務之模型與工作流程。
+
+ # #   S e c u r i t y   H a r d e n i n g 
+ 
+ A   r e c e n t   s e c u r i t y   h a r d e n i n g   p a s s   h a s   a d d e d   s e v e r a l   p r o t e c t i o n s : 
+ -   F r o n t e n d   S e c u r i t y   H e a d e r s   a n d   C S P   ( v i a    e r c e l . j s o n ) 
+ -   R e s t r i c t e d   C O R S   v i a   e n v i r o n m e n t - d r i v e n   a l l o w l i s t 
+ -   B a c k e n d   u p l o a d   s i z e   l i m i t i n g   m i d d l e w a r e 
+ -   O p t i o n a l   r e q u e s t   r a t e   l i m i t i n g   m i d d l e w a r e 
+ -   D e p e n d a b o t   s u p p l y - c h a i n   m o n i t o r i n g   c o n f i g u r a t i o n 
+ 
+ F o r   d e t a i l s   o n   t h e s e   a d d i t i o n s ,   k n o w n   l i m i t a t i o n s ,   a n d   d e p l o y m e n t   r e q u i r e m e n t s   ( l i k e   T R I A G E L E N S _ A L L O W E D _ O R I G I N S   a n d   T R I A G E L E N S _ M A X _ U P L O A D _ B Y T E S ) ,   p l e a s e   r e a d   t h e   [ S e c u r i t y   H a r d e n i n g   R e p o r t ] ( r e p o r t s / s e c u r i t y _ h a r d e n i n g _ r e p o r t . m d ) . 
+  
+ 

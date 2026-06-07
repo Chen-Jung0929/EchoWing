@@ -112,7 +112,11 @@ export function mergeConsecutiveEvents(events) {
     }
   }
 
-  return merged.map(({ _peakConfidence, ...ev }) => syncPeakFields(ev));
+  return merged.map((ev) => {
+    const copy = { ...ev };
+    delete copy._peakConfidence;
+    return syncPeakFields(copy);
+  });
 }
 
 /**

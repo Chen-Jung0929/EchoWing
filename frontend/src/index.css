@@ -151,3 +151,13 @@ body {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+@layer utilities {
+  .nav-icon-button {
+    @apply p-2 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--c-primary)] text-[var(--c-text)] hover:bg-[var(--c-card)]/40 flex items-center justify-center;
+  }
+  .nav-link-button {
+    @apply text-sm font-bold text-[var(--c-text)]/70 hover:text-[var(--c-primary)] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--c-primary)] rounded-md px-2 py-1;
+  }
+}
+

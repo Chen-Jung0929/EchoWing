@@ -2,6 +2,10 @@
 const zh = {
   title: 'EchoWing',
   subtitle: '鳥聲辨識',
+  notFound: '您尋找的頁面不存在。',
+  notAvailable: '無',
+  unknownError: '未知的後端錯誤',
+
   uploadBtn: '上傳音訊或影片',
   uploadFormatsHint:
     '支援 WAV、MP3、FLAC、OGG、M4A、AAC、WEBM；影片將擷取音訊（單檔最長 30 秒、上限 20MB）',
@@ -73,8 +77,7 @@ const zh = {
   taskLabel: '聲學辨識分析',
   modelUsed: '使用模型',
   modelSelectionLabel: '模型選擇',
-  modelTagFast: 'fast',
-  modelPerchFast: 'Perch v2 Fast (Google TFLite)',
+  modelPerchFast: 'Perch v2 (Google)',
   modelBirdnet: 'BirdNET v2.4 (Cornell)',
   modelSilic: 'SILIC (Academia Sinica)',
   modelHintLearnMore: '了解更多',
@@ -106,7 +109,7 @@ const zh = {
   attentionBinsLabel: '個時間窗',
   collapseAttention: '收合注意力權重',
   expandAttention: '展開注意力權重',
-  decisionSupport: '決策輔助',
+  decisionSupportTitle: '決策輔助',
   riskAnalysis: '風險分析',
   actionRecommendation: '行動建議',
   disclaimer: '免責聲明',
@@ -123,8 +126,7 @@ const zh = {
   warnings: '警告',
   classLabels: '類別總數',
   decodeFailed: '此片段解碼失敗',
-  rawResponse: '完整回應 (JSON)',
-  summaryLabel: '總覽',
+    summaryLabel: '總覽',
   summaryTabShort: '總',
   tabHoverHint: '滑鼠移至分頁可預覽物種',
   prevPage: '上一頁',
@@ -244,6 +246,7 @@ const zh = {
       window: '5 秒',
       type: '實驗性／專案特定模型',
       source: 'Academia Sinica',
+      link: 'https://github.com/RedbirdTaiwan/silic',
       citation: '中央研究院團隊開發之鳥類聲學辨識模型，以 5 秒分析窗推論。',
     },
   ],
@@ -339,6 +342,250 @@ const zh = {
   xaiStatusUnavailablePdf: '無法提供；僅包含預測結果',
   xaiUnavailable: 'XAI 無法提供',
   xaiUnavailableDetail: '預測結果仍可查看，但未收到 XAI。結果操作與僅含預測的 PDF 下載仍可使用。',
+
+  pdfNoSpeciesEvents: '無達事件信心門檻的物種。',
+  pdfNoEventsDetected: '尚無偵測到明顯物種事件。',
+  pdfReportTitle: '鳥類聲學辨識分析報告',
+  pdfCoverOverview: '封面／總覽',
+  pdfReportId: '報告編號',
+  pdfGeneratedAt: '產生時間',
+  pdfSampleInfo: '樣本資訊',
+  pdfTotalDuration: '總時長',
+  pdfApproxSec: '約 {sec} 秒',
+  pdfSampleRate: '採樣率',
+  pdfChannels: '音訊通道',
+  pdfChannelMono: '單聲道',
+  pdfThreshold: '信心門檻',
+  pdfSpeciesActivitySummary: '物種活動摘要',
+  pdfActivitySummaryHint: '以下依時間軸反卷積與事件信心門檻彙整（非投票聚合）。',
+  pdfSpeciesName: '物種名稱',
+  pdfPeakEventConfidence: '最高事件信心',
+  pdfPeakTimeSingle: '峰值時間',
+  pdfSpeciesEvents: '物種事件一覽',
+  pdfSpecies: '物種',
+  pdfOnset: '起始',
+  pdfOffset: '結束',
+  pdfPeakTimesPlural: '峰值時間',
+  pdfEventConfidenceLabel: '事件信心',
+  pdfFullSpectrogram: '全段頻譜圖',
+  pdfFieldNotesOverview: '田野備註（總覽）',
+  pdfObservationTime: '觀察時間',
+  pdfObserver: '觀察者',
+  pdfLocation: '地點',
+  pdfEnvironment: '環境描述',
+  pdfOverallConclusion: '整體結論',
+  pdfSpeciesRankBookmark: '物種 {rank} · {species}',
+  pdfPrimarySpeciesTitle: '主要預測物種 {rank} · {species}',
+  pdfSpeciesInfo: '物種資訊',
+  pdfScientificName: '學名',
+  pdfActivitySpan: '活動時間範圍',
+  pdfTimelineEvents: '時間軸事件',
+  pdfFullSpecSpeciesLabels: '全段頻譜圖（物種標籤）',
+  pdfSpecSpeciesTitle: '{species} · 全段頻譜標籤',
+  pdfNoSpectrogramData: '無可用頻譜資料',
+  pdfDecisionSupport: '決策輔助',
+  pdfDecisionSupportHint: '以下依時間軸事件信心與反卷積結果提供參考，非逐片段模型信心彙整。',
+  pdfRiskAnalysis: '風險分析',
+  pdfRecommendation: '行動建議',
+  pdfTimeRangeSec: '{min} 至 {max} 秒',
+  pdfTimeSec: '{sec} 秒',
+  pdfSegmentTitle: '片段 {label} · {timeRange}',
+  pdfFullRecordingSpectrogram: '全段頻譜圖',
+  decisionSupport: {
+    noReliableSummaryRisk: "各片段皆未達 {threshold}% 信心門檻，無可靠物種辨識總覽。",
+    noReliableSummaryAction: "建議重新錄製含清晰鳥鳴的片段，或逐段查看低信心候選與決策輔助說明。",
+    voteAggregateRisk: "投票彙整：{name} 在 {votes}/{validCount} 個分析窗的 Top 預測中出現（整體得票率 {pct}%）。主要出現在窗 {chunkHint}。",
+    useSummaryAction: "建議以總覽結果為整段錄音的參考；若各片段差異大，請點選時間軸查看分段詳情。",
+    boundaryEventRisk: "於 {peakTime}s 偵測到 {name}（事件信心 {pct}%）。此事件接近錄音邊界，反卷積覆蓋率可能較低，解讀時請謹慎。",
+    generalEventRisk: "於 {peakTime}s 偵測到 {name}，事件信心 {pct}%（一般事件門檻 {minPct}%）。此數值由反卷積活動與時間覆蓋率綜合估算。",
+    eventFallbackAction: "此事件落在 {timeRange} 分析窗。建議對照頻譜圖與 XAI 時間重要性，並以實地觀察或影像作二次確認。",
+    noTimelineEventsRisk: "時間軸未偵測到達事件信心門檻（一般事件 ≥{minPct}%、邊界 ≥{boundaryPct}%）的明顯鳴叫事件。",
+    timelineFallbackAction: "建議對照全段頻譜與原始音訊；若預期有鳥鳴，可嘗試在較安靜環境重新錄製或延長錄音時間。",
+    timelineSummaryRisk: "時間軸偵測到 {eventCount} 個物種事件、{speciesCount} 種鳥類；最高事件信心為 {name}（{pct}%，峰值 {peakTime}）。結果依反卷積時間軸與事件信心篩選，非逐窗投票聚合。",
+    timelineSummaryFallbackAction: "建議以時間軸事件作為整段錄音的參考摘要；點選事件可檢視該時段物種與頻譜。若用於生態調查，請輔以實地觀察或影像確認。",
+    disclaimer: "免責聲明：本網站之 AI 模組僅提供分析與行動建議，不作最後決定。本平台不保證辨識結果之絕對正確性，亦不構成預測承諾、最終決策或行為保證。",
+  },
+
+  apiErrors: {
+    ERR_SERVER_HTTP_ERROR: "伺服器回應錯誤，請稍後再試。",
+    ERR_SERVER_NOT_READY: "分析伺服器尚未就緒，請稍候再試。",
+    ERR_BACKEND_TIMEOUT: "後端準備逾時，請稍後再試或確認伺服器是否正常運作。",
+    ERR_BACKEND_MODEL_FAILED: "後端模型載入失敗。",
+    ERR_STREAM_CALLBACK_REQUIRED: "伺服器回應錯誤，請稍後再試。",
+    ERR_UNKNOWN_BACKEND: "伺服器回應錯誤，請稍後再試。",
+  },
+  xaiEducation: {
+    "navLabel": "運作原理與 XAI",
+    "homeLabel": "首頁",
+    "eyebrow": "EchoWing 教學頁",
+    "title": "EchoWing 如何理解聲音？",
+    "subtitle": "從聲音上傳、模型辨識，到時間定位與可解釋 AI 的完整流程。",
+    "sectionNavLabel": "運作原理頁面章節",
+    "flowLabel": "EchoWing 聲音分析流程",
+    "takeawayLabel": "如何解讀：",
+    "backToHome": "回首頁",
+    "animations": {
+      "audioToSpec": "聲波被映射為時間-頻率網格。",
+      "slidingWindow": "每個時間窗都會獲得獨立的物種分數。",
+      "deconvolution": "重疊的時間窗分數向下投影，形成連續的活動曲線。",
+      "occlusion": "遮蔽重要的音訊片段會導致信心分數下降。",
+      "confidence": "信心分數"
+    },
+    "flowSteps": [
+        {
+            "icon": "🎙️",
+            "label": "聲音輸入"
+        },
+        {
+            "icon": "〰️",
+            "label": "前處理"
+        },
+        {
+            "icon": "🪟",
+            "label": "分窗辨識"
+        },
+        {
+            "icon": "📊",
+            "label": "物種分數"
+        },
+        {
+            "icon": "⏱️",
+            "label": "時間定位"
+        },
+        {
+            "icon": "🔥",
+            "label": "XAI 熱圖"
+        }
+    ],
+    "sections": [
+        {
+            "id": "overview",
+            "navLabel": "總覽",
+            "kicker": "Overview",
+            "title": "一段鳥鳴聲進入 EchoWing 後，會經過五個步驟",
+            "paragraphs": [
+                "EchoWing 並不是直接「聽懂」整段聲音，而是把音訊轉換成模型可以分析的訊號，再分段送入鳥音辨識模型。",
+                "模型會對每個時間窗輸出候選物種與信心分數。接著，EchoWing 會把多個時間窗的分數整理成時間軸，估計聲音事件可能出現的時間範圍。",
+                "最後，XAI 模組會遮蔽音訊中的不同時間區段，觀察模型信心如何改變，藉此顯示模型判斷時最依賴哪些聲音片段。"
+            ],
+            "animation": "pipeline",
+            "takeaway": "EchoWing 的輸出是模型推論與演算法估計，不等於人工標註的絕對真相。"
+        },
+        {
+            "id": "preprocessing",
+            "navLabel": "聲音前處理",
+            "kicker": "Audio preprocessing",
+            "title": "聲音會先被標準化成模型能處理的格式",
+            "paragraphs": [
+                "使用者上傳或錄製的音訊可能有不同格式、取樣率、聲道數與音量。EchoWing 會先將音訊解碼，轉換成單聲道訊號，並重新取樣到模型需要的取樣率。",
+                "接著，模型會將時間域的聲波轉換成類似頻譜圖的聲學特徵，使鳥鳴中的頻率變化、短促叫聲與連續鳴唱更容易被辨識。"
+            ],
+            "formula": "x(t) \\rightarrow S(f,t)",
+            "formulaCaption": "原始聲波 x(t) 會被轉換成時間-頻率表示 S(f,t)。",
+            "animation": "spectrogram",
+            "takeaway": "模型通常不是直接讀取人類看到的波形，而是分析轉換後的聲學特徵。"
+        },
+        {
+            "id": "windows",
+            "navLabel": "分窗辨識",
+            "kicker": "Sliding-window prediction",
+            "title": "模型不是一次分析整段音訊，而是分成固定長度的時間窗",
+            "paragraphs": [
+                "鳥音模型通常在固定長度的音訊片段上訓練。EchoWing 因此會把一段聲音切成多個時間窗，分別送入模型。",
+                "每個時間窗都會得到一組物種分數，代表模型認為該時間窗中可能包含哪些鳥類聲音。"
+            ],
+            "formula": "p_i^{(c)} = f_c(x_{w_i})",
+            "formulaCaption": "模型 f 對第 i 個時間窗 x_{w_i} 輸出物種 c 的分數 p_i^{(c)}。",
+            "animation": "slidingWindow",
+            "takeaway": "單一模型分數通常對應一整個時間窗，而不是單一瞬間。"
+        },
+        {
+            "id": "timeline",
+            "navLabel": "時間定位",
+            "kicker": "Timeline localization",
+            "title": "從 window-level 分數估計更細的事件時間軸",
+            "paragraphs": [
+                "如果一段鳥叫真的出現在某個時間點，所有覆蓋到該時間點的時間窗，其物種分數都可能上升。",
+                "EchoWing 會把各時間窗的分數投影回細時間軸，並依覆蓋次數正規化，估計哪些時間點最可能貢獻了模型的高分判斷。"
+            ],
+            "formula": "\\hat{z}_t^{(c)} = \\frac{\\sum_i A_{i,t} p_i^{(c)}}{\\sum_i A_{i,t} + \\lambda}",
+            "formulaCaption": "覆蓋時間 t 的高分時間窗越多，估計活動值 \\hat{z}_t^{(c)} 越高。",
+            "animation": "deconvolution",
+            "takeaway": "這是根據 window 分數估計出的 activity curve，不是人工逐秒標註。"
+        },
+        {
+            "id": "occlusion",
+            "navLabel": "XAI 熱圖",
+            "kicker": "Occlusion-based XAI",
+            "title": "遮住一小段聲音，觀察模型信心如何改變",
+            "paragraphs": [
+                "EchoWing 的 XAI 會把音訊中的某一小段暫時遮住或降低，重新送入模型。",
+                "如果遮住這段聲音後，某個物種的信心分數明顯下降，代表模型原本很依賴這段聲音來做判斷。"
+            ],
+            "formula": "I_t^{(c)} = p^{(c)}(x) - p^{(c)}(x_{\\setminus t})",
+            "formulaCaption": "遮蔽後分數下降越多，代表該時間片段對模型判斷越重要。",
+            "animation": "occlusion",
+            "takeaway": "XAI 顯示模型依賴哪些聲音片段，不保證那就是鳥叫的唯一真實位置。"
+        },
+        {
+            "id": "limits",
+            "navLabel": "限制",
+            "kicker": "Limitations",
+            "title": "如何正確解讀 EchoWing 的結果？",
+            "paragraphs": [
+                "信心分數不是生態學上的出現機率。",
+                "XAI heatmap 顯示模型依賴的聲音片段，不是人工標註的真實鳥叫位置。",
+                "如果同時有多種鳥、昆蟲、人聲或背景噪音，模型可能受到干擾。",
+                "EchoWing 適合作為教育、探索與輔助辨識工具；正式調查仍應搭配人工確認與田野紀錄。"
+            ],
+            "animation": "limits",
+            "takeaway": "AI 結果應被視為輔助線索，而不是取代觀察者判斷。"
+        }
+    ]
+}
+,
+  loaderPreprocessing: '正在預處理與切割音訊',
+  loaderPreprocessingHint: '正在利用 Web Audio API 在前端進行強制單聲道、32kHz 降採樣與 5 秒切割。',
+  spectrogramEventLabels: '物種事件時間標籤',
+  xaiGenerating: 'XAI生成中...',
+  xaiGeneratingHint: '可解釋性熱圖計算中，完成後可儲存、分享或列印報告',
+  spectrogramNoData: '尚無頻譜資料',
+  spectrogramTitle: '音訊頻譜圖',
+  spectrogramDescription: '橫軸為時間、縱軸為 Mel 頻率；頻譜下方半透明區塊內白色尖峰為 XAI 時間重要性（越高越關鍵）',
+  spectrogramClickToEnlarge: '點擊頻譜圖可放大檢視',
+  spectrogramOverviewSummary: '總覽 · {segmentCount} 段 · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramChunkSummary: '分析窗 {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramEnlarge: '放大檢視頻譜圖',
+  xaiRedHeatmapHint: '越深的紅色代表 AI 模型在辨識時的關注度越高',
+  visualizerChunkSummary: '片段 {chunkIndex} · 5.0s · 32kHz · Mono',
+  pageMetaTitleSuffix: 'EchoWing - AI 鳥類聲學辨識平台',
+  loadingTitle: '分析中...',
+  apiErrorAudioFormat: '音訊分析請求失敗',
+  apiErrorStream: '音訊串流分析請求失敗',
+  voteDisclaimer: '免責聲明：本網站之 AI 模組僅提供分析與行動建議，不作最後決定。本平台不保證辨識結果之絕對正確性，亦不構成預測承諾、最終決策或行為保證。',
+  voteEmptyOverview: '各片段皆未達 {threshold}% 信心門檻，無可靠物種辨識總覽。',
+  voteEmptySuggestion: '建議重新錄製含清晰鳥鳴的片段，或逐段查看低信心候選與決策輔助說明。',
+  voteResultOverview: '投票彙整：{species} 在 {votes}/{validCount} 個分析窗的 Top 預測中出現（整體得票率 {pct}%）。主要出現於片段 {windows}。',
+  voteResultSuggestion: '建議以總覽結果為整段錄音的參考；若各片段差異大，請點選時間軸查看分段詳情。',
+  distanceMeters: '{meters} 公尺',
+  distanceKm: '{km} 公里',
+  durationSeconds: '{s} 秒',
+  durationMinSec: '{m} 分 {s} 秒',
+  pdfCheckEmptyPage: '第 {page} 頁內容過少（疑似空白頁）',
+  pdfCheckOrphanHeading: '第 {page} 頁底部可能有 orphan heading',
+  pdfCheckUnsearchable: 'PDF 無法抽取足夠文字（不可搜尋）',
+  pdfCheckTooManyPages: '頁數異常：{count} 頁（預期約 ≤ {max}）',
+  spectrogramXLabel: '時間 (秒)',
+  spectrogramYLabel: 'Mel 頻率',
+  spectrogramIntensity: '強度',
+  timelineSingleEventEdge: '於 {time}s 偵測到 {species}（事件信心 {pct}%）。此事件接近錄音邊界，反卷積覆蓋率可能較低，請謹慎參考。',
+  timelineSingleEventNormal: '於 {time}s 偵測到 {species}，事件信心 {pct}%（一般事件門檻 {minPct}%）。此數值顯示該時段有強烈之物種聲學特徵。',
+  timelineSingleEventSuggestion: '此事件落在 {window} 分析窗。建議對照頻譜圖與 XAI 時間重要性，並以實地觀察或影像作二次確認。',
+  timelineNoEvents: '時間軸未偵測到達事件信心門檻（一般事件 ≥{minPct}%、邊界 ≥{boundaryPct}%）的明顯鳴叫事件。',
+  timelineNoEventsSuggestion: '建議對照全段頻譜與原始音訊；若預期有鳥鳴，可嘗試在較安靜環境重新錄製或延長錄音時間。',
+  timelineMultipleEvents: '時間軸偵測到 {count} 個物種事件、{speciesCount} 種鳥類；最高事件信心為 {species}（{pct}%）。',
+  timelineMultipleEventsSuggestion: '建議以時間軸事件作為整段錄音的參考摘要；點選事件可檢視該時段物種與頻譜。若用於生態調查，請輔以實地觀察或影像確認。',
+  pdfRangeTo: '{from} 至 {to}'
 };
 
 export default zh;

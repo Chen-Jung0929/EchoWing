@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { formatMessage } from '../i18n';
 import DownloadMetadataModal from '../components/DownloadMetadataModal/DownloadMetadataModal';
 import NearbyRecordsModal from '../components/NearbyRecordsModal/NearbyRecordsModal';
@@ -64,13 +64,12 @@ export default function ChunkResultsView({
   resetToLanding,
   spectrogramByIndex = {},
 }) {
-  const allChunks = result.chunks ?? [];
   const modelName = resolveResultModelName(result);
   const modelLabel = getModelDisplayLabel(modelName, dict);
   const windowSec = modelWindowSec(modelName);
   const chunks = useMemo(
-    () => displayChunksForModel(allChunks, modelName),
-    [allChunks, modelName]
+    () => displayChunksForModel(result.chunks ?? [], modelName),
+    [result.chunks, modelName]
   );
   const timeline = result.timeline ?? null;
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -91,7 +90,7 @@ export default function ChunkResultsView({
   const xaiAvailable = okChunks.some((chunk) => chunk.predictions?.xai_heatmap?.length);
   const isOverview = !selectedEvent;
   const activeChunk = useMemo(() => {
-    const decisionOpts = { windowSec, selectedEvent: selectedEvent ?? null };
+    const decisionOpts = { windowSec, selectedEvent: selectedEvent ?? null, dict };
     const decisionSupport = buildTimelineDecisionSupport(timeline, decisionOpts);
 
     if (selectedEvent) {
@@ -132,7 +131,7 @@ export default function ChunkResultsView({
       },
       decision_support: decisionSupport,
     };
-  }, [selectedEvent, chunks, windowSec, okChunks, timeline]);
+  }, [selectedEvent, chunks, windowSec, okChunks, timeline, dict]);
 
   const filename = result.original_filename?.trim() || '—';
   const chunkIndices = useMemo(() => chunks.map((c) => c.index), [chunks]);
@@ -151,8 +150,9 @@ export default function ChunkResultsView({
       aggregateChunksByVote(chunks, {
         confidenceThreshold: resolveConfidenceThreshold(result.confidence_threshold),
         windowSec,
+        dict,
       }),
-    [chunks, result.confidence_threshold, windowSec]
+    [chunks, result.confidence_threshold, windowSec, dict]
   );
 
   const fullReportModel = useMemo(
@@ -169,6 +169,7 @@ export default function ChunkResultsView({
         totalDurationSec,
         timeline,
         xaiAvailable,
+        dict,
       }),
     [
       result,
@@ -181,6 +182,7 @@ export default function ChunkResultsView({
       totalDurationSec,
       timeline,
       xaiAvailable,
+      dict,
     ]
   );
 
@@ -287,7 +289,9 @@ export default function ChunkResultsView({
     [result, dict, lang]
   );
 
-  surveyMetadataRef.current = surveyMetadata;
+  useEffect(() => {
+    surveyMetadataRef.current = surveyMetadata;
+  }, [surveyMetadata]);
 
   const handleSaveConfirm = useCallback(
     async (metadata) => {
@@ -480,7 +484,7 @@ export default function ChunkResultsView({
           </details>
         </header>
 
-        {result.warnings?.length > 0 && (
+        {Array.isArray(result.warnings) && result.warnings.length > 0 && (
           <section className="mb-4 bg-amber-500/10 rounded-xl p-3 text-xs text-amber-800 dark:text-amber-200">
             <p className="font-black mb-1">{dict.warnings}</p>
             <ul className="list-disc pl-4 space-y-0.5">
@@ -587,14 +591,7 @@ export default function ChunkResultsView({
         <p className="text-center text-red-500 text-sm mt-4">{dict.errorTitle}</p>
       )}
 
-      <details className="mt-6 bg-[var(--c-bg)]/50 rounded-xl p-4">
-        <summary className="cursor-pointer font-bold text-[var(--c-text)]/70 text-sm">
-          {dict.rawResponse}
-        </summary>
-        <pre className="mt-3 text-xs overflow-auto max-h-64 text-[var(--c-text)]/80">
-          {JSON.stringify(result, null, 2)}
-        </pre>
-      </details>
+
 
       <div className="text-center mt-8">
         <button

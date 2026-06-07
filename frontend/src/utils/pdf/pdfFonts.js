@@ -1,4 +1,5 @@
 import { FONT_ZH } from './pdfConstants';
+import { formatMessage } from '../../i18n';
 
 /** PingFang TC（內嵌 Noto Sans TC）；Latin 亦用同一字型以確保混排與頁首頁尾可搜尋 */
 const FONT_URL = '/fonts/NotoSansTC-Regular.ttf';
@@ -85,13 +86,14 @@ export function sanitizePdfText(text, lang = 'zh') {
   return s;
 }
 
-/** @param {number} minSec @param {number} maxSec @param {'zh'|'en'} [lang] */
-export function formatPdfTimeRangeSec(minSec, maxSec, lang = 'zh') {
+/** @param {number} minSec @param {number} maxSec @param {object} [dict] */
+export function formatPdfTimeRangeSec(minSec, maxSec, dict) {
   const min = Number(minSec);
   const max = Number(maxSec);
   if (!Number.isFinite(min) || !Number.isFinite(max)) return '—';
-  if (min === max) return lang === 'zh' ? `${min} 秒` : `${min} s`;
-  return lang === 'zh' ? `${min} 至 ${max} 秒` : `${min} to ${max} s`;
+  if (!dict) return `${min} s`; // Fallback if dict is not provided
+  if (min === max) return formatMessage(dict.pdfTimeSec, { sec: min });
+  return formatMessage(dict.pdfTimeRangeSec, { min, max });
 }
 
 export function normalizeFieldValue(value, lang = 'zh') {

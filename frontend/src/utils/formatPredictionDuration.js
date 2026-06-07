@@ -7,7 +7,7 @@ export function formatPredictionDuration(ms, lang = 'zh') {
   const sec = ms / 1000;
   if (sec < 60) {
     const label = sec.toFixed(1);
-    return lang === 'zh' ? `${label} 秒` : `${label} s`;
+    return getDict(lang).durationSeconds?.replace('{s}', label);
   }
   const minutes = Math.floor(sec / 60);
   const seconds = Math.round(sec % 60);

@@ -23,7 +23,7 @@ function parseErrorBody(body) {
 
 async function fetchJson(path, options = {}) {
   const response = await fetch(`${API_BASE_URL}${path}`, options);
-  let body = null;
+  let body;
   try {
     body = await response.json();
   } catch {
@@ -39,7 +39,12 @@ async function fetchJson(path, options = {}) {
 export async function fetchBackendStatus() {
   const { response, body } = await fetchJson('/health');
   if (!response.ok && response.status !== 503) {
-    throw new Error(parseErrorBody(body) || `伺服器回應錯誤：${response.status}`);
+    const msg = parseErrorBody(body);
+    if (msg) throw new Error(msg);
+    const err = new Error('ERR_SERVER_HTTP_ERROR');
+    err.code = 'ERR_SERVER_HTTP_ERROR';
+    err.status = response.status;
+    throw err;
   }
   return body ?? { ok: false, ready: false, status: 'unknown' };
 }
@@ -68,7 +73,10 @@ export async function waitForBackendReady(opts = {}) {
 
     if (payload.ready) return payload;
     if (payload.status === 'error') {
-      throw new Error(payload.error || '後端模型載入失敗');
+      const err = new Error('ERR_BACKEND_MODEL_FAILED');
+      err.code = 'ERR_BACKEND_MODEL_FAILED';
+      err.detail = payload.error;
+      throw err;
     }
 
     await new Promise((resolve, reject) => {
@@ -84,7 +92,9 @@ export async function waitForBackendReady(opts = {}) {
     });
   }
 
-  throw new Error('後端準備逾時，請稍後再試或確認 Hugging Face Space 是否 Running');
+  const err = new Error('ERR_BACKEND_TIMEOUT');
+  err.code = 'ERR_BACKEND_TIMEOUT';
+  throw err;
 }
 
 /**
@@ -115,18 +125,20 @@ export const analyzeAudioChunks = async (chunks, metadata, opts = {}) => {
     const errorData = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      const msg =
-        parseErrorBody(errorData) ||
-        (response.status === 503
-          ? '分析伺服器尚未就緒，請稍候再試'
-          : `伺服器回應錯誤：狀態碼 ${response.status}`);
-      throw new Error(msg);
+      const msg = parseErrorBody(errorData);
+      if (msg) throw new Error(msg);
+      
+      const code = response.status === 503 ? 'ERR_SERVER_NOT_READY' : 'ERR_SERVER_HTTP_ERROR';
+      const err = new Error(code);
+      err.code = code;
+      err.status = response.status;
+      throw err;
     }
 
     return errorData;
   } catch (error) {
     if (error?.name === 'AbortError') throw error;
-    console.error('[API Error] 音訊分析請求失敗:', error);
+    console.error('[API Error]', error);
     throw error;
   }
 };
@@ -149,18 +161,20 @@ export const analyzeAudioFile = async (file, metadata, modelSelection = 'birdnet
     const errorData = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      const msg =
-        parseErrorBody(errorData) ||
-        (response.status === 503
-          ? '分析伺服器尚未就緒，請稍候再試'
-          : `伺服器回應錯誤：狀態碼 ${response.status}`);
-      throw new Error(msg);
+      const msg = parseErrorBody(errorData);
+      if (msg) throw new Error(msg);
+      
+      const code = response.status === 503 ? 'ERR_SERVER_NOT_READY' : 'ERR_SERVER_HTTP_ERROR';
+      const err = new Error(code);
+      err.code = code;
+      err.status = response.status;
+      throw err;
     }
 
     return errorData;
   } catch (error) {
     if (error?.name === 'AbortError') throw error;
-    console.error(`[API Error] 音訊分析請求失敗:`, error);
+    console.error(`[API Error]`, error);
     throw error;
   }
 };
@@ -193,20 +207,22 @@ export const analyzeAudioStream = async (
     typeof modelOrOptions === 'object' &&
     typeof modelOrOptions.onChunk === 'function'
   ) {
-    modelSelection = modelOrOptions.modelSelection ?? 'birdnet';
+    modelSelection = modelOrOptions.modelSelection || 'birdnet';
     chunkHandler = modelOrOptions.onChunk;
     signal = modelOrOptions.signal;
   } else if (typeof modelOrOptions === 'function') {
     chunkHandler = modelOrOptions;
     signal = onChunk?.signal ?? opts?.signal;
   } else {
-    modelSelection = modelOrOptions ?? 'birdnet';
+    modelSelection = modelOrOptions || 'birdnet';
     chunkHandler = onChunk;
     signal = opts?.signal;
   }
 
   if (typeof chunkHandler !== 'function') {
-    throw new Error('analyzeAudioStream: onChunk callback is required');
+    const err = new Error('ERR_STREAM_CALLBACK_REQUIRED');
+    err.code = 'ERR_STREAM_CALLBACK_REQUIRED';
+    throw err;
   }
 
   try {
@@ -223,12 +239,20 @@ export const analyzeAudioStream = async (
     });
 
     if (!response.ok) {
-      let msg = `伺服器回應錯誤：狀態碼 ${response.status}`;
+      let msg = null;
       try {
         const errorData = await response.json();
-        msg = parseErrorBody(errorData) || msg;
-      } catch (e) {}
-      throw new Error(msg);
+        msg = parseErrorBody(errorData);
+      } catch {
+        // Ignored
+      }
+      if (msg) throw new Error(msg);
+      
+      const code = response.status === 503 ? 'ERR_SERVER_NOT_READY' : 'ERR_SERVER_HTTP_ERROR';
+      const err = new Error(code);
+      err.code = code;
+      err.status = response.status;
+      throw err;
     }
 
     // 處理 SSE 串流
@@ -275,7 +299,7 @@ export const analyzeAudioStream = async (
     }
   } catch (error) {
     if (error?.name === 'AbortError') throw error;
-    console.error(`[API Error] 音訊串流分析請求失敗:`, error);
+    console.error(`[API Error]`, error);
     throw error;
   }
 };

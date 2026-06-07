@@ -1,41 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
 
+const STAGE_SIZE = 400;
+const CENTER = STAGE_SIZE / 2;
+
+const FRUIT_SIZE = 300;
+const FRUIT_LEFT = (STAGE_SIZE - FRUIT_SIZE) / 2;
+const FRUIT_TOP = (STAGE_SIZE - FRUIT_SIZE) / 2;
+
+const FOOT_ORBIT_RADIUS = 60;
+
+const FRAME_CONFIG = {
+  1: { w: 108, h: 82, footPxX: 8, footPxY: 85 },
+  2: { w: 108, h: 82, footPxX: 8, footPxY: 85 },
+};
+
+const START_ANGLE_RAD = Math.PI + Math.PI / 36;
+const ORBIT_PERIOD_MS = 10_000;
+const PROGRESS_TICK_MS = 30;
+const PROGRESS_STEP = PROGRESS_TICK_MS / ORBIT_PERIOD_MS;
+
 export default function KiwiAnimation() {
   const [frame, setFrame] = useState(1);
   const [progress01, setProgress01] = useState(0);
   const [imageError, setImageError] = useState(false);
 
-  const STAGE_SIZE = 400;
-  const CENTER = STAGE_SIZE / 2;
-
-  const FRUIT_SIZE = 300;
-  const FRUIT_LEFT = (STAGE_SIZE - FRUIT_SIZE) / 2;
-  const FRUIT_TOP = (STAGE_SIZE - FRUIT_SIZE) / 2;
-
-  const FOOT_ORBIT_RADIUS = 60;
-
-  const FRAME_CONFIG = {
-    1: {
-      w: 108,
-      h: 82,
-      footPxX: 8,
-      footPxY: 85,
-    },
-    2: {
-      w: 108,
-      h: 82,
-      footPxX: 8,
-      footPxY: 85,
-    },
-  };
-
   const cfg = FRAME_CONFIG[frame];
-
-  const START_ANGLE_RAD = Math.PI + Math.PI / 36;
-
-  const ORBIT_PERIOD_MS = 10_000;
-  const PROGRESS_TICK_MS = 30;
-  const PROGRESS_STEP = PROGRESS_TICK_MS / ORBIT_PERIOD_MS;
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -109,13 +98,13 @@ export default function KiwiAnimation() {
         }}
       >
         <img
-          src="/kiwi-fruit.png"
+          src="/kiwi-fruit.webp"
           alt=""
           className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none opacity-15"
         />
 
         <img
-          src="/kiwi-fruit.png"
+          src="/kiwi-fruit.webp"
           alt="Loading progress"
           className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
           style={{
@@ -141,7 +130,7 @@ export default function KiwiAnimation() {
         }}
       >
         <img
-          src={`/kiwi${frame}.png`}
+          src={`/kiwi${frame}.webp`}
           alt="Walking Kiwi"
           onError={() => setImageError(true)}
           className="w-full h-full object-contain drop-shadow-md select-none"

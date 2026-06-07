@@ -2,6 +2,10 @@
 const en = {
   title: 'EchoWing',
   subtitle: 'Bird Sound Recognition',
+  notFound: 'The page you are looking for does not exist.',
+  notAvailable: 'N/A',
+  unknownError: 'Unknown backend error',
+
   uploadBtn: 'Upload audio or video',
   uploadFormatsHint:
     'WAV, MP3, FLAC, OGG, M4A, AAC, WEBM; video files use their audio track (max 30 s, 20 MB).',
@@ -75,8 +79,7 @@ const en = {
   taskLabel: 'Acoustic analysis',
   modelUsed: 'Model',
   modelSelectionLabel: 'Model',
-  modelTagFast: 'fast',
-  modelPerchFast: 'Perch v2 Fast (Google TFLite)',
+  modelPerchFast: 'Perch v2 (Google)',
   modelBirdnet: 'BirdNET v2.4 (Cornell)',
   modelSilic: 'SILIC (Academia Sinica)',
   modelHintLearnMore: 'Learn more',
@@ -108,7 +111,7 @@ const en = {
   attentionBinsLabel: 'time windows',
   collapseAttention: 'Collapse attention weights',
   expandAttention: 'Expand attention weights',
-  decisionSupport: 'Decision Support',
+  decisionSupportTitle: 'Decision Support',
   riskAnalysis: 'Risk Analysis',
   actionRecommendation: 'Action Recommendation',
   disclaimer: 'Disclaimer',
@@ -126,8 +129,7 @@ const en = {
   warnings: 'Warnings',
   classLabels: 'Total classes',
   decodeFailed: 'Decode failed for this chunk',
-  rawResponse: 'Full response (JSON)',
-  summaryLabel: 'Summary',
+    summaryLabel: 'Summary',
   summaryTabShort: 'All',
   tabHoverHint: 'Hover a tab to preview species',
   prevPage: 'Previous',
@@ -251,6 +253,7 @@ const en = {
       window: '5 seconds',
       type: 'Experimental / project-specific model',
       source: 'Academia Sinica',
+      link: 'https://github.com/RedbirdTaiwan/silic',
       citation: 'Academia Sinica bird acoustic model with 5 s analysis windows.',
     },
   ],
@@ -347,6 +350,250 @@ const en = {
   xaiStatusUnavailablePdf: 'Unavailable; prediction-only report',
   xaiUnavailable: 'XAI unavailable',
   xaiUnavailableDetail: 'Predictions remain available, but XAI was not returned. Result actions and prediction-only PDF download remain available.',
+
+  pdfNoSpeciesEvents: 'No species met the event confidence threshold.',
+  pdfNoEventsDetected: 'No distinct species events detected.',
+  pdfReportTitle: 'Bird Acoustic Analysis Report',
+  pdfCoverOverview: 'Cover / Overview',
+  pdfReportId: 'Report ID',
+  pdfGeneratedAt: 'Generated',
+  pdfSampleInfo: 'Sample information',
+  pdfTotalDuration: 'Total duration',
+  pdfApproxSec: '~{sec} s',
+  pdfSampleRate: 'Sample rate',
+  pdfChannels: 'Channels',
+  pdfChannelMono: 'Mono',
+  pdfThreshold: 'Threshold',
+  pdfSpeciesActivitySummary: 'Species activity summary',
+  pdfActivitySummaryHint: 'Timeline deconvolution with event-confidence filtering (not vote aggregation).',
+  pdfSpeciesName: 'Species',
+  pdfPeakEventConfidence: 'Peak event confidence',
+  pdfPeakTimeSingle: 'Peak time',
+  pdfSpeciesEvents: 'Species events',
+  pdfSpecies: 'Species',
+  pdfOnset: 'Onset',
+  pdfOffset: 'Offset',
+  pdfPeakTimesPlural: 'Peak times',
+  pdfEventConfidenceLabel: 'Event confidence',
+  pdfFullSpectrogram: 'Full spectrogram',
+  pdfFieldNotesOverview: 'Field notes (overview)',
+  pdfObservationTime: 'Observation time',
+  pdfObserver: 'Observer',
+  pdfLocation: 'Location',
+  pdfEnvironment: 'Environment',
+  pdfOverallConclusion: 'Overall conclusion',
+  pdfSpeciesRankBookmark: 'Species {rank} · {species}',
+  pdfPrimarySpeciesTitle: 'Primary species {rank} · {species}',
+  pdfSpeciesInfo: 'Species information',
+  pdfScientificName: 'Scientific name',
+  pdfActivitySpan: 'Activity span',
+  pdfTimelineEvents: 'Timeline events',
+  pdfFullSpecSpeciesLabels: 'Full spectrogram (species labels)',
+  pdfSpecSpeciesTitle: '{species} · full recording labels',
+  pdfNoSpectrogramData: 'No spectrogram',
+  pdfDecisionSupport: 'Decision support',
+  pdfDecisionSupportHint: 'Based on timeline event confidence and deconvolution—not per-segment model confidence aggregation.',
+  pdfRiskAnalysis: 'Risk analysis',
+  pdfRecommendation: 'Recommendation',
+  pdfTimeRangeSec: '{min} to {max} s',
+  pdfTimeSec: '{sec} s',
+  pdfSegmentTitle: 'Segment {label} · {timeRange}',
+  pdfFullRecordingSpectrogram: 'Full recording spectrogram',
+  decisionSupport: {
+    noReliableSummaryRisk: "No segment met the {threshold}% confidence threshold; no reliable species summary.",
+    noReliableSummaryAction: "Re-record with clearer bird calls, or review each segment’s reference candidates and decision support.",
+    voteAggregateRisk: "Vote aggregate: {name} appeared in the top predictions of {votes}/{validCount} window(s) (overall vote share {pct}%). Most prominent in window(s) {chunkHint}.",
+    useSummaryAction: "Use the summary as a reference for the full recording; if segments disagree, use the timeline to inspect each segment.",
+    boundaryEventRisk: "{name} detected at {peakTime}s (event confidence {pct}%). This event is near the recording boundary; deconvolution coverage may be lower—interpret with caution.",
+    generalEventRisk: "{name} detected at {peakTime}s with {pct}% event confidence (general threshold {minPct}%). This score combines deconvolved activity and temporal coverage.",
+    eventFallbackAction: "This event falls in analysis window {timeRange}. Cross-check the spectrogram and XAI time importance; confirm with field observation or visual evidence when possible.",
+    noTimelineEventsRisk: "The timeline shows no clear vocalization events above the event-confidence thresholds (general ≥{minPct}%, boundary ≥{boundaryPct}%).",
+    timelineFallbackAction: "Review the full spectrogram and original audio. If bird calls were expected, try re-recording in a quieter setting or using a longer clip.",
+    timelineSummaryRisk: "Timeline detected {eventCount} species event(s) across {speciesCount} species; highest event confidence is {name} ({pct}%, peak {peakTime}). Based on deconvolved timeline filtering, not per-window vote aggregation.",
+    timelineSummaryFallbackAction: "Use timeline events as a summary reference for the full recording; select an event to inspect that time window. For ecological surveys, confirm with field observation or visual evidence.",
+    disclaimer: "Disclaimer: The AI module provides analysis and decision-support suggestions only. It does not make final decisions or guarantee absolute correctness.",
+  },
+
+  apiErrors: {
+    ERR_SERVER_HTTP_ERROR: "Server responded with an error, please try again later.",
+    ERR_SERVER_NOT_READY: "Analysis server is not ready, please try again later.",
+    ERR_BACKEND_TIMEOUT: "Backend preparation timed out, please try again or check if the server is running.",
+    ERR_BACKEND_MODEL_FAILED: "Backend model failed to load.",
+    ERR_STREAM_CALLBACK_REQUIRED: "Server responded with an error, please try again later.",
+    ERR_UNKNOWN_BACKEND: "Server responded with an error, please try again later.",
+  },
+  xaiEducation: {
+    "navLabel": "How It Works / XAI",
+    "homeLabel": "Home",
+    "eyebrow": "EchoWing Education Page",
+    "title": "How does EchoWing understand sound?",
+    "subtitle": "From audio upload and model prediction to timeline localization and Explainable AI.",
+    "sectionNavLabel": "How It Works Sections",
+    "flowLabel": "EchoWing Audio Analysis Pipeline",
+    "takeawayLabel": "Takeaway:",
+    "backToHome": "Back to Home",
+    "animations": {
+      "audioToSpec": "Audio waves are mapped into time-frequency cells.",
+      "slidingWindow": "Each window receives its own species score.",
+      "deconvolution": "Overlapping window scores project downwards to form a continuous activity curve.",
+      "occlusion": "Masking an important audio segment causes the confidence to drop.",
+      "confidence": "Confidence"
+    },
+    "flowSteps": [
+        {
+            "icon": "🎙️",
+            "label": "Audio Input"
+        },
+        {
+            "icon": "〰️",
+            "label": "Preprocessing"
+        },
+        {
+            "icon": "🪟",
+            "label": "Window Prediction"
+        },
+        {
+            "icon": "📊",
+            "label": "Species Score"
+        },
+        {
+            "icon": "⏱️",
+            "label": "Timeline Localization"
+        },
+        {
+            "icon": "🔥",
+            "label": "XAI Heatmap"
+        }
+    ],
+    "sections": [
+        {
+            "id": "overview",
+            "navLabel": "Overview",
+            "kicker": "Overview",
+            "title": "What happens when a bird call enters EchoWing?",
+            "paragraphs": [
+                "EchoWing does not directly \"listen\" to the whole audio at once. Instead, it converts the audio into a signal the model can analyze and feeds it in segments.",
+                "The model outputs candidate species and confidence scores for each time window. EchoWing then aggregates these overlapping windows into a timeline to estimate when sound events occur.",
+                "Finally, the XAI module masks different time segments of the audio to observe how model confidence changes, showing which audio segments the model relied on most."
+            ],
+            "animation": "pipeline",
+            "takeaway": "EchoWing’s output is a mix of model inference and algorithm estimation, not an absolute ground truth annotated by humans."
+        },
+        {
+            "id": "preprocessing",
+            "navLabel": "Preprocessing",
+            "kicker": "Audio preprocessing",
+            "title": "Audio is standardized into a format the model can read",
+            "paragraphs": [
+                "Uploaded or recorded audio may have different formats, sample rates, channels, and volumes. EchoWing decodes, converts to mono, and resamples the audio to meet model requirements.",
+                "The model then transforms the time-domain acoustic waves into a time-frequency spectrogram-like acoustic feature, making frequency variations, short calls, and continuous songs easier to recognize."
+            ],
+            "formula": "x(t) \\rightarrow S(f,t)",
+            "formulaCaption": "Raw acoustic wave x(t) is converted to a time-frequency representation S(f,t).",
+            "animation": "spectrogram",
+            "takeaway": "Models usually do not directly read raw waveforms, but analyze transformed acoustic features."
+        },
+        {
+            "id": "windows",
+            "navLabel": "Window Prediction",
+            "kicker": "Sliding-window prediction",
+            "title": "The model analyzes fixed-length windows instead of the entire audio",
+            "paragraphs": [
+                "Bird sound models are usually trained on fixed-length audio clips. EchoWing slices a long recording into multiple time windows and feeds them to the model individually.",
+                "Each time window receives a set of species scores, representing which bird sounds the model thinks might be present in that specific window."
+            ],
+            "formula": "p_i^{(c)} = f_c(x_{w_i})",
+            "formulaCaption": "Model f outputs a score p_i^{(c)} for species c on the i-th time window x_{w_i}.",
+            "animation": "slidingWindow",
+            "takeaway": "A single model score usually corresponds to an entire time window, not a single instant."
+        },
+        {
+            "id": "timeline",
+            "navLabel": "Localization",
+            "kicker": "Timeline localization",
+            "title": "Estimating a finer timeline from window-level scores",
+            "paragraphs": [
+                "If a bird call truly occurs at a certain time point, all time windows covering that point are likely to have elevated species scores.",
+                "EchoWing projects window scores back onto a finer timeline and normalizes by coverage, estimating which time points contributed most to the model’s high scores."
+            ],
+            "formula": "\\hat{z}_t^{(c)} = \\frac{\\sum_i A_{i,t} p_i^{(c)}}{\\sum_i A_{i,t} + \\lambda}",
+            "formulaCaption": "The more high-score windows covering time t, the higher the estimated activity \\hat{z}_t^{(c)}.",
+            "animation": "deconvolution",
+            "takeaway": "This is an activity curve estimated from window scores, not manual second-by-second annotation."
+        },
+        {
+            "id": "occlusion",
+            "navLabel": "XAI Heatmap",
+            "kicker": "Occlusion-based XAI",
+            "title": "Masking a small audio segment to observe confidence drop",
+            "paragraphs": [
+                "EchoWing’s XAI temporarily masks or lowers a small segment of the audio and reruns the model.",
+                "If the confidence score for a species drops significantly after masking, it means the model heavily relied on that audio segment to make its decision."
+            ],
+            "formula": "I_t^{(c)} = p^{(c)}(x) - p^{(c)}(x_{\\setminus t})",
+            "formulaCaption": "A larger score drop after masking implies that time segment is more important for the prediction.",
+            "animation": "occlusion",
+            "takeaway": "XAI shows which audio segments the model relied on, but does not guarantee it is the only true location of the bird call."
+        },
+        {
+            "id": "limits",
+            "navLabel": "Limitations",
+            "kicker": "Limitations",
+            "title": "How to correctly interpret EchoWing results?",
+            "paragraphs": [
+                "Confidence scores are not ecological occurrence probabilities.",
+                "The XAI heatmap shows model reliance, not manually annotated true bird call locations.",
+                "The model may be disturbed if multiple birds, insects, human voices, or background noises are present simultaneously.",
+                "EchoWing is an educational, exploratory, and assistive tool; formal surveys still require manual verification and field records."
+            ],
+            "animation": "limits",
+            "takeaway": "AI results should be treated as supportive clues, rather than replacing observer judgment."
+        }
+    ]
+}
+,
+  loaderPreprocessing: 'Preprocessing and chunking audio',
+  loaderPreprocessingHint: 'Forcing Mono, downsampling to 32kHz, and chunking into 5-second segments via Web Audio API on the frontend.',
+  spectrogramEventLabels: 'Species event time labels',
+  xaiGenerating: 'Generating XAI...',
+  xaiGeneratingHint: 'Computing interpretability heatmap... You can save, share, or print the report when finished.',
+  spectrogramNoData: 'No spectrogram data',
+  spectrogramTitle: 'Spectrogram',
+  spectrogramDescription: 'X-axis is time, Y-axis is Mel frequency; white peaks in the translucent area below indicate XAI temporal importance (higher is more critical).',
+  spectrogramClickToEnlarge: 'Click the spectrogram to enlarge',
+  spectrogramOverviewSummary: 'Overview · {segmentCount} segments · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramChunkSummary: 'Window {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramEnlarge: 'Enlarge spectrogram',
+  xaiRedHeatmapHint: 'Deeper red indicates higher attention from the AI model during recognition.',
+  visualizerChunkSummary: 'Segment {chunkIndex} · 5.0s · 32kHz · Mono',
+  pageMetaTitleSuffix: 'EchoWing - AI Bird Sound Recognition',
+  loadingTitle: 'Analyzing...',
+  apiErrorAudioFormat: 'Audio analysis request failed',
+  apiErrorStream: 'Audio stream analysis request failed',
+  voteDisclaimer: 'Disclaimer: The AI models on this website only provide analysis and suggestions, not final decisions. We do not guarantee absolute accuracy, nor do we make predictive promises or behavioral guarantees.',
+  voteEmptyOverview: 'No segments reached the {threshold}% confidence threshold. No reliable species overview available.',
+  voteEmptySuggestion: 'Consider re-recording a segment with clear bird calls, or examine low-confidence candidates and decision support section by section.',
+  voteResultOverview: 'Vote summary: {species} appeared in Top predictions for {votes}/{validCount} analysis windows (overall vote rate {pct}%). Mainly in segments {windows}.',
+  voteResultSuggestion: 'Use the overview as a reference for the entire recording. If segments vary greatly, click the timeline for details.',
+  distanceMeters: '{meters} m',
+  distanceKm: '{km} km',
+  durationSeconds: '{s} s',
+  durationMinSec: '{m} m {s} s',
+  pdfCheckEmptyPage: 'Page {page} has too little content (possibly blank)',
+  pdfCheckOrphanHeading: 'Page {page} might have an orphan heading at the bottom',
+  pdfCheckUnsearchable: 'PDF cannot extract enough text (unsearchable)',
+  pdfCheckTooManyPages: 'Abnormal page count: {count} pages (expected ≤ {max})',
+  spectrogramXLabel: 'Time (seconds)',
+  spectrogramYLabel: 'Mel frequency',
+  spectrogramIntensity: 'Intensity',
+  timelineSingleEventEdge: '{species} detected at {time}s (event confidence {pct}%). This event is near the recording edge, deconvolution coverage may be lower, please reference cautiously.',
+  timelineSingleEventNormal: '{species} detected at {time}s, event confidence {pct}% (normal threshold {minPct}%). This indicates strong species acoustic features in this period.',
+  timelineSingleEventSuggestion: 'This event falls in analysis window {window}. Suggest cross-referencing with spectrogram and XAI temporal importance, and verifying with field observations or images.',
+  timelineNoEvents: 'Timeline detected no distinct vocalization events reaching the confidence threshold (normal ≥{minPct}%, edge ≥{boundaryPct}%).',
+  timelineNoEventsSuggestion: 'Suggest reviewing the full spectrogram and original audio. If bird calls were expected, try re-recording in a quieter environment or extending the duration.',
+  timelineMultipleEvents: 'Timeline detected {count} species events, {speciesCount} bird species; highest event confidence is {species} ({pct}%).',
+  timelineMultipleEventsSuggestion: 'Suggest using timeline events as a reference summary. Click an event to view species and spectrogram for that period. If used for ecological surveys, supplement with field observations or images.',
+  pdfRangeTo: '{from} to {to}'
 };
 
 export default en;

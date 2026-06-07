@@ -54,11 +54,16 @@ class Settings(BaseSettings):
     onnx_input_name: str | None = None
 
     max_chunks: int = 120 # Allow more chunks since we might upload 60s
-    max_body_mb: int = 50
+    max_upload_bytes: int = 25 * 1024 * 1024
     max_concurrent_predictions: int = 1
     response_top_k: int = 5
     confidence_threshold: float = 0.5
     perch_confidence_threshold: float = 0.75
+
+    allowed_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:3000"
+    enable_rate_limit: bool = False
+    rate_limit_window_sec: int = 60
+    rate_limit_max_requests: int = 10
 
     # BirdNET: TFLite 輸出為 logit；經 sensitivity 與分數校準後再與門檻比較
     birdnet_sigmoid_sensitivity: float = 1.0

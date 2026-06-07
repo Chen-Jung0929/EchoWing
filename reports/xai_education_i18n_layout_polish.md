@@ -1,0 +1,29 @@
+# XAI Education Page i18n & Layout Polish Report
+
+- **Branch name**: `feature/xai-education-i18n-layout-polish`
+- **Starting main commit hash**: `1d3c037f`
+- **Files changed**:
+  - `frontend/src/App.jsx`
+  - `frontend/src/index.css`
+  - `frontend/src/utils/ResultTitleActions.jsx`
+  - `frontend/src/pages/XaiEducationPage/XaiEducationPage.jsx`
+  - `frontend/src/i18n/locales/*.js` (all 12 files)
+  - `README.md`
+- **Router usage**: `react-router-dom` was already used natively by the application; no new router dependency was introduced, but its usage was cleaned up.
+- **Dependency changes**: None. `katex` and `react-katex` were already present in `package.json`.
+- **xaiEducation locales completed**: `zh`, `en`, `ja`, `ko`, `fr`, `es`, `th`, `de`, `lzh`, `id`, `yue`, `ms` (all 12 languages supported).
+- **i18n validation result**: PASS (`All 12 locales passed structure and coverage validation!`)
+- **Build result**: PASS (Vite built successfully in 861ms)
+- **Layout fixes completed**:
+  - `App.jsx`: Perfected vertical alignment across the Navigation Bar's Theme, Language, and Guide icon buttons by utilizing new utility classes `.nav-icon-button` and ensuring the language dropdown wrapper employs `flex items-center`.
+  - `ResultTitleActions.jsx`: Realigned the floating action button (FAB) expansion menu to right-align the labels and vertically center the action icons into a uniform column on the right edge.
+  - `XaiEducationPage.jsx`: Added a clear "Back to Home" button allowing users to return to the landing page.
+- **Remaining known issues**: None.
+- **Visual Checklist**:
+  - [x] Home label is visible and understandable across languages.
+  - [x] How It Works / XAI nav item opens the XAI page.
+  - [x] Back to Home returns to the analysis page.
+  - [x] Formulas render correctly using KaTeX.
+  - [x] Language, Theme, Guide buttons align perfectly.
+  - [x] Result action menu icons align in a vertical column.
+  - [x] Mobile header does not overflow.

@@ -4,7 +4,7 @@
  * @param {'zh' | 'en'} lang
  * @returns {string | null}
  */
-export function resolveSpeciesWikiUrl(species, lang) {
+export function resolveSpeciesWikiUrl(species) {
   const query = species?.scientific_name || species?.name?.en || species?.name?.zh || species?.species_id;
   if (!query) return null;
   return `https://www.inaturalist.org/search?q=${encodeURIComponent(query)}`;

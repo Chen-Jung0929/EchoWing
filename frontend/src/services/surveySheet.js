@@ -88,11 +88,12 @@ async function postToSheet(body) {
     return { ok: true, body: parsed };
   } catch (err) {
     if (err?.name === 'AbortError') {
-      throw new Error('Request timed out');
+      throw new Error('Request timed out', { cause: err });
     }
     if (err instanceof TypeError && /fetch/i.test(err.message)) {
       throw new Error(
-        'Network or CORS error. Redeploy Web App as Execute as Me with access Anyone.'
+        'Network or CORS error. Redeploy Web App as Execute as Me with access Anyone.',
+        { cause: err }
       );
     }
     throw err instanceof Error ? err : new Error(String(err));

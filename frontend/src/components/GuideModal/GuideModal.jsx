@@ -2,7 +2,6 @@ import { useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MdClose, MdOpenInNew, MdPrivacyTip } from 'react-icons/md';
 
-const SECTION_KEYS = ['usage', 'models', 'how', 'privacy', 'credits'];
 
 export default function GuideModal({
   open,
@@ -64,7 +63,7 @@ export default function GuideModal({
           role="tablist"
           aria-label={dict.guideTitle}
         >
-          {SECTION_KEYS.map((key) => (
+          {Object.keys(dict.guideTabs).map((key) => (
             <button
               key={key}
               type="button"
@@ -105,9 +104,9 @@ export default function GuideModal({
               {dict.guideModelsComparison}
             </p>
             <div className="space-y-3">
-              {dict.guideModels.map((model) => (
+              {(Array.isArray(dict?.guideModels) ? dict.guideModels : []).map((model) => (
                 <article
-                  key={model.name}
+                  key={model?.name || Math.random()}
                   className="rounded-xl border border-[var(--c-text)]/10 bg-[var(--c-card)]/60 p-4"
                 >
                   <h4 className="font-black text-[var(--c-text)]">{model.name}</h4>

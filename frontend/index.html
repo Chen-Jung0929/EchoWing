@@ -1,19 +1,87 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-TW">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/logo.png" />
+    <link rel="icon" href="/favicon.ico" sizes="any">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="EchoWing - 結合人工智慧與聲學分析的鳥類叫聲辨識平台。上傳音訊或現場錄音，自動識別鳥類物種，並可產生田野調查報告。" />
-    <meta name="keywords" content="鳥類辨識, 鳥音辨識, EchoWing, BirdCLEF, 人工智慧, 聲學辨識, 田野調查" />
-    <meta property="og:title" content="EchoWing - AI 鳥類聲學辨識平台" />
-    <meta property="og:description" content="結合人工智慧與聲學分析的鳥類叫聲辨識平台，提供快速且準確的物種分析。" />
-    <meta property="og:image" content="/logo.png" />
+
+    <!-- SEO: Primary Meta Tags -->
+    <title>EchoWing - AI Bird Sound Recognition</title>
+    <meta name="description" content="EchoWing is an AI-powered bird sound recognition platform with explainable audio analysis and field-report generation." />
+    <meta name="keywords" content="鳥類辨識, 鳥音辨識, EchoWing, BirdCLEF, 人工智慧, 聲學辨識, 田野調查, bird sound recognition, bird identification, AI" />
+    <link rel="canonical" href="https://echo-wing.vercel.app/" />
+    <meta name="theme-color" content="#2F4A5F" />
+    <meta name="robots" content="index, follow" />
+
+    
+    <!-- Hreflang: SEO -->
+    <link rel="alternate" hreflang="zh-TW" href="https://echo-wing.vercel.app/" />
+    <link rel="alternate" hreflang="en" href="https://echo-wing.vercel.app/" />
+    <link rel="alternate" hreflang="ja" href="https://echo-wing.vercel.app/" />
+    <link rel="alternate" hreflang="ko" href="https://echo-wing.vercel.app/" />
+    <link rel="alternate" hreflang="fr" href="https://echo-wing.vercel.app/" />
+    <link rel="alternate" hreflang="es" href="https://echo-wing.vercel.app/" />
+    <link rel="alternate" hreflang="de" href="https://echo-wing.vercel.app/" />
+    <link rel="alternate" hreflang="th" href="https://echo-wing.vercel.app/" />
+    <link rel="alternate" hreflang="id" href="https://echo-wing.vercel.app/" />
+    <link rel="alternate" hreflang="ms" href="https://echo-wing.vercel.app/" />
+    <link rel="alternate" hreflang="yue" href="https://echo-wing.vercel.app/" />
+    <link rel="alternate" hreflang="lzh" href="https://echo-wing.vercel.app/" />
+    <link rel="alternate" hreflang="x-default" href="https://echo-wing.vercel.app/" />
+
+    <!-- SEO: Open Graph / Facebook -->
     <meta property="og:type" content="website" />
-    <title>EchoWing - AI 鳥類聲學辨識平台 | Bird Sound Recognition</title>
+    <meta property="og:url" content="https://echo-wing.vercel.app/" />
+    <meta property="og:title" content="EchoWing - AI Bird Sound Recognition" />
+    <meta property="og:description" content="Upload or record bird sounds, identify species, view XAI explanations, and generate field reports." />
+    <meta property="og:image" content="https://echo-wing.vercel.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="EchoWing bird sound recognition platform" />
+
+    <!-- SEO: Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="EchoWing - AI Bird Sound Recognition" />
+    <meta name="twitter:description" content="AI-powered bird sound recognition with explainable audio analysis." />
+    <meta name="twitter:image" content="https://echo-wing.vercel.app/og-image.png" />
+
+    <!-- SEO: JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "EchoWing",
+      "url": "https://echo-wing.vercel.app/",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Web",
+      "description": "AI-powered bird sound recognition platform with explainable audio analysis and field-report generation."
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+
+    <noscript>
+      <div style="max-width: 800px; margin: 80px auto; padding: 24px; font-family: system-ui, sans-serif;">
+        <h1>EchoWing - AI 鳥類聲學辨識平台</h1>
+        <p>EchoWing 是一個結合人工智慧與聲學分析的鳥類叫聲辨識平台。上傳音訊或現場錄音，即可自動識別鳥類物種，並產生田野調查報告。</p>
+        <h2>功能特色</h2>
+        <ul>
+          <li>🎙️ 支援音訊上傳與即時錄音辨識</li>
+          <li>🤖 基於 BirdCLEF 深度學習模型的物種辨識</li>
+          <li>📊 可解釋性 AI (XAI) 分析報告</li>
+          <li>📄 自動產生田野調查 PDF 報告</li>
+          <li>🌍 支援 17 種語言介面</li>
+        </ul>
+        <p>請啟用 JavaScript 以使用完整功能。</p>
+        <p><a href="/how-it-works">了解辨識原理 (How It Works)</a></p>
+      </div>
+    </noscript>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
