@@ -16,6 +16,17 @@ const FAB_ICON_COLOR = '#000000';
 const FAB_ICON_SIZE = 20;
 const DONE_MS = 3000;
 
+function ActionRow({ label, children }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="max-w-48 rounded-lg border border-white/10 bg-black/55 px-2.5 py-1.5 text-right text-xs font-bold text-white shadow-md backdrop-blur-sm">
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
+
 function SaveTextButton({ label, labelDone, onSave, saved, className = '' }) {
   const [flashDone, setFlashDone] = useState(false);
   const timerRef = useRef(null);
@@ -175,32 +186,40 @@ export function ResultFloatingActions({
 
         {menuOpen ? (
           <>
-            <ShareFabButton
-              ariaLabel={dict.shareResult}
-              disabled={!getSharePayload}
-              onClick={() => setShareOpen(true)}
-            />
-            <SaveTextButton
-              label={dict.saveResult}
-              labelDone={dict.saveDone}
-              onSave={onSave}
-              saved={surveySaved}
-            />
+            <ActionRow label={dict.shareResult}>
+              <ShareFabButton
+                ariaLabel={dict.shareResult}
+                disabled={!getSharePayload}
+                onClick={() => setShareOpen(true)}
+              />
+            </ActionRow>
+            <ActionRow label={dict.saveFieldNotesLabel}>
+              <SaveTextButton
+                label={dict.saveFieldNotesLabel}
+                labelDone={dict.saveDone}
+                onSave={onSave}
+                saved={surveySaved}
+              />
+            </ActionRow>
             {nearbyEnabled ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setMenuOpen(false);
-                  onNearbyRecords?.();
-                }}
-                aria-label={dict.nearbyRecordsBtn}
-                className={`${FAB_BTN} h-12 w-12`}
-                style={FAB_BG}
-              >
-                <MdPlace color={FAB_ICON_COLOR} size={FAB_ICON_SIZE} aria-hidden />
-              </button>
+              <ActionRow label={dict.nearbyRecordsLabel}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMenuOpen(false);
+                    onNearbyRecords?.();
+                  }}
+                  aria-label={dict.nearbyRecordsLabel}
+                  className={`${FAB_BTN} h-12 w-12`}
+                  style={FAB_BG}
+                >
+                  <MdPlace color={FAB_ICON_COLOR} size={FAB_ICON_SIZE} aria-hidden />
+                </button>
+              </ActionRow>
             ) : null}
-            <DownloadButton ariaLabel={dict.downloadResult} onDownload={onDownload} />
+            <ActionRow label={dict.downloadResult}>
+              <DownloadButton ariaLabel={dict.downloadResult} onDownload={onDownload} />
+            </ActionRow>
           </>
         ) : null}
       </div>

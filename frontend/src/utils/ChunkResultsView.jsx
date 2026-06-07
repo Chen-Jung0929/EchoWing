@@ -14,6 +14,8 @@ import {
 import { buildFullReportModel } from './buildFullReportModel';
 import { buildSurveySheetPayload } from './buildSurveySheetPayload';
 import { ResultTitleBar } from './ResultTitleActions';
+import ResultSummaryCard from '../features/results/ResultSummaryCard';
+import SpeciesWindowOverview from '../features/results/SpeciesWindowOverview';
 import { buildResultShareContent } from './shareResult';
 import { getModelDisplayLabel, resolveResultModelName } from './modelLabel';
 import { isSurveyMetadataSaved } from './surveyMetadata';
@@ -86,6 +88,7 @@ export default function ChunkResultsView({
   const downloadRejectRef = useRef(null);
 
   const okChunks = chunks.filter((c) => !c.error);
+  const xaiAvailable = okChunks.some((chunk) => chunk.predictions?.xai_heatmap?.length);
   const isOverview = !selectedEvent;
   const activeChunk = useMemo(() => {
     const decisionOpts = { windowSec, selectedEvent: selectedEvent ?? null };
@@ -165,6 +168,7 @@ export default function ChunkResultsView({
         windowSec,
         totalDurationSec,
         timeline,
+        xaiAvailable,
       }),
     [
       result,
@@ -176,6 +180,7 @@ export default function ChunkResultsView({
       windowSec,
       totalDurationSec,
       timeline,
+      xaiAvailable,
     ]
   );
 
@@ -340,7 +345,13 @@ export default function ChunkResultsView({
     lang
   );
   const xaiPending = result.xai_pending === true;
+  const xaiUnavailable = !xaiPending && okChunks.length > 0 && !xaiAvailable;
   const actionsDisabled = xaiPending;
+  const xaiStatus = xaiPending
+    ? dict.xaiStatusPending
+    : xaiAvailable
+      ? dict.xaiStatusAvailable
+      : dict.xaiStatusUnavailable;
 
   const nearbyInitialCoordinates = useMemo(
     () => surveyMetadata?.overview?.coordinates ?? null,
@@ -451,8 +462,22 @@ export default function ChunkResultsView({
               <ResultBadge>
                 {dict.xaiGenerating}
               </ResultBadge>
+            ) : xaiUnavailable ? (
+              <ResultBadge>
+                {dict.xaiUnavailable}
+              </ResultBadge>
             ) : null}
           </div>
+          <details className="mx-auto mt-3 max-w-2xl rounded-xl border border-[var(--c-text)]/10 bg-[var(--c-bg)]/45 px-4 py-2 text-xs text-[var(--c-text)]/65">
+            <summary className="cursor-pointer font-black text-[var(--c-primary)]">
+              {dict.resultInterpretationTitle}
+            </summary>
+            <ul className="mt-2 list-disc space-y-1.5 pl-4 leading-relaxed">
+              <li>{dict.confidenceInterpretation}</li>
+              <li>{dict.xaiInterpretation}</li>
+              <li>{dict.timelineInterpretation}</li>
+            </ul>
+          </details>
         </header>
 
         {result.warnings?.length > 0 && (
@@ -466,6 +491,34 @@ export default function ChunkResultsView({
           </section>
         )}
       </div>
+
+      <ResultSummaryCard
+        summary={summaryForReport}
+        dict={dict}
+        lang={lang}
+        getLocalizedText={getLocalizedText}
+        modelLabel={modelLabel}
+        windowSec={windowSec}
+        threshold={confidenceThreshold}
+        xaiStatus={xaiStatus}
+      />
+
+      {xaiUnavailable ? (
+        <p className="mb-5 rounded-xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-xs font-bold text-amber-800 dark:text-amber-200" role="status">
+          {dict.xaiUnavailableDetail}
+        </p>
+      ) : null}
+
+      <SpeciesWindowOverview
+        chunks={chunks}
+        windowSec={windowSec}
+        threshold={confidenceThreshold}
+        durationSec={totalDurationSec}
+        dict={dict}
+        lang={lang}
+        getLocalizedText={getLocalizedText}
+        onSelectWindow={handleSelectEvent}
+      />
 
       {summarySpectrogramChunk ? (
         <ChunkVisualizerSection
