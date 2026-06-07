@@ -69,8 +69,7 @@ const en = {
   modelUsed: 'Model',
   modelSelectionLabel: 'Model',
   modelTagFast: 'fast',
-  modelTagExpert: 'expert',
-  modelPerch: 'Perch v2 (Google)',
+  modelPerchFast: 'Perch v2 Fast (Google TFLite)',
   modelBirdnet: 'BirdNET v2.4 (Cornell)',
   modelSilic: 'SILIC (Academia Sinica)',
   analyzedAt: 'Analyzed at',
@@ -203,7 +202,7 @@ const en = {
   guideUsageTitle: 'How to use',
   guideUsageSteps: [
     'Upload audio or video, or record in the browser (max 30 s per clip, 20 MB file limit).',
-    'Choose a model (Perch, BirdNET, or SILIC) and tap Process & Identify.',
+    'Choose a model (Perch Fast, BirdNET, or SILIC) and tap Process & Identify.',
     'Review the vote aggregate summary, per-window predictions, spectrograms, and XAI heatmaps.',
     'Fill in field notes and tap Save to update the PDF and sync to Google Sheets when configured.',
     'In in-app browsers (Messenger, Instagram, etc.), recording may be unavailable—upload a file or open in Safari/Chrome instead.',
@@ -211,9 +210,9 @@ const en = {
   guideModelsTitle: 'Model attribution',
   guideModels: [
     {
-      name: 'Perch v2 (Google)',
+      name: 'Perch v2 Fast (Google TFLite)',
       citation:
-        'Google bird acoustic embedding model used in tasks such as BirdCLEF. This app runs CPU inference via SavedModel.',
+        'Google bird acoustic embedding model; CPU inference via TFLite FP32 (perch_v2_cpu_fp32.tflite) for tasks such as BirdCLEF.',
     },
     {
       name: 'BirdNET v2.4 (Cornell Lab of Ornithology)',

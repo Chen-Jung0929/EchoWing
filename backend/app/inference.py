@@ -11,10 +11,10 @@ from app.audio_mel import AudioToMelSpectrogram
 from app.config import Settings, chunk_samples, get_settings
 
 
-def create_perch_predictor(settings: Settings | None = None):
+def create_perch_fast_predictor(settings: Settings | None = None):
     cfg = settings or get_settings()
     from app.perch_inference import PerchChunkPredictor
-    return PerchChunkPredictor(cfg)
+    return PerchChunkPredictor(cfg, runtime="tflite", allow_tf_fallback=False)
 
 def create_birdnet_predictor(settings: Settings | None = None):
     cfg = settings or get_settings()

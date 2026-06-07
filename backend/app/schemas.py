@@ -62,7 +62,7 @@ class DecisionSupport(BaseModel):
 class ChunkPrediction(BaseModel):
     index: int
     analysis_id: str
-    model_name: str = "perch"
+    model_name: str = "birdnet"
     predictions: Prediction | None = None
     decision_support: DecisionSupport | None = None
     spectrogram: SpectrogramPayload | None = None

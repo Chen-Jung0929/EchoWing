@@ -67,8 +67,7 @@ const zh = {
   modelUsed: '使用模型',
   modelSelectionLabel: '模型選擇',
   modelTagFast: 'fast',
-  modelTagExpert: 'expert',
-  modelPerch: 'Perch v2 (Google)',
+  modelPerchFast: 'Perch v2 Fast (Google TFLite)',
   modelBirdnet: 'BirdNET v2.4 (Cornell)',
   modelSilic: 'SILIC (Academia Sinica)',
   analyzedAt: '分析時間',
@@ -198,7 +197,7 @@ const zh = {
   guideUsageTitle: '使用方法',
   guideUsageSteps: [
     '上傳音訊或影片，或使用瀏覽器錄音（單次最長 30 秒、檔案上限 20MB）。',
-    '選擇辨識模型（Perch、BirdNET 或 SILIC），點擊「開始處理並辨識」。',
+    '選擇辨識模型（Perch Fast、BirdNET 或 SILIC），點擊「開始處理並辨識」。',
     '檢視總覽投票彙整與各分析窗的物種預測、頻譜與 XAI 熱圖。',
     '填寫田野觀察紀錄後按「確認儲存」，將一併寫入 PDF 並同步至 Google 試算表（若已設定）。',
     '於 Messenger、Instagram 等 App 內建瀏覽器開啟時，錄音功能可能受限，請改以上傳或以外部瀏覽器開啟。',
@@ -206,9 +205,9 @@ const zh = {
   guideModelsTitle: '模型引用',
   guideModels: [
     {
-      name: 'Perch v2 (Google)',
+      name: 'Perch v2 Fast (Google TFLite)',
       citation:
-        'Google 開發之鳥類聲學 embedding 模型，適用於 BirdCLEF 等聲學辨識任務。本應用透過 SavedModel 進行 CPU 推論。',
+        'Google 開發之鳥類聲學 embedding 模型，以 TFLite FP32（perch_v2_cpu_fp32.tflite）在 CPU 上推論，適用於 BirdCLEF 等聲學辨識任務。',
     },
     {
       name: 'BirdNET v2.4 (Cornell Lab of Ornithology)',

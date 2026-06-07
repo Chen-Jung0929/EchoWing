@@ -6,7 +6,8 @@
 
 | 模型 | 代碼 | 分析窗 |
 |------|------|--------|
-| Perch v2 | `perch` | 5 s |
+| Perch v2 | `perch` | 5 s | TensorFlow SavedModel |
+| Perch v2 Fast | `perch-fast` | 5 s | TFLite FP32（`perch_v2_cpu_fp32.tflite`） |
 | BirdNET v2.4 | `birdnet` | 3 s |
 | SILIC | `silic` | 5 s（需權重檔） |
 
@@ -125,7 +126,7 @@ BirdCLEF/
 │   │   ├── config.py                 # TRIAGELENS_* 設定
 │   │   ├── model_loader.py           # 背景載入多模型、warmup
 │   │   ├── inference.py              # 預測器工廠
-│   │   ├── perch_inference.py
+│   │   ├── perch_inference.py      # Perch TFLite FP32（預設）+ SavedModel fallback
 │   │   ├── birdnet_inference.py
 │   │   ├── silic_inference.py
 │   │   ├── xai.py                    # Occlusion 熱圖
@@ -255,7 +256,7 @@ npm run build
 | `audio_chunks` | 音訊檔（前端送整檔即可） |
 | `original_filename` | 原始檔名 |
 | `sample_rate` | 預設 `32000` |
-| `model_selection` | `perch` \| `birdnet` \| `silic` |
+| `model_selection` | `perch` \| `perch-fast` \| `birdnet` \| `silic` |
 
 **SSE 事件：**
 
@@ -277,7 +278,9 @@ npm run build
 | 變數 | 預設 | 說明 |
 |------|------|------|
 | `TRIAGELENS_INFERENCE_BACKEND` | `perch` | 啟動預設後端（多模型仍會嘗試載入） |
-| `TRIAGELENS_PERCH_SAVEDMODEL_PATH` | `models/perch/perch_v2_cpu_savedmodel` | Perch SavedModel |
+| `TRIAGELENS_PERCH_RUNTIME` | `tf` | 未指定 runtime 時 Perch 預設（`perch` / `perch-fast` 各自固定 runtime） |
+| `TRIAGELENS_PERCH_TFLITE_PATH` | `models/perch/perch_v2_cpu_fp32.tflite` | Perch TFLite FP32 路徑 |
+| `TRIAGELENS_PERCH_SAVEDMODEL_PATH` | `models/perch/perch_v2_cpu_savedmodel` | Perch SavedModel fallback |
 | `TRIAGELENS_PERCH_LABELS_PATH` | `…/assets/labels.csv` | ~14795 學名標籤 |
 | `TRIAGELENS_TAXONOMY_CSV_PATH` | `models/perch/species_info_completed_comma.csv` | 中英文名對照 |
 | `TRIAGELENS_BIRDNET_MODEL_PATH` | `models/birdnet/audio-model.tflite` | BirdNET |
@@ -304,10 +307,12 @@ npm run build
 
 **Perch（`models/perch/`）**
 
-- `perch_v2_cpu_savedmodel/` — TensorFlow SavedModel（輸出 key：`label`）
+- `perch_v2_cpu_fp32.tflite` — **perch-fast** 推論模型（TFLite FP32）
+- `perch_v2_cpu_savedmodel/` — **perch** 推論模型（TensorFlow SavedModel）
 - `perch_v2_cpu_savedmodel/assets/labels.csv` — 類別學名
 - `species_info_completed_comma.csv` — 顯示用 taxonomy
 - `pseudo_best_model.pt` — 選用分類頭
+- （選用）`perch_v2_cpu_dynamic_int8.tflite` — dynamic INT8 實驗用（`TRIAGELENS_PERCH_RUNTIME=tflite_int8`）
 
 **BirdNET v2.4（`models/birdnet/`）**
 

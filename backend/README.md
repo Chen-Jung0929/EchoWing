@@ -9,9 +9,9 @@ pinned: false
 license: mit
 ---
 
-# EchoWing 鳥聲辨識 API（Perch v2）
+# EchoWing 鳥聲辨識 API（Perch v2 TFLite）
 
-FastAPI 後端：上傳 5 秒 WAV chunks → 物種預測、頻譜圖、決策輔助。
+FastAPI 後端：上傳音訊 → Perch TFLite FP32（`perch_v2_cpu_fp32.tflite`）物種預測、頻譜圖、XAI。
 
 ## 端點
 

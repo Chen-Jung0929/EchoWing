@@ -14,9 +14,14 @@ class Settings(BaseSettings):
     )
 
     # Removed strict literal to allow dynamic model routing
-    inference_backend: str = "perch" # Default
+    inference_backend: str = "perch-fast" # Default
     
+    # Perch runtime override via env (used when PerchChunkPredictor has no runtime= kwarg).
+    perch_runtime: Literal["tflite", "tflite_int8", "tf", "onnx", "onnx_int8"] = "tflite"
+
     # Model Paths (layout: models/perch | models/birdnet | models/silic | ONNX at models root)
+    perch_tflite_path: Path = Path("models/perch/perch_v2_cpu_fp32.tflite")
+    perch_tflite_int8_path: Path = Path("models/perch/perch_v2_cpu_dynamic_int8.tflite")
     perch_savedmodel_path: Path = Path("models/perch/perch_v2_cpu_savedmodel")
     perch_pseudo_head_path: Path = Path("models/perch/pseudo_best_model.pt")
     perch_labels_path: Path = Path("models/perch/perch_v2_cpu_savedmodel/assets/labels.csv")
@@ -81,13 +86,13 @@ def confidence_threshold_for_model(settings: Settings, model_name: str) -> float
     """Per-model confidence cutoffs."""
     if model_name == "birdnet":
         return settings.birdnet_confidence_threshold
-    if model_name == "perch":
+    if model_name in ("perch", "perch-fast"):
         return settings.perch_confidence_threshold
     return settings.confidence_threshold
 
 
 def xai_stride_sec_for_model(settings: Settings, model_name: str) -> float:
-    if model_name == "perch":
+    if model_name in ("perch", "perch-fast"):
         return settings.perch_xai_stride_sec
     return settings.xai_stride_sec
 

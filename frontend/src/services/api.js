@@ -131,7 +131,7 @@ export const analyzeAudioChunks = async (chunks, metadata, opts = {}) => {
   }
 };
 
-export const analyzeAudioFile = async (file, metadata, modelSelection = 'perch', opts = {}) => {
+export const analyzeAudioFile = async (file, metadata, modelSelection = 'birdnet', opts = {}) => {
   const { signal } = opts;
   try {
     const formData = new FormData();
@@ -180,11 +180,11 @@ export const analyzeAudioFile = async (file, metadata, modelSelection = 'perch',
 export const analyzeAudioStream = async (
   file,
   metadata,
-  modelOrOptions = 'perch',
+  modelOrOptions = 'birdnet',
   onChunk,
   opts = {}
 ) => {
-  let modelSelection = 'perch';
+  let modelSelection = 'birdnet';
   let chunkHandler = onChunk;
   let signal;
 
@@ -193,14 +193,14 @@ export const analyzeAudioStream = async (
     typeof modelOrOptions === 'object' &&
     typeof modelOrOptions.onChunk === 'function'
   ) {
-    modelSelection = modelOrOptions.modelSelection ?? 'perch';
+    modelSelection = modelOrOptions.modelSelection ?? 'birdnet';
     chunkHandler = modelOrOptions.onChunk;
     signal = modelOrOptions.signal;
   } else if (typeof modelOrOptions === 'function') {
     chunkHandler = modelOrOptions;
     signal = onChunk?.signal ?? opts?.signal;
   } else {
-    modelSelection = modelOrOptions ?? 'perch';
+    modelSelection = modelOrOptions ?? 'birdnet';
     chunkHandler = onChunk;
     signal = opts?.signal;
   }

@@ -1,7 +1,52 @@
-﻿# 模型權重與二進位產物（不適合送進 AI，也避免索引耗 CPU/RAM）
+﻿# ── 依賴與建置產物（最大宗，優先排除）────────────────────────
+backend/venv/
+**/.venv/
+frontend/node_modules/
+frontend/dist/
+
+# Git / LFS 物件（~850 MB+）
+.git/
+
+# 舊版重複 checkout（~1.1 GB）
+EchoWing-Backend/
+
+# ── 模型與推論權重（~500 MB+）──────────────────────────────────
+backend/models/
 **/*.pt
 **/*.tflite
 **/*.onnx
 **/*.pb
 **/variables.data-*
 **/variables.index
+**/perch_v2_cpu_savedmodel/
+
+# ── 資料、快取、實驗產物 ──────────────────────────────────────
+backend/data/
+backend/.hf_cache/
+backend/notebooks/
+**/.keras/
+wavs/
+feedback_box/
+
+# ── 音訊／影片（測試用媒體）────────────────────────────────────
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
+*.aac
+*.webm
+*.mp4
+*.mov
+*.mkv
+
+# ── 文件與標籤表（體積大或重複性高）────────────────────────────
+**/*.docx
+**/labels.csv
+
+# ── Python / 工具快取 ──────────────────────────────────────────
+**/__pycache__/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+*.py[cod]

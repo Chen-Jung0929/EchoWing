@@ -75,4 +75,5 @@ backend/notebooks/
 # Hugging Face / TF download caches
 backend/.hf_cache/
 **/.keras/
-scripts/google-sheets/
+scripts/
+

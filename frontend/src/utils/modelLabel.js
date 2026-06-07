@@ -1,21 +1,26 @@
 /**
  * @param {string | undefined | null} modelName
- * @returns {'perch' | 'birdnet' | 'silic'}
+ * @returns {'perch' | 'perch-fast' | 'birdnet' | 'silic'}
  */
 export function normalizeModelName(modelName) {
-  const key = String(modelName ?? 'perch').toLowerCase();
-  if (key === 'birdnet' || key === 'silic' || key === 'perch') return key;
-  return 'perch';
+  const key = String(modelName ?? 'birdnet').toLowerCase();
+  if (key === 'perch') return 'perch-fast';
+  if (key === 'perch-fast' || key === 'birdnet' || key === 'silic') return key;
+  return 'birdnet';
 }
 
-/** 首頁模型選單順序：BirdNET、SILIC 標 fast；Perch 置底標 expert。 */
+/** 首頁模型選單（皆為 fast 推論路徑）。 */
 export const LANDING_MODEL_OPTIONS = [
   { value: 'birdnet', tag: 'fast' },
   { value: 'silic', tag: 'fast' },
-  { value: 'perch', tag: 'expert' },
+  { value: 'perch-fast', tag: 'fast' },
 ];
 
 export const DEFAULT_MODEL_SELECTION = 'birdnet';
+
+function modelOptionTag(_modelName, dict) {
+  return dict.modelTagFast;
+}
 
 /**
  * @param {string | undefined | null} modelName
@@ -23,8 +28,7 @@ export const DEFAULT_MODEL_SELECTION = 'birdnet';
  */
 export function formatLandingModelOption(modelName, dict) {
   const name = getModelDisplayLabel(modelName, dict);
-  const tag =
-    normalizeModelName(modelName) === 'perch' ? dict.modelTagExpert : dict.modelTagFast;
+  const tag = modelOptionTag(modelName, dict);
   return `${name} · ${tag}`;
 }
 
@@ -35,7 +39,7 @@ export function formatLandingModelOption(modelName, dict) {
 export function getModelDisplayLabel(modelName, dict) {
   const key = normalizeModelName(modelName);
   const labels = {
-    perch: dict.modelPerch,
+    'perch-fast': dict.modelPerchFast,
     birdnet: dict.modelBirdnet,
     silic: dict.modelSilic,
   };
@@ -49,6 +53,6 @@ export function resolveResultModelName(result) {
   return (
     result?.chunks?.[0]?.model_name ??
     result?.stream_meta?.model ??
-    'perch'
+    'birdnet'
   );
 }

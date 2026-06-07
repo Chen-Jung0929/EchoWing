@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 from pathlib import Path
 
 import numpy as np
@@ -16,12 +17,22 @@ logger = logging.getLogger(__name__)
 
 EMBED_DIM = 1536
 _SCORE_OUTPUT_KEYS = ("logits", "label")
+_PERCH_CHUNK_SAMPLES = 160_000  # 32 kHz × 5 s
 
 
 def _import_tensorflow():
     import tensorflow as tf
 
     return tf
+
+
+def _import_tflite():
+    try:
+        import tflite_runtime.interpreter as tflite
+        return tflite
+    except ImportError:
+        import tensorflow as tf
+        return tf.lite
 
 
 def _load_perch_labels(labels_path: Path) -> list[str]:
@@ -56,26 +67,20 @@ def _scores_to_probs(scores: np.ndarray) -> np.ndarray:
     )
 
 
-class PerchChunkPredictor:
-    """Perch v2 SavedModel: global species scores + embedding."""
+class _PerchTfBackend:
+    """Original Perch v2 TensorFlow SavedModel backend."""
 
-    uses_baseline = False
+    name = "tf"
 
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings, labels: list[str]) -> None:
         self.settings = settings
-        self.device = torch.device("cpu")
+        self.labels = labels
+        self._chunk_samples = chunk_samples(settings)
+        self._embed_batch_size = max(1, settings.batch_size)
+
         savedmodel_path = settings.perch_savedmodel_path
         if not savedmodel_path.is_dir():
             raise FileNotFoundError(f"Perch SavedModel directory not found: {savedmodel_path}")
-
-        labels_path = settings.perch_labels_path
-        if not labels_path.is_file():
-            labels_path = savedmodel_path / "assets" / "labels.csv"
-        self.labels = _load_perch_labels(labels_path)
-        logger.info("Loaded %s Perch labels from %s", len(self.labels), labels_path)
-
-        self._chunk_samples = chunk_samples(settings)
-        self._embed_batch_size = max(1, settings.batch_size)
 
         tf = _import_tensorflow()
         configure_tensorflow_threads(
@@ -88,8 +93,6 @@ class PerchChunkPredictor:
         saved = tf.saved_model.load(str(savedmodel_path))
         self._embed_fn = saved.signatures["serving_default"]
         self._score_key = self._resolve_score_output_key()
-
-        self.baseline = np.zeros(len(self.labels), dtype=np.float32)
 
     def _resolve_score_output_key(self) -> str:
         probe = self._tf.constant(
@@ -115,8 +118,7 @@ class PerchChunkPredictor:
             f"got {list(outputs.keys())}"
         )
 
-    def _infer_batch(self, waveforms: np.ndarray) -> np.ndarray:
-        """waveforms: (N, samples) float32 -> (N, num_classes) float32."""
+    def infer_batch(self, waveforms: np.ndarray) -> np.ndarray:
         n = waveforms.shape[0]
         if waveforms.shape[1] != self._chunk_samples:
             raise ValueError(
@@ -132,8 +134,185 @@ class PerchChunkPredictor:
                 raw = raw[np.newaxis, :]
             score_parts.append(raw)
 
-        all_scores = np.concatenate(score_parts, axis=0)
-        return _scores_to_probs(all_scores)
+        return _scores_to_probs(np.concatenate(score_parts, axis=0))
+
+
+class _PerchTfliteBackend:
+    """Perch v2 CPU TFLite backend (FP32 or dynamic INT8)."""
+
+    name = "tflite"
+
+    def __init__(self, settings: Settings, labels: list[str], model_path: Path) -> None:
+        if not model_path.is_file():
+            raise FileNotFoundError(f"Perch TFLite model not found: {model_path}")
+
+        self.settings = settings
+        self.labels = labels
+        self.model_path = model_path
+        self._chunk_samples = _PERCH_CHUNK_SAMPLES
+        self._embed_batch_size = max(1, settings.batch_size)
+
+        tflite = _import_tflite()
+        logger.info(
+            "Loading Perch TFLite from %s (num_threads=%s)",
+            model_path,
+            settings.num_threads,
+        )
+        self.interpreter = tflite.Interpreter(
+            model_path=str(model_path),
+            num_threads=max(1, settings.num_threads),
+        )
+        self.interpreter.allocate_tensors()
+        self.input_details = self.interpreter.get_input_details()
+        self.output_details = self.interpreter.get_output_details()
+        self._output_index = self._resolve_label_output_index()
+        self._input_shape = tuple(self.input_details[0]["shape"])
+        self._invoke_lock = threading.Lock()
+
+    def _resolve_label_output_index(self) -> int:
+        for detail in self.output_details:
+            name = str(detail.get("name", "")).lower()
+            shape = tuple(int(x) for x in detail["shape"])
+            if "label" in name or (len(shape) >= 2 and shape[-1] == len(self.labels)):
+                logger.info(
+                    "Perch TFLite score output: '%s' shape=%s",
+                    detail.get("name"),
+                    detail["shape"],
+                )
+                return int(detail["index"])
+        # Fallback: first output with class dimension matching labels (or largest 2D output).
+        best_idx = int(self.output_details[0]["index"])
+        best_classes = -1
+        for detail in self.output_details:
+            shape = tuple(int(x) for x in detail["shape"])
+            if len(shape) >= 2:
+                classes = shape[-1]
+                if classes == len(self.labels):
+                    return int(detail["index"])
+                if classes > best_classes:
+                    best_classes = classes
+                    best_idx = int(detail["index"])
+        logger.warning(
+            "Perch TFLite: using output index %s (no exact label match for %s classes)",
+            best_idx,
+            len(self.labels),
+        )
+        return best_idx
+
+    def _run_one(self, wave: np.ndarray) -> np.ndarray:
+        if len(wave) < self._chunk_samples:
+            wave = np.pad(wave, (0, self._chunk_samples - len(wave)))
+        elif len(wave) > self._chunk_samples:
+            wave = wave[: self._chunk_samples]
+
+        input_shape = self._input_shape
+        if input_shape[0] in (-1, 0, None):
+            tensor = wave.reshape(1, self._chunk_samples).astype(np.float32, copy=True)
+        else:
+            batch = int(input_shape[0])
+            if batch == 1:
+                tensor = wave.reshape(1, self._chunk_samples).astype(np.float32, copy=True)
+            else:
+                raise ValueError(f"Unsupported Perch TFLite batch size: {batch}")
+
+        self.interpreter.set_tensor(self.input_details[0]["index"], tensor)
+        self.interpreter.invoke()
+        raw = np.copy(self.interpreter.get_tensor(self._output_index))
+        if raw.ndim == 2:
+            raw = raw[0]
+        return _scores_to_probs(raw)
+
+    def infer_batch(self, waveforms: np.ndarray) -> np.ndarray:
+        n = waveforms.shape[0]
+        if waveforms.shape[1] != self._chunk_samples:
+            raise ValueError(
+                f"expected {self._chunk_samples} samples per chunk, got {waveforms.shape[1]}"
+            )
+
+        with self._invoke_lock:
+            return np.stack([self._run_one(waveforms[i]) for i in range(n)], axis=0)
+
+
+def _resolve_tflite_path(settings: Settings, runtime: str) -> Path:
+    if runtime == "tflite_int8":
+        return settings.perch_tflite_int8_path
+    return settings.perch_tflite_path
+
+
+def _create_perch_backend(
+    settings: Settings,
+    labels: list[str],
+    *,
+    runtime: str,
+    allow_tf_fallback: bool = True,
+):
+    runtime = runtime.lower()
+
+    if runtime in ("onnx", "onnx_int8"):
+        if allow_tf_fallback:
+            logger.warning(
+                "Perch runtime '%s' has no valid artifact; falling back to TensorFlow SavedModel",
+                runtime,
+            )
+            return _PerchTfBackend(settings, labels)
+        raise RuntimeError(f"Perch ONNX runtime '{runtime}' is not available")
+
+    if runtime == "tf":
+        return _PerchTfBackend(settings, labels)
+
+    tflite_path = _resolve_tflite_path(settings, runtime)
+    try:
+        backend = _PerchTfliteBackend(settings, labels, tflite_path)
+        if runtime == "tflite_int8":
+            backend.name = "tflite_int8"
+        return backend
+    except Exception as exc:
+        if not allow_tf_fallback:
+            raise RuntimeError(
+                f"Perch TFLite load failed ({tflite_path}): {exc}"
+            ) from exc
+        logger.warning(
+            "Perch TFLite load failed (%s); falling back to TensorFlow SavedModel",
+            exc,
+        )
+        return _PerchTfBackend(settings, labels)
+
+
+class PerchChunkPredictor:
+    """Perch v2: TensorFlow SavedModel or TFLite FP32 (selected via runtime=)."""
+
+    uses_baseline = False
+
+    def __init__(
+        self,
+        settings: Settings,
+        *,
+        runtime: str | None = None,
+        allow_tf_fallback: bool = True,
+    ) -> None:
+        self.settings = settings
+        self.device = torch.device("cpu")
+
+        labels_path = settings.perch_labels_path
+        if not labels_path.is_file():
+            fallback = settings.perch_savedmodel_path / "assets" / "labels.csv"
+            if fallback.is_file():
+                labels_path = fallback
+        self.labels = _load_perch_labels(labels_path)
+        logger.info("Loaded %s Perch labels from %s", len(self.labels), labels_path)
+
+        self._chunk_samples = chunk_samples(settings)
+        effective_runtime = (runtime or settings.perch_runtime).lower()
+        self._backend = _create_perch_backend(
+            settings,
+            self.labels,
+            runtime=effective_runtime,
+            allow_tf_fallback=allow_tf_fallback,
+        )
+        self.runtime = self._backend.name
+        logger.info("Perch inference runtime: %s", self.runtime)
+
+        self.baseline = np.zeros(len(self.labels), dtype=np.float32)
 
     def predict_waveform_batch(
         self, chunks: torch.Tensor
@@ -142,5 +321,5 @@ class PerchChunkPredictor:
             raise ValueError(f"expected chunks shape (N, 1, S), got {tuple(chunks.shape)}")
 
         waveforms = chunks.squeeze(1).detach().cpu().numpy().astype(np.float32, copy=False)
-        probs = self._infer_batch(waveforms)
+        probs = self._backend.infer_batch(waveforms)
         return probs, None
