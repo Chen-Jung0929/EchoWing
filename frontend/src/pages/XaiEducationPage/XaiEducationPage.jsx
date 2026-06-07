@@ -36,6 +36,15 @@ export default function XaiEducationPage({ dict }) {
     <main className="xai-page min-h-screen bg-[var(--c-bg)] text-[var(--c-text)] pt-24 pb-32">
       <div className="max-w-4xl mx-auto px-6">
         
+        <div className="mb-8">
+          <button
+            onClick={() => navigate('/')}
+            className="text-sm font-bold text-[var(--c-primary)] hover:text-[var(--c-text)] transition-colors flex items-center gap-2"
+          >
+            <span aria-hidden="true">←</span> {xaiDict.backToHome || 'Back to Home'}
+          </button>
+        </div>
+
         <header className="xai-hero mb-16 text-center">
           <p className="text-[var(--c-primary)] font-bold tracking-widest uppercase text-sm mb-4">
             {xaiDict.eyebrow}

@@ -71,8 +71,7 @@ const yue = {
   "modelUsed": "使用模型",
   "modelSelectionLabel": "模型",
   "modelTagFast": "fast",
-  "modelTagExpert": "expert",
-  "modelPerch": "Perch v2 (Google)",
+  "modelPerchFast": "Perch v2 Fast (Google TFLite)",
   "modelBirdnet": "BirdNET v2.4 (Cornell)",
   "modelSilic": "SILIC (Academia Sinica)",
   "modelHintLearnMore": "了解更多",
@@ -379,26 +378,27 @@ const yue = {
     ERR_UNKNOWN_BACKEND: "伺服器發生錯誤",
   },
   xaiEducation: {
-    "navLabel": "運作原理與 XAI",
+    "navLabel": "點樣運作 / XAI",
+    "homeLabel": "首頁",
     "eyebrow": "EchoWing 教學頁",
-    "title": "EchoWing 如何理解聲音？",
-    "subtitle": "從聲音上傳、模型辨識，到時間定位與可解釋 AI 的完整流程。",
-    "sectionNavLabel": "運作原理頁面章節",
-    "flowLabel": "EchoWing 聲音分析流程",
-    "takeawayLabel": "如何解讀：",
-    "backToHome": "回首頁",
+    "title": "EchoWing 係點樣理解聲音㗎？",
+    "subtitle": "由上載音訊、模型預測，到時間定位同可解釋 AI (XAI) 嘅成個流程。",
+    "sectionNavLabel": "點樣運作嘅章節",
+    "flowLabel": "EchoWing 音訊分析流程",
+    "takeawayLabel": "重點：",
+    "backToHome": "返去首頁",
     "flowSteps": [
         {
             "icon": "🎙️",
-            "label": "聲音輸入"
+            "label": "輸入音訊"
         },
         {
             "icon": "〰️",
-            "label": "前處理"
+            "label": "音訊前處理"
         },
         {
             "icon": "🪟",
-            "label": "分窗辨識"
+            "label": "分窗預測"
         },
         {
             "icon": "📊",
@@ -418,84 +418,84 @@ const yue = {
             "id": "overview",
             "navLabel": "總覽",
             "kicker": "Overview",
-            "title": "一段鳥鳴聲進入 EchoWing 後，會經過五個步驟",
+            "title": "一段雀叫聲入到 EchoWing 之後會點？",
             "paragraphs": [
-                "EchoWing 並不是直接「聽懂」整段聲音，而是把音訊轉換成模型可以分析的訊號，再分段送入鳥音辨識模型。",
-                "模型會對每個時間窗輸出候選物種與信心分數。接著，EchoWing 會把多個時間窗的分數整理成時間軸，估計聲音事件可能出現的時間範圍。",
-                "最後，XAI 模組會遮蔽音訊中的不同時間區段，觀察模型信心如何改變，藉此顯示模型判斷時最依賴哪些聲音片段。"
+                "EchoWing 唔係直接一次過「聽」晒成段音訊。佢會將啲音訊轉做模型識得分析嘅訊號，再分段畀模型去睇。",
+                "模型會為每一個時間窗畀出可能嘅物種同信心分數。跟住，EchoWing 會將呢啲疊埋一齊嘅時間窗轉做時間軸，去估計雀叫係幾時發生。",
+                "最後，XAI 模組會遮住音訊入面唔同嘅時間段，睇下模型嘅信心會點變，咁就可以知道模型最依賴邊一段音訊。"
             ],
             "animation": "pipeline",
-            "takeaway": "EchoWing 的輸出是模型推論與演算法估計，不等於人工標註的絕對真相。"
+            "takeaway": "EchoWing 嘅結果係模型預測同演算法估計嘅結合，唔係百分百準確嘅人工標註真相。"
         },
         {
             "id": "preprocessing",
-            "navLabel": "聲音前處理",
+            "navLabel": "音訊前處理",
             "kicker": "Audio preprocessing",
-            "title": "聲音會先被標準化成模型能處理的格式",
+            "title": "音訊會被標準化做模型睇得明嘅格式",
             "paragraphs": [
-                "使用者上傳或錄製的音訊可能有不同格式、取樣率、聲道數與音量。EchoWing 會先將音訊解碼，轉換成單聲道訊號，並重新取樣到模型需要的取樣率。",
-                "接著，模型會將時間域的聲波轉換成類似頻譜圖的聲學特徵，使鳥鳴中的頻率變化、短促叫聲與連續鳴唱更容易被辨識。"
+                "大家上載或者錄嘅音訊，可能有唔同嘅格式、取樣率、聲道同音量。EchoWing 會先將音訊解碼、轉做單聲道，再重新取樣去符合模型嘅要求。",
+                "跟住，模型會將時間域嘅聲波轉做類似頻譜圖嘅聲學特徵，等雀仔叫嘅頻率變化、短叫聲同連續唱歌都可以容易啲認得出。"
             ],
             "formula": "x(t) \\rightarrow S(f,t)",
-            "formulaCaption": "原始聲波 x(t) 會被轉換成時間-頻率表示 S(f,t)。",
+            "formulaCaption": "原始聲波 x(t) 會被轉換做時間-頻率表示 S(f,t)。",
             "animation": "spectrogram",
-            "takeaway": "模型通常不是直接讀取人類看到的波形，而是分析轉換後的聲學特徵。"
+            "takeaway": "模型通常唔會直接睇原始波形，而係分析轉換咗嘅聲學特徵。"
         },
         {
             "id": "windows",
-            "navLabel": "分窗辨識",
+            "navLabel": "分窗預測",
             "kicker": "Sliding-window prediction",
-            "title": "模型不是一次分析整段音訊，而是分成固定長度的時間窗",
+            "title": "模型唔係分析成段音訊，而係固定長度嘅時間窗",
             "paragraphs": [
-                "鳥音模型通常在固定長度的音訊片段上訓練。EchoWing 因此會把一段聲音切成多個時間窗，分別送入模型。",
-                "每個時間窗都會得到一組物種分數，代表模型認為該時間窗中可能包含哪些鳥類聲音。"
+                "雀鳥聲音模型通常用固定長度嘅音訊嚟訓練。所以 EchoWing 會將長嘅錄音切做多個時間窗，逐個餵畀模型去分析。",
+                "每個時間窗都會有一組物種分數，代表模型覺得呢個窗入面可能有咩雀仔叫。"
             ],
             "formula": "p_i^{(c)} = f_c(x_{w_i})",
-            "formulaCaption": "模型 f 對第 i 個時間窗 x_{w_i} 輸出物種 c 的分數 p_i^{(c)}。",
+            "formulaCaption": "模型 f 會為第 i 個時間窗 x_{w_i} 輸出物種 c 嘅分數 p_i^{(c)}。",
             "animation": "slidingWindow",
-            "takeaway": "單一模型分數通常對應一整個時間窗，而不是單一瞬間。"
+            "takeaway": "單一嘅模型分數通常代表成個時間窗，唔係淨係一瞬間。"
         },
         {
             "id": "timeline",
             "navLabel": "時間定位",
             "kicker": "Timeline localization",
-            "title": "從 window-level 分數估計更細的事件時間軸",
+            "title": "由 window-level 分數去估計更細緻嘅時間軸",
             "paragraphs": [
-                "如果一段鳥叫真的出現在某個時間點，所有覆蓋到該時間點的時間窗，其物種分數都可能上升。",
-                "EchoWing 會把各時間窗的分數投影回細時間軸，並依覆蓋次數正規化，估計哪些時間點最可能貢獻了模型的高分判斷。"
+                "如果一段雀叫真係喺某個時間點發生，所有包住嗰點嘅時間窗，佢哋嘅物種分數都好可能會升高。",
+                "EchoWing 會將各個時間窗嘅分數投射返去更細緻嘅時間軸，再按覆蓋次數做正規化，估計邊啲時間點對模型畀高分最有關鍵作用。"
             ],
             "formula": "\\hat{z}_t^{(c)} = \\frac{\\sum_i A_{i,t} p_i^{(c)}}{\\sum_i A_{i,t} + \\lambda}",
-            "formulaCaption": "覆蓋時間 t 的高分時間窗越多，估計活動值 \\hat{z}_t^{(c)} 越高。",
+            "formulaCaption": "包住時間 t 嘅高分時間窗越多，估計出嚟嘅活動值 \\hat{z}_t^{(c)} 就越高。",
             "animation": "deconvolution",
-            "takeaway": "這是根據 window 分數估計出的 activity curve，不是人工逐秒標註。"
+            "takeaway": "呢個係由時間窗分數估計出嚟嘅活動曲線，唔係人工一秒一秒咁標註嘅。"
         },
         {
             "id": "occlusion",
             "navLabel": "XAI 熱圖",
             "kicker": "Occlusion-based XAI",
-            "title": "遮住一小段聲音，觀察模型信心如何改變",
+            "title": "遮住一小段音訊，觀察模型信心會跌幾多",
             "paragraphs": [
-                "EchoWing 的 XAI 會把音訊中的某一小段暫時遮住或降低，重新送入模型。",
-                "如果遮住這段聲音後，某個物種的信心分數明顯下降，代表模型原本很依賴這段聲音來做判斷。"
+                "EchoWing 嘅 XAI 會暫時遮住或者調低音訊嘅一小段，再重新跑一次模型。",
+                "如果遮完之後某個物種嘅信心分數跌得好犀利，就代表模型好依賴嗰段音訊嚟做決定。"
             ],
             "formula": "I_t^{(c)} = p^{(c)}(x) - p^{(c)}(x_{\\setminus t})",
-            "formulaCaption": "遮蔽後分數下降越多，代表該時間片段對模型判斷越重要。",
+            "formulaCaption": "遮蔽之後分數跌得越多，代表嗰段時間對模型判斷越重要。",
             "animation": "occlusion",
-            "takeaway": "XAI 顯示模型依賴哪些聲音片段，不保證那就是鳥叫的唯一真實位置。"
+            "takeaway": "XAI 只係顯示模型依賴邊啲音訊，唔保證嗰度就一定係雀叫嘅唯一真實位置。"
         },
         {
             "id": "limits",
             "navLabel": "限制",
             "kicker": "Limitations",
-            "title": "如何正確解讀 EchoWing 的結果？",
+            "title": "點樣正確解讀 EchoWing 嘅結果？",
             "paragraphs": [
-                "信心分數不是生態學上的出現機率。",
-                "XAI heatmap 顯示模型依賴的聲音片段，不是人工標註的真實鳥叫位置。",
-                "如果同時有多種鳥、昆蟲、人聲或背景噪音，模型可能受到干擾。",
-                "EchoWing 適合作為教育、探索與輔助辨識工具；正式調查仍應搭配人工確認與田野紀錄。"
+                "信心分數唔等於生態學上嘅出現機率。",
+                "XAI 熱圖顯示嘅係模型依賴嘅位，唔係人工標註嘅真實雀叫位置。",
+                "如果同時有好多隻雀、昆蟲、人聲或者背景雜音，模型可能會受到干擾。",
+                "EchoWing 係一個教育、探索同輔助工具；正式嘅生態調查都係需要人工確認同田野紀錄嘅。"
             ],
             "animation": "limits",
-            "takeaway": "AI 結果應被視為輔助線索，而不是取代觀察者判斷。"
+            "takeaway": "AI 嘅結果應該當做輔助線索，唔可以完全取代觀察者嘅判斷。"
         }
     ]
 }

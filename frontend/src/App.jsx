@@ -136,14 +136,14 @@ function AppLayout() {
               <button
                 type="button"
                 onClick={() => navigate('/')}
-                className="hover:text-[var(--c-primary)] transition-colors"
+                className="nav-link-button"
               >
-                {dict.navAnalyze || 'Analyze'}
+                {dict.xaiEducation?.homeLabel || 'Home'}
               </button>
               <button
                 type="button"
                 onClick={() => navigate('/how-it-works')}
-                className="hover:text-[var(--c-primary)] transition-colors"
+                className="nav-link-button"
               >
                 {dict.xaiEducation?.navLabel || 'How It Works / XAI'}
               </button>
@@ -154,7 +154,7 @@ function AppLayout() {
                 <button
                   type="button"
                   onClick={handleThemeToggle}
-                  className="p-2 rounded-lg hover:bg-[var(--c-card)]/40 transition-colors focus:outline-none"
+                  className="nav-icon-button"
                   aria-label={isDarkMode ? dict.themeLight : dict.themeDark}
                 >
                   {isDarkMode ? (
@@ -165,12 +165,12 @@ function AppLayout() {
                 </button>
               </Tooltip>
 
-              <div className="relative">
+              <div className="relative flex items-center">
                 <Tooltip label={dict.languageMenuLabel}>
                   <button
                     type="button"
                     onClick={() => setIsMenuOpen((prev) => !prev)}
-                    className="p-2 rounded-lg hover:bg-[var(--c-card)]/40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--c-primary)]"
+                    className="nav-icon-button"
                     aria-label={dict.languageMenuLabel}
                     aria-expanded={isMenuOpen}
                     aria-haspopup="listbox"
@@ -206,16 +206,18 @@ function AppLayout() {
                 )}
               </div>
 
-              <Tooltip label={dict.navGuide}>
-                <button
-                  type="button"
-                  onClick={() => openGuide('usage')}
-                  className="p-2 rounded-lg hover:bg-[var(--c-card)]/40 transition-colors focus:outline-none"
-                  aria-label={dict.navGuide}
-                >
-                  <MdHelpOutline className="w-6 h-6 text-[var(--c-text)]" />
-                </button>
-              </Tooltip>
+              <div className="flex items-center">
+                <Tooltip label={dict.navGuide}>
+                  <button
+                    type="button"
+                    onClick={() => openGuide('usage')}
+                    className="nav-icon-button"
+                    aria-label={dict.navGuide}
+                  >
+                    <MdHelpOutline className="w-6 h-6 text-[var(--c-text)]" />
+                  </button>
+                </Tooltip>
+              </div>
             </div>
           </div>
         </nav>

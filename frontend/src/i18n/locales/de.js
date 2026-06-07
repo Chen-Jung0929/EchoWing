@@ -71,8 +71,7 @@ const de = {
   modelUsed: "Modell",
   modelSelectionLabel: "Modell",
   modelTagFast: "schnell",
-  modelTagExpert: "Experte",
-  modelPerch: "Barsch v2 (Google)",
+  "modelPerchFast": "Perch v2 Fast (Google TFLite)",
   modelBirdnet: "BirdNET v2.4 (Cornell)",
   modelSilic: "SILIC (Academia Sinica)",
   modelHintLearnMore: "Mehr erfahren",
@@ -379,125 +378,126 @@ const de = {
     ERR_UNKNOWN_BACKEND: "Der Server hat mit einem Fehler geantwortet. Bitte versuchen Sie es später erneut.",
   },
   xaiEducation: {
-    "navLabel": "How It Works / XAI",
-    "eyebrow": "EchoWing Education Page",
-    "title": "How does EchoWing understand sound?",
-    "subtitle": "From audio upload and model prediction to timeline localization and Explainable AI.",
-    "sectionNavLabel": "How It Works Sections",
-    "flowLabel": "EchoWing Audio Analysis Pipeline",
-    "takeawayLabel": "Takeaway:",
-    "backToHome": "Back to Home",
-    "flowSteps": [
-        {
-            "icon": "🎙️",
-            "label": "Audio Input"
-        },
-        {
-            "icon": "〰️",
-            "label": "Preprocessing"
-        },
-        {
-            "icon": "🪟",
-            "label": "Window Prediction"
-        },
-        {
-            "icon": "📊",
-            "label": "Species Score"
-        },
-        {
-            "icon": "⏱️",
-            "label": "Timeline Localization"
-        },
-        {
-            "icon": "🔥",
-            "label": "XAI Heatmap"
-        }
-    ],
-    "sections": [
-        {
-            "id": "overview",
-            "navLabel": "Overview",
-            "kicker": "Overview",
-            "title": "What happens when a bird call enters EchoWing?",
-            "paragraphs": [
-                "EchoWing does not directly \"listen\" to the whole audio at once. Instead, it converts the audio into a signal the model can analyze and feeds it in segments.",
-                "The model outputs candidate species and confidence scores for each time window. EchoWing then aggregates these overlapping windows into a timeline to estimate when sound events occur.",
-                "Finally, the XAI module masks different time segments of the audio to observe how model confidence changes, showing which audio segments the model relied on most."
-            ],
-            "animation": "pipeline",
-            "takeaway": "EchoWing’s output is a mix of model inference and algorithm estimation, not an absolute ground truth annotated by humans."
-        },
-        {
-            "id": "preprocessing",
-            "navLabel": "Preprocessing",
-            "kicker": "Audio preprocessing",
-            "title": "Audio is standardized into a format the model can read",
-            "paragraphs": [
-                "Uploaded or recorded audio may have different formats, sample rates, channels, and volumes. EchoWing decodes, converts to mono, and resamples the audio to meet model requirements.",
-                "The model then transforms the time-domain acoustic waves into a time-frequency spectrogram-like acoustic feature, making frequency variations, short calls, and continuous songs easier to recognize."
-            ],
-            "formula": "x(t) \\rightarrow S(f,t)",
-            "formulaCaption": "Raw acoustic wave x(t) is converted to a time-frequency representation S(f,t).",
-            "animation": "spectrogram",
-            "takeaway": "Models usually do not directly read raw waveforms, but analyze transformed acoustic features."
-        },
-        {
-            "id": "windows",
-            "navLabel": "Window Prediction",
-            "kicker": "Sliding-window prediction",
-            "title": "The model analyzes fixed-length windows instead of the entire audio",
-            "paragraphs": [
-                "Bird sound models are usually trained on fixed-length audio clips. EchoWing slices a long recording into multiple time windows and feeds them to the model individually.",
-                "Each time window receives a set of species scores, representing which bird sounds the model thinks might be present in that specific window."
-            ],
-            "formula": "p_i^{(c)} = f_c(x_{w_i})",
-            "formulaCaption": "Model f outputs a score p_i^{(c)} for species c on the i-th time window x_{w_i}.",
-            "animation": "slidingWindow",
-            "takeaway": "A single model score usually corresponds to an entire time window, not a single instant."
-        },
-        {
-            "id": "timeline",
-            "navLabel": "Localization",
-            "kicker": "Timeline localization",
-            "title": "Estimating a finer timeline from window-level scores",
-            "paragraphs": [
-                "If a bird call truly occurs at a certain time point, all time windows covering that point are likely to have elevated species scores.",
-                "EchoWing projects window scores back onto a finer timeline and normalizes by coverage, estimating which time points contributed most to the model’s high scores."
-            ],
-            "formula": "\\hat{z}_t^{(c)} = \\frac{\\sum_i A_{i,t} p_i^{(c)}}{\\sum_i A_{i,t} + \\lambda}",
-            "formulaCaption": "The more high-score windows covering time t, the higher the estimated activity \\hat{z}_t^{(c)}.",
-            "animation": "deconvolution",
-            "takeaway": "This is an activity curve estimated from window scores, not manual second-by-second annotation."
-        },
-        {
-            "id": "occlusion",
-            "navLabel": "XAI Heatmap",
-            "kicker": "Occlusion-based XAI",
-            "title": "Masking a small audio segment to observe confidence drop",
-            "paragraphs": [
-                "EchoWing’s XAI temporarily masks or lowers a small segment of the audio and reruns the model.",
-                "If the confidence score for a species drops significantly after masking, it means the model heavily relied on that audio segment to make its decision."
-            ],
-            "formula": "I_t^{(c)} = p^{(c)}(x) - p^{(c)}(x_{\\setminus t})",
-            "formulaCaption": "A larger score drop after masking implies that time segment is more important for the prediction.",
-            "animation": "occlusion",
-            "takeaway": "XAI shows which audio segments the model relied on, but does not guarantee it is the only true location of the bird call."
-        },
-        {
-            "id": "limits",
-            "navLabel": "Limitations",
-            "kicker": "Limitations",
-            "title": "How to correctly interpret EchoWing results?",
-            "paragraphs": [
-                "Confidence scores are not ecological occurrence probabilities.",
-                "The XAI heatmap shows model reliance, not manually annotated true bird call locations.",
-                "The model may be disturbed if multiple birds, insects, human voices, or background noises are present simultaneously.",
-                "EchoWing is an educational, exploratory, and assistive tool; formal surveys still require manual verification and field records."
-            ],
-            "animation": "limits",
-            "takeaway": "AI results should be treated as supportive clues, rather than replacing observer judgment."
-        }
-    ]
+  "navLabel": "Wie es funktioniert / XAI",
+  "homeLabel": "Startseite",
+  "eyebrow": "EchoWing-Bildungsseite",
+  "title": "Wie versteht EchoWing Geräusche?",
+  "subtitle": "Vom Audio-Upload und der Modellvorhersage bis hin zur Zeitleistenlokalisierung und Explainable AI.",
+  "sectionNavLabel": "Abschnitte zur Funktionsweise",
+  "flowLabel": "EchoWing Audio-Analyse-Pipeline",
+  "takeawayLabel": "Fazit:",
+  "backToHome": "Zurück zur Startseite",
+  "flowSteps": [
+    {
+      "icon": "🎙️",
+      "label": "Audioeingang"
+    },
+    {
+      "icon": "〰️",
+      "label": "Vorverarbeitung"
+    },
+    {
+      "icon": "🪟",
+      "label": "Fenstervorhersage"
+    },
+    {
+      "icon": "📊",
+      "label": "Arten-Score"
+    },
+    {
+      "icon": "⏱️",
+      "label": "Zeitleistenlokalisierung"
+    },
+    {
+      "icon": "🔥",
+      "label": "XAI-Heatmap"
+    }
+  ],
+  "sections": [
+    {
+      "id": "overview",
+      "navLabel": "Übersicht",
+      "kicker": "Übersicht",
+      "title": "Was passiert, wenn ein Vogelruf bei EchoWing eingeht?",
+      "paragraphs": [
+        "EchoWing \"hört\" sich das gesamte Audio nicht auf einmal an. Stattdessen wird das Audio in ein Signal umgewandelt, das das Modell analysieren kann, und in Segmenten eingespeist.",
+        "Das Modell gibt Kandidatenarten und Konfidenzwerte für jedes Zeitfenster aus. EchoWing aggregiert dann diese überlappenden Fenster in eine Zeitleiste, um abzuschätzen, wann Schallereignisse auftreten.",
+        "Schließlich maskiert das XAI-Modul verschiedene Zeitsegmente des Audios, um zu beobachten, wie sich die Modellkonfidenz ändert, und zeigt, auf welche Audiosegmente sich das Modell am meisten verlassen hat."
+      ],
+      "animation": "pipeline",
+      "takeaway": "Die Ausgabe von EchoWing ist eine Mischung aus Modellinferenz und Algorithmusschätzung, keine absolute, von Menschen kommentierte Grundwahrheit."
+    },
+    {
+      "id": "preprocessing",
+      "navLabel": "Vorverarbeitung",
+      "kicker": "Audiovorverarbeitung",
+      "title": "Audio wird in ein Format standardisiert, das das Modell lesen kann",
+      "paragraphs": [
+        "Hochgeladene oder aufgenommene Audiodaten können unterschiedliche Formate, Abtastraten, Kanäle und Lautstärken aufweisen. EchoWing dekodiert, konvertiert in Mono und tastet das Audio neu ab, um die Modellanforderungen zu erfüllen.",
+        "Das Modell transformiert dann die akustischen Wellen im Zeitbereich in ein Zeit-Frequenz-Spektrogramm-ähnliches akustisches Merkmal, wodurch Frequenzvariationen, kurze Rufe und kontinuierliche Gesänge leichter zu erkennen sind."
+      ],
+      "formula": "x(t) \\rightarrow S(f,t)",
+      "formulaCaption": "Die rohe akustische Welle x(t) wird in eine Zeit-Frequenz-Darstellung S(f,t) umgewandelt.",
+      "animation": "spectrogram",
+      "takeaway": "Modelle lesen Rohwellenformen in der Regel nicht direkt, sondern analysieren transformierte akustische Merkmale."
+    },
+    {
+      "id": "windows",
+      "navLabel": "Fenstervorhersage",
+      "kicker": "Sliding-Window-Vorhersage",
+      "title": "Das Modell analysiert Fenster fester Länge anstelle des gesamten Audios",
+      "paragraphs": [
+        "Vogelstimmenmodelle werden normalerweise an Audioclips fester Länge trainiert. EchoWing schneidet eine lange Aufnahme in mehrere Zeitfenster und speist sie einzeln in das Modell ein.",
+        "Jedes Zeitfenster erhält eine Reihe von Artenbewertungen, die darstellen, welche Vogelgeräusche das Modell in diesem bestimmten Fenster für vorhanden hält."
+      ],
+      "formula": "p_i^{(c)} = f_c(x_{w_i})",
+      "formulaCaption": "Modell f gibt einen Score p_i^{(c)} für die Art c im i-ten Zeitfenster x_{w_i} aus.",
+      "animation": "slidingWindow",
+      "takeaway": "Eine einzelne Modellbewertung entspricht in der Regel einem ganzen Zeitfenster, nicht einem einzigen Augenblick."
+    },
+    {
+      "id": "timeline",
+      "navLabel": "Lokalisierung",
+      "kicker": "Zeitleistenlokalisierung",
+      "title": "Schätzung einer feineren Zeitleiste anhand von Werten auf Fensterebene",
+      "paragraphs": [
+        "Wenn ein Vogelruf tatsächlich zu einem bestimmten Zeitpunkt auftritt, weisen wahrscheinlich alle Zeitfenster, die diesen Punkt abdecken, erhöhte Artenscores auf.",
+        "EchoWing projiziert die Fensterwerte zurück auf eine feinere Zeitleiste und normalisiert sie nach Abdeckung, um abzuschätzen, welche Zeitpunkte am meisten zu den hohen Werten des Modells beigetragen haben."
+      ],
+      "formula": "\\hat{z}_t^{(c)} = \\frac{\\sum_i A_{i,t} p_i^{(c)}}{\\sum_i A_{i,t} + \\lambda}",
+      "formulaCaption": "Je mehr High-Score-Fenster die Zeit t abdecken, desto höher ist die geschätzte Aktivität \\hat{z}_t^{(c)}.",
+      "animation": "deconvolution",
+      "takeaway": "Dies ist eine Aktivitätskurve, die anhand von Fensterbewertungen geschätzt wird, und keine manuelle sekundenweise Annotation."
+    },
+    {
+      "id": "occlusion",
+      "navLabel": "XAI-Heatmap",
+      "kicker": "Okklusionsbasiertes XAI",
+      "title": "Maskierung eines kleinen Audiosegments, um einen Vertrauensabfall zu beobachten",
+      "paragraphs": [
+        "Das XAI von EchoWing maskiert vorübergehend ein kleines Segment des Audios oder senkt es ab und führt das Modell erneut aus.",
+        "Wenn der Konfidenzwert für eine Art nach der Maskierung deutlich sinkt, bedeutet dies, dass sich das Modell bei seiner Entscheidung stark auf dieses Audiosegment verlassen hat."
+      ],
+      "formula": "I_t^{(c)} = p^{(c)}(x) - p^{(c)}(x_{\\setminus t})",
+      "formulaCaption": "Ein größerer Score-Rückgang nach der Maskierung impliziert, dass das Zeitsegment für die Vorhersage wichtiger ist.",
+      "animation": "occlusion",
+      "takeaway": "XAI zeigt, auf welche Audiosegmente sich das Modell verlassen hat, aber es gibt keine Garantie, dass es der einzige wahre Ort des Vogelrufs ist."
+    },
+    {
+      "id": "limits",
+      "navLabel": "Einschränkungen",
+      "kicker": "Einschränkungen",
+      "title": "Wie sind die EchoWing-Ergebnisse richtig zu interpretieren?",
+      "paragraphs": [
+        "Konfidenzwerte sind keine ökologischen Auftretenswahrscheinlichkeiten.",
+        "Die XAI-Heatmap zeigt die Modellabhängigkeit und nicht manuell kommentierte wahre Vogelrufpositionen.",
+        "Das Modell kann gestört werden, wenn mehrere Vögel, Insekten, menschliche Stimmen oder Hintergrundgeräusche gleichzeitig vorhanden sind.",
+        "EchoWing ist ein lehrreiches, exploratives und unterstützendes Tool; Formelle Erhebungen erfordern weiterhin eine manuelle Überprüfung und Feldaufzeichnungen."
+      ],
+      "animation": "limits",
+      "takeaway": "KI-Ergebnisse sollten als unterstützende Hinweise behandelt werden und nicht das Urteilsvermögen des Beobachters ersetzen."
+    }
+  ]
 }
 };
 

@@ -71,8 +71,7 @@ const ko = {
   "modelUsed": "사용 모델",
   "modelSelectionLabel": "모델",
   "modelTagFast": "빠름",
-  "modelTagExpert": "전문가",
-  "modelPerch": "Perch v2 (Google)",
+  "modelPerchFast": "Perch v2 Fast (Google TFLite)",
   "modelBirdnet": "BirdNET v2.4 (Cornell)",
   "modelSilic": "SILIC (Academia Sinica)",
   "modelHintLearnMore": "자세히 보기",
@@ -379,123 +378,124 @@ const ko = {
     ERR_UNKNOWN_BACKEND: "서버 오류가 발생했습니다",
   },
   xaiEducation: {
-    "navLabel": "How It Works / XAI",
-    "eyebrow": "EchoWing Education Page",
-    "title": "How does EchoWing understand sound?",
-    "subtitle": "From audio upload and model prediction to timeline localization and Explainable AI.",
-    "sectionNavLabel": "How It Works Sections",
-    "flowLabel": "EchoWing Audio Analysis Pipeline",
-    "takeawayLabel": "Takeaway:",
-    "backToHome": "Back to Home",
+    "navLabel": "작동 방식 / XAI",
+    "homeLabel": "홈",
+    "eyebrow": "EchoWing 교육 페이지",
+    "title": "EchoWing은 어떻게 소리를 이해할까요?",
+    "subtitle": "오디오 업로드 및 모델 예측에서 타임라인 위치 파악 및 설명 가능한 AI(XAI)까지.",
+    "sectionNavLabel": "작동 방식 섹션",
+    "flowLabel": "EchoWing 오디오 분석 파이프라인",
+    "takeawayLabel": "요점:",
+    "backToHome": "홈으로 돌아가기",
     "flowSteps": [
         {
             "icon": "🎙️",
-            "label": "Audio Input"
+            "label": "오디오 입력"
         },
         {
             "icon": "〰️",
-            "label": "Preprocessing"
+            "label": "전처리"
         },
         {
             "icon": "🪟",
-            "label": "Window Prediction"
+            "label": "윈도우 예측"
         },
         {
             "icon": "📊",
-            "label": "Species Score"
+            "label": "종 점수"
         },
         {
             "icon": "⏱️",
-            "label": "Timeline Localization"
+            "label": "타임라인 위치 파악"
         },
         {
             "icon": "🔥",
-            "label": "XAI Heatmap"
+            "label": "XAI 히트맵"
         }
     ],
     "sections": [
         {
             "id": "overview",
-            "navLabel": "Overview",
+            "navLabel": "개요",
             "kicker": "Overview",
-            "title": "What happens when a bird call enters EchoWing?",
+            "title": "새소리가 EchoWing에 들어오면 어떻게 될까요?",
             "paragraphs": [
-                "EchoWing does not directly \"listen\" to the whole audio at once. Instead, it converts the audio into a signal the model can analyze and feeds it in segments.",
-                "The model outputs candidate species and confidence scores for each time window. EchoWing then aggregates these overlapping windows into a timeline to estimate when sound events occur.",
-                "Finally, the XAI module masks different time segments of the audio to observe how model confidence changes, showing which audio segments the model relied on most."
+                "EchoWing은 한 번에 전체 오디오를 직접 \"듣지\" 않습니다. 대신 오디오를 모델이 분석할 수 있는 신호로 변환하여 세그먼트별로 입력합니다.",
+                "모델은 각 시간 창에 대한 후보 종과 신뢰도 점수를 출력합니다. 그런 다음 EchoWing은 겹치는 시간 창을 타임라인으로 집계하여 소리 이벤트가 언제 발생하는지 추정합니다.",
+                "마지막으로 XAI 모듈은 오디오의 다양한 시간 세그먼트를 마스킹하여 모델의 신뢰도가 어떻게 변하는지 관찰함으로써 모델이 어떤 오디오 세그먼트에 가장 많이 의존했는지 보여줍니다."
             ],
             "animation": "pipeline",
-            "takeaway": "EchoWing’s output is a mix of model inference and algorithm estimation, not an absolute ground truth annotated by humans."
+            "takeaway": "EchoWing의 출력은 모델 추론과 알고리즘 추정을 혼합한 것이며 사람이 주석을 단 절대적인 정답이 아닙니다."
         },
         {
             "id": "preprocessing",
-            "navLabel": "Preprocessing",
+            "navLabel": "전처리",
             "kicker": "Audio preprocessing",
-            "title": "Audio is standardized into a format the model can read",
+            "title": "오디오는 모델이 읽을 수 있는 형식으로 표준화됩니다",
             "paragraphs": [
-                "Uploaded or recorded audio may have different formats, sample rates, channels, and volumes. EchoWing decodes, converts to mono, and resamples the audio to meet model requirements.",
-                "The model then transforms the time-domain acoustic waves into a time-frequency spectrogram-like acoustic feature, making frequency variations, short calls, and continuous songs easier to recognize."
+                "업로드되거나 녹음된 오디오는 형식, 샘플링 속도, 채널 및 볼륨이 다를 수 있습니다. EchoWing은 모델 요구 사항을 충족하기 위해 오디오를 디코딩하고 모노로 변환하며 리샘플링합니다.",
+                "그런 다음 모델은 시간 영역의 음파를 시간-주파수 스펙트로그램과 같은 음향 특성으로 변환하여 주파수 변화, 짧은 울음소리 및 연속적인 노래를 더 쉽게 인식할 수 있도록 합니다."
             ],
             "formula": "x(t) \\rightarrow S(f,t)",
-            "formulaCaption": "Raw acoustic wave x(t) is converted to a time-frequency representation S(f,t).",
+            "formulaCaption": "원시 음파 x(t)는 시간-주파수 표현 S(f,t)로 변환됩니다.",
             "animation": "spectrogram",
-            "takeaway": "Models usually do not directly read raw waveforms, but analyze transformed acoustic features."
+            "takeaway": "모델은 일반적으로 원시 파형을 직접 읽지 않고 변환된 음향 특성을 분석합니다."
         },
         {
             "id": "windows",
-            "navLabel": "Window Prediction",
+            "navLabel": "윈도우 예측",
             "kicker": "Sliding-window prediction",
-            "title": "The model analyzes fixed-length windows instead of the entire audio",
+            "title": "모델은 전체 오디오가 아닌 고정된 길이의 창을 분석합니다",
             "paragraphs": [
-                "Bird sound models are usually trained on fixed-length audio clips. EchoWing slices a long recording into multiple time windows and feeds them to the model individually.",
-                "Each time window receives a set of species scores, representing which bird sounds the model thinks might be present in that specific window."
+                "새소리 모델은 일반적으로 고정된 길이의 오디오 클립으로 훈련됩니다. 따라서 EchoWing은 긴 녹음을 여러 시간 창으로 분할하여 개별적으로 모델에 공급합니다.",
+                "각 시간 창은 일련의 종 점수를 받으며, 이는 특정 창에 어떤 새소리가 존재할 수 있는지 나타냅니다."
             ],
             "formula": "p_i^{(c)} = f_c(x_{w_i})",
-            "formulaCaption": "Model f outputs a score p_i^{(c)} for species c on the i-th time window x_{w_i}.",
+            "formulaCaption": "모델 f는 i번째 시간 창 x_{w_i}의 종 c에 대한 점수 p_i^{(c)}를 출력합니다.",
             "animation": "slidingWindow",
-            "takeaway": "A single model score usually corresponds to an entire time window, not a single instant."
+            "takeaway": "단일 모델 점수는 일반적으로 한 순간이 아니라 전체 시간 창에 해당합니다."
         },
         {
             "id": "timeline",
-            "navLabel": "Localization",
+            "navLabel": "위치 파악",
             "kicker": "Timeline localization",
-            "title": "Estimating a finer timeline from window-level scores",
+            "title": "윈도우 수준의 점수에서 더 자세한 타임라인 추정하기",
             "paragraphs": [
-                "If a bird call truly occurs at a certain time point, all time windows covering that point are likely to have elevated species scores.",
-                "EchoWing projects window scores back onto a finer timeline and normalizes by coverage, estimating which time points contributed most to the model’s high scores."
+                "새소리가 특정 시점에 실제로 발생하는 경우, 해당 시점을 덮는 모든 시간 창에서 종 점수가 상승할 가능성이 높습니다.",
+                "EchoWing은 시간 창 점수를 더 미세한 타임라인으로 역투영하고 커버리지별로 정규화하여 어떤 시점이 모델의 높은 점수에 가장 많이 기여했는지 추정합니다."
             ],
             "formula": "\\hat{z}_t^{(c)} = \\frac{\\sum_i A_{i,t} p_i^{(c)}}{\\sum_i A_{i,t} + \\lambda}",
-            "formulaCaption": "The more high-score windows covering time t, the higher the estimated activity \\hat{z}_t^{(c)}.",
+            "formulaCaption": "시간 t를 덮는 고득점 시간 창이 많을수록 추정 활동 \\hat{z}_t^{(c)}가 높아집니다.",
             "animation": "deconvolution",
-            "takeaway": "This is an activity curve estimated from window scores, not manual second-by-second annotation."
+            "takeaway": "이것은 수동으로 초 단위 주석을 단 것이 아니라 윈도우 점수에서 추정한 활동 곡선입니다."
         },
         {
             "id": "occlusion",
-            "navLabel": "XAI Heatmap",
+            "navLabel": "XAI 히트맵",
             "kicker": "Occlusion-based XAI",
-            "title": "Masking a small audio segment to observe confidence drop",
+            "title": "오디오의 작은 세그먼트를 마스킹하여 신뢰도 하락 관찰하기",
             "paragraphs": [
-                "EchoWing’s XAI temporarily masks or lowers a small segment of the audio and reruns the model.",
-                "If the confidence score for a species drops significantly after masking, it means the model heavily relied on that audio segment to make its decision."
+                "EchoWing의 XAI는 오디오의 작은 세그먼트를 일시적으로 마스킹하거나 낮추고 모델을 다시 실행합니다.",
+                "마스킹 후 종의 신뢰도 점수가 크게 떨어지면, 모델이 그 결정을 내리기 위해 해당 오디오 세그먼트에 크게 의존했음을 의미합니다."
             ],
             "formula": "I_t^{(c)} = p^{(c)}(x) - p^{(c)}(x_{\\setminus t})",
-            "formulaCaption": "A larger score drop after masking implies that time segment is more important for the prediction.",
+            "formulaCaption": "마스킹 후 점수 하락이 클수록 해당 시간 세그먼트가 예측에 더 중요하다는 것을 의미합니다.",
             "animation": "occlusion",
-            "takeaway": "XAI shows which audio segments the model relied on, but does not guarantee it is the only true location of the bird call."
+            "takeaway": "XAI는 모델이 어떤 오디오 세그먼트에 의존했는지 보여주지만 그것이 새소리의 유일한 실제 위치임을 보장하지는 않습니다."
         },
         {
             "id": "limits",
-            "navLabel": "Limitations",
+            "navLabel": "제한 사항",
             "kicker": "Limitations",
-            "title": "How to correctly interpret EchoWing results?",
+            "title": "EchoWing의 결과를 올바르게 해석하는 방법은?",
             "paragraphs": [
-                "Confidence scores are not ecological occurrence probabilities.",
-                "The XAI heatmap shows model reliance, not manually annotated true bird call locations.",
-                "The model may be disturbed if multiple birds, insects, human voices, or background noises are present simultaneously.",
-                "EchoWing is an educational, exploratory, and assistive tool; formal surveys still require manual verification and field records."
+                "신뢰도 점수는 생태학적 발생 확률이 아닙니다.",
+                "XAI 히트맵은 모델의 의존성을 보여주며 사람이 주석을 단 실제 새소리 위치가 아닙니다.",
+                "여러 마리의 새, 곤충, 사람의 목소리 또는 배경 소음이 동시에 존재하는 경우 모델이 방해를 받을 수 있습니다.",
+                "EchoWing은 교육적, 탐구적 및 보조적 도구입니다. 공식적인 조사에는 여전히 수동 확인 및 현장 기록이 필요합니다."
             ],
             "animation": "limits",
-            "takeaway": "AI results should be treated as supportive clues, rather than replacing observer judgment."
+            "takeaway": "AI의 결과는 관찰자의 판단을 대체하는 것이 아니라 보조적인 단서로 취급되어야 합니다."
         }
     ]
 }

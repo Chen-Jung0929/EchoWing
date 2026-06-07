@@ -71,8 +71,7 @@ const th = {
   "modelUsed": "โมเดลที่ใช้",
   "modelSelectionLabel": "โมเดล",
   "modelTagFast": "เร็ว",
-  "modelTagExpert": "ผู้เชี่ยวชาญ",
-  "modelPerch": "Perch v2 (Google)",
+  "modelPerchFast": "Perch v2 Fast (Google TFLite)",
   "modelBirdnet": "BirdNET v2.4 (Cornell)",
   "modelSilic": "SILIC (Academia Sinica)",
   "modelHintLearnMore": "เรียนรู้เพิ่มเติม",
@@ -379,123 +378,124 @@ const th = {
     ERR_UNKNOWN_BACKEND: "เกิดข้อผิดพลาดของเซิร์ฟเวอร์",
   },
   xaiEducation: {
-    "navLabel": "How It Works / XAI",
-    "eyebrow": "EchoWing Education Page",
-    "title": "How does EchoWing understand sound?",
-    "subtitle": "From audio upload and model prediction to timeline localization and Explainable AI.",
-    "sectionNavLabel": "How It Works Sections",
-    "flowLabel": "EchoWing Audio Analysis Pipeline",
-    "takeawayLabel": "Takeaway:",
-    "backToHome": "Back to Home",
+    "navLabel": "หลักการทำงาน / XAI",
+    "homeLabel": "หน้าหลัก",
+    "eyebrow": "หน้าการเรียนรู้ EchoWing",
+    "title": "EchoWing เข้าใจเสียงได้อย่างไร?",
+    "subtitle": "ตั้งแต่การอัปโหลดเสียง การคาดการณ์ของโมเดล ไปจนถึงการระบุตำแหน่งบนไทม์ไลน์และ AI ที่อธิบายได้ (XAI)",
+    "sectionNavLabel": "ส่วนหลักการทำงาน",
+    "flowLabel": "ไปป์ไลน์การวิเคราะห์เสียงของ EchoWing",
+    "takeawayLabel": "ประเด็นสำคัญ:",
+    "backToHome": "กลับหน้าหลัก",
     "flowSteps": [
         {
             "icon": "🎙️",
-            "label": "Audio Input"
+            "label": "เสียงเข้า"
         },
         {
             "icon": "〰️",
-            "label": "Preprocessing"
+            "label": "การประมวลผลเบื้องต้น"
         },
         {
             "icon": "🪟",
-            "label": "Window Prediction"
+            "label": "การทำนายตามหน้าต่างเวลา"
         },
         {
             "icon": "📊",
-            "label": "Species Score"
+            "label": "คะแนนของชนิด"
         },
         {
             "icon": "⏱️",
-            "label": "Timeline Localization"
+            "label": "การระบุตำแหน่งบนไทม์ไลน์"
         },
         {
             "icon": "🔥",
-            "label": "XAI Heatmap"
+            "label": "แผนที่ความร้อน XAI"
         }
     ],
     "sections": [
         {
             "id": "overview",
-            "navLabel": "Overview",
+            "navLabel": "ภาพรวม",
             "kicker": "Overview",
-            "title": "What happens when a bird call enters EchoWing?",
+            "title": "เกิดอะไรขึ้นเมื่อเสียงนกเข้าสู่ EchoWing?",
             "paragraphs": [
-                "EchoWing does not directly \"listen\" to the whole audio at once. Instead, it converts the audio into a signal the model can analyze and feeds it in segments.",
-                "The model outputs candidate species and confidence scores for each time window. EchoWing then aggregates these overlapping windows into a timeline to estimate when sound events occur.",
-                "Finally, the XAI module masks different time segments of the audio to observe how model confidence changes, showing which audio segments the model relied on most."
+                "EchoWing ไม่ได้ \"ฟัง\" เสียงทั้งหมดในคราวเดียว แต่จะแปลงเสียงเป็นสัญญาณที่โมเดลสามารถวิเคราะห์ได้และป้อนเป็นส่วน ๆ",
+                "โมเดลจะส่งออกชนิดที่คาดการณ์และคะแนนความมั่นใจสำหรับแต่ละหน้าต่างเวลา จากนั้น EchoWing จะรวมหน้าต่างที่ทับซ้อนกันเหล่านี้ลงในไทม์ไลน์เพื่อประมาณว่าเหตุการณ์เสียงเกิดขึ้นเมื่อใด",
+                "ในที่สุด โมดูล XAI จะปิดบังส่วนของเสียงในช่วงเวลาต่าง ๆ เพื่อสังเกตว่าความมั่นใจของโมเดลเปลี่ยนแปลงไปอย่างไร ซึ่งแสดงให้เห็นว่าโมเดลพึ่งพาส่วนใดของเสียงมากที่สุด"
             ],
             "animation": "pipeline",
-            "takeaway": "EchoWing’s output is a mix of model inference and algorithm estimation, not an absolute ground truth annotated by humans."
+            "takeaway": "ผลลัพธ์ของ EchoWing เป็นการผสมผสานระหว่างการอนุมานของโมเดลและการประมาณการด้วยอัลกอริทึม ไม่ใช่ความจริงที่แน่นอนซึ่งมนุษย์เป็นผู้กำหนด"
         },
         {
             "id": "preprocessing",
-            "navLabel": "Preprocessing",
+            "navLabel": "การประมวลผลเบื้องต้น",
             "kicker": "Audio preprocessing",
-            "title": "Audio is standardized into a format the model can read",
+            "title": "เสียงจะถูกทำให้เป็นมาตรฐานในรูปแบบที่โมเดลอ่านได้",
             "paragraphs": [
-                "Uploaded or recorded audio may have different formats, sample rates, channels, and volumes. EchoWing decodes, converts to mono, and resamples the audio to meet model requirements.",
-                "The model then transforms the time-domain acoustic waves into a time-frequency spectrogram-like acoustic feature, making frequency variations, short calls, and continuous songs easier to recognize."
+                "เสียงที่อัปโหลดหรือบันทึกอาจมีรูปแบบ อัตราการสุ่มตัวอย่าง ช่องสัญญาณ และระดับเสียงที่แตกต่างกัน EchoWing ถอดรหัส แปลงเป็นโมโน และสุ่มตัวอย่างเสียงใหม่เพื่อให้ตรงตามข้อกำหนดของโมเดล",
+                "จากนั้นโมเดลจะแปลงคลื่นเสียงในโดเมนเวลาเป็นลักษณะทางเสียงที่แสดงเวลา-ความถี่ (เช่น สเปกโตรแกรม) ทำให้จดจำการเปลี่ยนแปลงของความถี่ เสียงร้องสั้น ๆ และเสียงร้องต่อเนื่องได้ง่ายขึ้น"
             ],
             "formula": "x(t) \\rightarrow S(f,t)",
-            "formulaCaption": "Raw acoustic wave x(t) is converted to a time-frequency representation S(f,t).",
+            "formulaCaption": "คลื่นเสียงต้นฉบับ x(t) จะถูกแปลงเป็นการแสดงเวลา-ความถี่ S(f,t)",
             "animation": "spectrogram",
-            "takeaway": "Models usually do not directly read raw waveforms, but analyze transformed acoustic features."
+            "takeaway": "โดยปกติโมเดลจะไม่ได้อ่านรูปคลื่นต้นฉบับโดยตรง แต่วิเคราะห์ลักษณะทางเสียงที่แปลงแล้ว"
         },
         {
             "id": "windows",
-            "navLabel": "Window Prediction",
+            "navLabel": "การทำนายตามหน้าต่างเวลา",
             "kicker": "Sliding-window prediction",
-            "title": "The model analyzes fixed-length windows instead of the entire audio",
+            "title": "โมเดลวิเคราะห์หน้าต่างที่มีความยาวคงที่แทนที่จะเป็นเสียงทั้งหมด",
             "paragraphs": [
-                "Bird sound models are usually trained on fixed-length audio clips. EchoWing slices a long recording into multiple time windows and feeds them to the model individually.",
-                "Each time window receives a set of species scores, representing which bird sounds the model thinks might be present in that specific window."
+                "โมเดลเสียงนกมักจะได้รับการฝึกฝนบนคลิปเสียงที่มีความยาวคงที่ ดังนั้น EchoWing จึงแบ่งการบันทึกเสียงที่ยาวเป็นหน้าต่างเวลาหลายบานและป้อนเข้าไปในโมเดลแยกกัน",
+                "แต่ละหน้าต่างเวลาจะได้รับชุดคะแนนของชนิด ซึ่งแสดงถึงเสียงนกที่โมเดลคิดว่าอาจมีอยู่ในหน้าต่างเวลานั้น"
             ],
             "formula": "p_i^{(c)} = f_c(x_{w_i})",
-            "formulaCaption": "Model f outputs a score p_i^{(c)} for species c on the i-th time window x_{w_i}.",
+            "formulaCaption": "โมเดล f จะส่งออกคะแนน p_i^{(c)} สำหรับชนิด c บนหน้าต่างเวลาที่ i (x_{w_i})",
             "animation": "slidingWindow",
-            "takeaway": "A single model score usually corresponds to an entire time window, not a single instant."
+            "takeaway": "คะแนนจากโมเดลเดียวมักจะสอดคล้องกับหน้าต่างเวลาทั้งหมด ไม่ใช่แค่ช่วงเวลาใดเวลาหนึ่ง"
         },
         {
             "id": "timeline",
-            "navLabel": "Localization",
+            "navLabel": "การระบุตำแหน่ง",
             "kicker": "Timeline localization",
-            "title": "Estimating a finer timeline from window-level scores",
+            "title": "การประมาณไทม์ไลน์ที่ละเอียดยิ่งขึ้นจากคะแนนระดับหน้าต่าง",
             "paragraphs": [
-                "If a bird call truly occurs at a certain time point, all time windows covering that point are likely to have elevated species scores.",
-                "EchoWing projects window scores back onto a finer timeline and normalizes by coverage, estimating which time points contributed most to the model’s high scores."
+                "หากมีเสียงนกเกิดขึ้นจริง ณ จุดเวลาใดเวลาหนึ่ง หน้าต่างเวลาทั้งหมดที่ครอบคลุมจุดเวลานั้นมีแนวโน้มที่จะมีคะแนนของชนิดที่สูงขึ้น",
+                "EchoWing จะฉายคะแนนจากหน้าต่างเวลากลับไปยังไทม์ไลน์ที่ละเอียดขึ้น และปรับให้เป็นบรรทัดฐานตามความครอบคลุม เพื่อประมาณว่าจุดเวลาใดที่ส่งผลต่อคะแนนที่สูงของโมเดลมากที่สุด"
             ],
             "formula": "\\hat{z}_t^{(c)} = \\frac{\\sum_i A_{i,t} p_i^{(c)}}{\\sum_i A_{i,t} + \\lambda}",
-            "formulaCaption": "The more high-score windows covering time t, the higher the estimated activity \\hat{z}_t^{(c)}.",
+            "formulaCaption": "ยิ่งมีหน้าต่างเวลาที่มีคะแนนสูงครอบคลุมเวลา t มากเท่าใด กิจกรรมที่ประมาณการไว้ \\hat{z}_t^{(c)} ก็จะยิ่งสูงขึ้น",
             "animation": "deconvolution",
-            "takeaway": "This is an activity curve estimated from window scores, not manual second-by-second annotation."
+            "takeaway": "นี่คือเส้นโค้งกิจกรรมที่ประมาณการจากคะแนนระดับหน้าต่าง ไม่ใช่การอธิบายประกอบแบบวินาทีต่อวินาทีโดยมนุษย์"
         },
         {
             "id": "occlusion",
-            "navLabel": "XAI Heatmap",
+            "navLabel": "แผนที่ความร้อน XAI",
             "kicker": "Occlusion-based XAI",
-            "title": "Masking a small audio segment to observe confidence drop",
+            "title": "การปิดบังส่วนของเสียงเล็ก ๆ เพื่อสังเกตการลดลงของความมั่นใจ",
             "paragraphs": [
-                "EchoWing’s XAI temporarily masks or lowers a small segment of the audio and reruns the model.",
-                "If the confidence score for a species drops significantly after masking, it means the model heavily relied on that audio segment to make its decision."
+                "XAI ของ EchoWing จะปิดบังหรือลดเสียงส่วนเล็ก ๆ ชั่วคราว และเรียกใช้โมเดลอีกครั้ง",
+                "หากคะแนนความมั่นใจสำหรับชนิดใดชนิดหนึ่งลดลงอย่างมากหลังจากถูกปิดบัง หมายความว่าโมเดลอาศัยเสียงส่วนนั้นอย่างมากในการตัดสินใจ"
             ],
             "formula": "I_t^{(c)} = p^{(c)}(x) - p^{(c)}(x_{\\setminus t})",
-            "formulaCaption": "A larger score drop after masking implies that time segment is more important for the prediction.",
+            "formulaCaption": "ยิ่งคะแนนลดลงมากหลังจากปิดบัง หมายความว่าช่วงเวลานั้นมีความสำคัญต่อการทำนายมากขึ้น",
             "animation": "occlusion",
-            "takeaway": "XAI shows which audio segments the model relied on, but does not guarantee it is the only true location of the bird call."
+            "takeaway": "XAI แสดงให้เห็นว่าโมเดลพึ่งพาส่วนใดของเสียง แต่ไม่ได้รับประกันว่าจะเป็นตำแหน่งที่แท้จริงของเสียงนกเพียงแห่งเดียว"
         },
         {
             "id": "limits",
-            "navLabel": "Limitations",
+            "navLabel": "ข้อจำกัด",
             "kicker": "Limitations",
-            "title": "How to correctly interpret EchoWing results?",
+            "title": "จะตีความผลลัพธ์ของ EchoWing อย่างถูกต้องได้อย่างไร?",
             "paragraphs": [
-                "Confidence scores are not ecological occurrence probabilities.",
-                "The XAI heatmap shows model reliance, not manually annotated true bird call locations.",
-                "The model may be disturbed if multiple birds, insects, human voices, or background noises are present simultaneously.",
-                "EchoWing is an educational, exploratory, and assistive tool; formal surveys still require manual verification and field records."
+                "คะแนนความมั่นใจไม่ใช่ความน่าจะเป็นของการเกิดขึ้นทางนิเวศวิทยา",
+                "แผนที่ความร้อน XAI แสดงการพึ่งพาของโมเดล ไม่ใช่ตำแหน่งที่แท้จริงของเสียงนกซึ่งมนุษย์เป็นผู้กำหนด",
+                "โมเดลอาจถูกรบกวนหากมีนกหลายตัว แมลง เสียงมนุษย์ หรือเสียงรบกวนพื้นหลังอยู่พร้อมกัน",
+                "EchoWing เป็นเครื่องมือเพื่อการศึกษา สำรวจ และช่วยเหลือ การสำรวจอย่างเป็นทางการยังคงต้องมีการตรวจสอบด้วยตนเองและบันทึกภาคสนาม"
             ],
             "animation": "limits",
-            "takeaway": "AI results should be treated as supportive clues, rather than replacing observer judgment."
+            "takeaway": "ผลลัพธ์จาก AI ควรถือเป็นเบาะแสเสริม มากกว่าที่จะนำมาแทนที่การตัดสินใจของผู้สังเกต"
         }
     ]
 }

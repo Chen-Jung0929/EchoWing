@@ -407,6 +407,7 @@ const en = {
   },
   xaiEducation: {
     "navLabel": "How It Works / XAI",
+    "homeLabel": "Home",
     "eyebrow": "EchoWing Education Page",
     "title": "How does EchoWing understand sound?",
     "subtitle": "From audio upload and model prediction to timeline localization and Explainable AI.",

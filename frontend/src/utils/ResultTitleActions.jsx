@@ -18,11 +18,13 @@ const DONE_MS = 3000;
 
 function ActionRow({ label, children }) {
   return (
-    <div className="flex items-center gap-2">
-      <span className="max-w-48 rounded-lg border border-white/10 bg-black/55 px-2.5 py-1.5 text-right text-xs font-bold text-white shadow-md backdrop-blur-sm">
+    <div className="flex justify-end items-center gap-2">
+      <span className="max-w-48 rounded-lg border border-white/10 bg-black/55 px-2.5 py-1.5 text-right text-xs font-bold text-white shadow-md backdrop-blur-sm shrink-0">
         {label}
       </span>
-      {children}
+      <div className="flex w-14 justify-center shrink-0">
+        {children}
+      </div>
     </div>
   );
 }
@@ -157,7 +159,7 @@ export function ResultFloatingActions({
       ) : null}
 
       <div
-        className="fixed bottom-6 right-6 z-[200] flex flex-col-reverse items-center gap-3"
+        className="fixed bottom-6 right-6 z-[200] flex flex-col-reverse items-end gap-3"
         role="group"
         aria-label={dict.resultTitle}
       >

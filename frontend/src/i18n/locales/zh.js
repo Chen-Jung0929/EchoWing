@@ -399,6 +399,7 @@ const zh = {
   },
   xaiEducation: {
     "navLabel": "運作原理與 XAI",
+    "homeLabel": "首頁",
     "eyebrow": "EchoWing 教學頁",
     "title": "EchoWing 如何理解聲音？",
     "subtitle": "從聲音上傳、模型辨識，到時間定位與可解釋 AI 的完整流程。",
