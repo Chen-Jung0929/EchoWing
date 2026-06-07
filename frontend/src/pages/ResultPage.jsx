@@ -5,7 +5,7 @@ import { useAudioAnalysisContext } from '../context/AudioAnalysisContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function ResultPage({ dict, lang, isDarkMode }) {
-  usePageMeta(dict.resultTitle);
+  usePageMeta(dict.resultTitle, undefined, dict.pageMetaTitleSuffix);
   const navigate = useNavigate();
   const { predictionResult, resetToLanding, spectrogramByIndex } = useAudioAnalysisContext();
 

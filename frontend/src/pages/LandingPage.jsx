@@ -9,7 +9,7 @@ import { isInAppBrowser } from '../utils/inAppBrowser';
 import { DEFAULT_MODEL_SELECTION, formatLandingModelOption, LANDING_MODEL_OPTIONS } from '../utils/modelLabel';
 
 export default function LandingPage({ dict, openGuide }) {
-  usePageMeta(dict.title, dict.subtitle);
+  usePageMeta(dict.title, dict.subtitle, dict.pageMetaTitleSuffix);
   const {
     selectedFile, setSelectedFile,
     isRecordedFile, setIsRecordedFile,

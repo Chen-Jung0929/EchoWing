@@ -9,6 +9,13 @@ import { DeconvolutionAnimation } from './animations/DeconvolutionAnimation.jsx'
 import { OcclusionXaiAnimation } from './animations/OcclusionXaiAnimation.jsx';
 import { xaiSections } from './content/xaiEducationContent.js';
 
+const ANIMATED_SECTION_TYPES = new Set([
+  'spectrogram',
+  'slidingWindow',
+  'deconvolution',
+  'occlusion',
+]);
+
 function AnimationSlot({ type, dict }) {
   switch (type) {
     case 'spectrogram':
@@ -26,7 +33,7 @@ function AnimationSlot({ type, dict }) {
 
 export default function XaiEducationPage({ dict }) {
   const xaiDict = dict.xaiEducation || {};
-  usePageMeta(xaiDict.navLabel, xaiDict.subtitle);
+  usePageMeta(xaiDict.navLabel, xaiDict.subtitle, dict.pageMetaTitleSuffix);
   const sections = Array.isArray(xaiDict.sections) ? xaiDict.sections : [];
 
   useEffect(() => {
@@ -108,14 +115,15 @@ export default function XaiEducationPage({ dict }) {
         <div className="xai-section-stack flex flex-col gap-12 md:gap-24">
           {sections.map((section) => {
             const contentMeta = xaiSections.find(s => s.id === section.id) || {};
-            
+            const hasVisual = ANIMATED_SECTION_TYPES.has(contentMeta.animation);
+
             return (
               <article
                 key={section.id}
                 id={`xai-${section.id}`}
-                className="xai-section-card flex flex-col md:flex-row gap-8 md:gap-16 items-center"
+                className={`xai-section-card flex flex-col gap-8${hasVisual ? ' md:flex-row md:gap-16 md:items-center' : ''}`}
               >
-                <div className="xai-section-copy flex-1">
+                <div className={`xai-section-copy w-full${hasVisual ? ' md:flex-1' : ''}`}>
                   <p className="text-[var(--c-primary)] font-bold tracking-widest uppercase text-xs mb-3">
                     {section.kicker}
                   </p>
@@ -147,9 +155,11 @@ export default function XaiEducationPage({ dict }) {
                   ) : null}
                 </div>
 
-                <div className="xai-section-visual w-full md:w-5/12 shrink-0">
-                  <AnimationSlot type={contentMeta.animation} dict={dict} />
-                </div>
+                {hasVisual ? (
+                  <div className="xai-section-visual w-full md:w-5/12 shrink-0">
+                    <AnimationSlot type={contentMeta.animation} dict={dict} />
+                  </div>
+                ) : null}
               </article>
             );
           })}

@@ -11,6 +11,7 @@ import DayHeroScene from './features/hero/DayHeroScene';
 import NightHeroScene from './features/hero/NightHeroScene';
 import { AudioAnalysisProvider } from './context/AudioAnalysisContext';
 import ErrorBoundary from './components/ErrorBoundary/ErrorBoundary';
+import { isPrivacyNoticeAccepted, markPrivacyNoticeAccepted, clearPrivacyNoticeAccepted } from './utils/privacyNoticeStorage';
 
 // Dynamic Imports
 const LandingPage = React.lazy(() => import('./pages/LandingPage'));
@@ -22,7 +23,6 @@ const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 
 const LANGUAGE_STORAGE_KEY = 'echowing-language';
 const THEME_STORAGE_KEY = 'echowing-theme';
-const PRIVACY_STORAGE_KEY = 'echowing-privacy-notice-accepted';
 
 function AppLayout() {
   const [lang, setLang] = useState(() => {
@@ -38,10 +38,7 @@ function AppLayout() {
 
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideSection, setGuideSection] = useState('usage');
-  const [privacyNoticeOpen, setPrivacyNoticeOpen] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.localStorage.getItem(PRIVACY_STORAGE_KEY) !== 'true';
-  });
+  const [privacyNoticeOpen, setPrivacyNoticeOpen] = useState(() => !isPrivacyNoticeAccepted());
 
   const dict = getDict(lang);
   
@@ -97,7 +94,7 @@ function AppLayout() {
   };
 
   const acceptPrivacyNotice = () => {
-    window.localStorage.setItem(PRIVACY_STORAGE_KEY, 'true');
+    markPrivacyNoticeAccepted();
     setPrivacyNoticeOpen(false);
   };
 
@@ -124,10 +121,14 @@ function AppLayout() {
           }`}
         >
           <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
-            <div className="flex items-center gap-2">
-              <img src="/logo.png" alt="EchoWing" className="w-10 h-10" />
-              <Link to="/" className="text-xl font-black tracking-wider text-[var(--c-text)] no-underline">EchoWing</Link>
-            </div>
+            <Link
+              to="/"
+              className="flex items-center gap-2 no-underline hover:opacity-80 transition-opacity"
+              aria-label="EchoWing"
+            >
+              <img src="/logo.png" alt="" className="w-10 h-10" aria-hidden="true" />
+              <span className="text-xl font-black tracking-wider text-[var(--c-text)]">EchoWing</span>
+            </Link>
 
             <div className="hidden md:flex items-center gap-6 text-sm font-bold text-[var(--c-text)]/70 mr-auto ml-8">
               <Link to="/" className="nav-link-button no-underline">{dict.xaiEducation?.homeLabel}</Link>
@@ -208,7 +209,7 @@ function AppLayout() {
         </nav>
 
         <main className="relative z-10 min-h-screen">
-          <ErrorBoundary>
+          <ErrorBoundary key={lang}>
             <Suspense fallback={<div className="min-h-screen flex items-center justify-center">Loading...</div>}>
               <Routes>
                 <Route path="/" element={<LandingPage dict={dict} openGuide={openGuide} />} />
@@ -239,6 +240,7 @@ function AppLayout() {
           onClose={() => setGuideOpen(false)}
           onReopenPrivacy={() => {
             setGuideOpen(false);
+            clearPrivacyNoticeAccepted();
             setPrivacyNoticeOpen(true);
           }}
         />

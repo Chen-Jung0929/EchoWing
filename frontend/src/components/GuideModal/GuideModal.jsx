@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MdClose, MdOpenInNew, MdPrivacyTip } from 'react-icons/md';
+import { getGuideModelLogo } from '../../config/modelLogos';
 
 
 export default function GuideModal({
@@ -63,7 +64,7 @@ export default function GuideModal({
           role="tablist"
           aria-label={dict.guideTitle}
         >
-          {Object.keys(dict.guideTabs).map((key) => (
+          {Object.keys(dict.guideTabs ?? {}).map((key) => (
             <button
               key={key}
               type="button"
@@ -88,7 +89,7 @@ export default function GuideModal({
               {dict.guideUsageTitle}
             </h3>
             <ol className="list-decimal pl-5 space-y-2.5 text-sm text-[var(--c-text)]/85 leading-relaxed">
-              {dict.guideUsageSteps.map((step) => (
+              {(Array.isArray(dict?.guideUsageSteps) ? dict.guideUsageSteps : []).map((step) => (
                 <li key={step}>{step}</li>
               ))}
             </ol>
@@ -104,16 +105,46 @@ export default function GuideModal({
               {dict.guideModelsComparison}
             </p>
             <div className="space-y-3">
-              {(Array.isArray(dict?.guideModels) ? dict.guideModels : []).map((model) => (
+              {(Array.isArray(dict?.guideModels) ? dict.guideModels : []).map((model, index) => {
+                const logo = getGuideModelLogo(index);
+                return (
                 <article
-                  key={model?.name || Math.random()}
-                  className="rounded-xl border border-[var(--c-text)]/10 bg-[var(--c-card)]/60 p-4"
+                  key={model?.name || index}
+                  className="relative overflow-hidden rounded-xl border border-[var(--c-text)]/10 bg-[var(--c-card)]/60 p-4"
                 >
+                  {logo ? (
+                    <>
+                      <img
+                        src={logo.src}
+                        alt=""
+                        aria-hidden
+                        className={`pointer-events-none absolute select-none object-contain opacity-[0.50] ${
+                          logo.wide
+                            ? 'right-2 top-1/2 h-[55%] max-w-[48%] -translate-y-1/2'
+                            : 'right-3 top-1/2 h-[78%] max-w-[38%] -translate-y-1/2'
+                        }`}
+                      />
+                      <div
+                        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-[var(--c-card)] via-[var(--c-card)]/88 to-transparent"
+                        aria-hidden
+                      />
+                    </>
+                  ) : null}
+                  <div className="relative z-10 min-w-0">
                   <h4 className="font-black text-[var(--c-text)]">{model.name}</h4>
-                  <dl className="mt-2 grid gap-1 text-xs text-[var(--c-text)]/65 sm:grid-cols-2">
-                    <div><dt className="font-black">{dict.guideModelWindow}</dt><dd>{model.window}</dd></div>
-                    <div><dt className="font-black">{dict.guideModelType}</dt><dd>{model.type}</dd></div>
-                    <div><dt className="font-black">{dict.guideModelSource}</dt><dd>{model.source}</dd></div>
+                  <dl className="mt-2 grid gap-1.5 text-xs sm:grid-cols-2">
+                    <div>
+                      <dt className="font-bold text-[var(--c-text)]">{dict.guideModelWindow}</dt>
+                      <dd className="text-[var(--c-text)]/65">{model.window}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-bold text-[var(--c-text)]">{dict.guideModelType}</dt>
+                      <dd className="text-[var(--c-text)]/65">{model.type}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-bold text-[var(--c-text)]">{dict.guideModelSource}</dt>
+                      <dd className="text-[var(--c-text)]/65">{model.source}</dd>
+                    </div>
                   </dl>
                   <p className="mt-1 text-sm text-[var(--c-text)]/75 leading-relaxed">
                     {model.citation}
@@ -129,8 +160,10 @@ export default function GuideModal({
                       <MdOpenInNew aria-hidden />
                     </a>
                   ) : null}
+                  </div>
                 </article>
-              ))}
+              );
+              })}
             </div>
           </section>
           ) : null}
@@ -141,7 +174,7 @@ export default function GuideModal({
                 {dict.guideHowTitle}
               </h3>
               <ol className="list-decimal space-y-2.5 pl-5 text-sm leading-relaxed text-[var(--c-text)]/85">
-                {dict.guideHowSteps.map((step) => <li key={step}>{step}</li>)}
+                {(Array.isArray(dict?.guideHowSteps) ? dict.guideHowSteps : []).map((step) => <li key={step}>{step}</li>)}
               </ol>
             </section>
           ) : null}

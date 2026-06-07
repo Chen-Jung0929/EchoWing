@@ -2,7 +2,7 @@ import usePageMeta from '../hooks/usePageMeta';
 import { useAudioAnalysisContext } from '../context/AudioAnalysisContext';
 
 export default function ErrorPage({ dict, isDarkMode }) {
-  usePageMeta(dict.errorTitle);
+  usePageMeta(dict.errorTitle, undefined, dict.pageMetaTitleSuffix);
   const { errorMessage, resetToLanding } = useAudioAnalysisContext();
   return (
     <div

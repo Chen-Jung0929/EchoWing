@@ -1,11 +1,13 @@
+import { createPortal } from 'react-dom';
 import { MdPrivacyTip } from 'react-icons/md';
 
 export default function PrivacyNotice({ open, dict, onAccept, onOpenPrivacy }) {
-  if (!open) return null;
+  if (!open || typeof document === 'undefined') return null;
 
-  return (
+  return createPortal(
     <aside
-      className="fixed inset-x-4 bottom-4 z-[280] mx-auto max-w-xl rounded-2xl border border-[var(--c-text)]/15 bg-[var(--c-card)]/95 p-4 shadow-2xl backdrop-blur-md"
+      className="fixed inset-x-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-[280] mx-auto max-w-xl rounded-2xl border border-[var(--c-text)]/15 bg-[var(--c-card)]/95 p-4 shadow-2xl backdrop-blur-md"
+      role="dialog"
       aria-labelledby="privacy-notice-title"
     >
       <div className="flex items-start gap-3">
@@ -35,6 +37,7 @@ export default function PrivacyNotice({ open, dict, onAccept, onOpenPrivacy }) {
           </div>
         </div>
       </div>
-    </aside>
+    </aside>,
+    document.body
   );
 }

@@ -1,8 +1,6 @@
 import React from 'react';
-import { getDict } from '../../i18n';
 
 const LANGUAGE_STORAGE_KEY = 'echowing-language';
-
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
@@ -28,17 +26,13 @@ class ErrorBoundary extends React.Component {
       try {
         lang = window.localStorage.getItem(LANGUAGE_STORAGE_KEY) || 'en';
       } catch (e) {}
-      
-      const dict = getDict(lang);
-      
-      // We will try to use dict, if it crashes, fallback
-      const title = dict?.backendError || "Oops! / 糟糕！";
-      const message = lang === 'zh' || lang === 'nan' || lang === 'hak' || lang === 'yue' 
-        ? "發生畫面渲染錯誤，請重新整理或返回首頁。"
-        : "EchoWing encountered a rendering error. Please refresh or return home.";
-      const btn = lang === 'zh' || lang === 'nan' || lang === 'hak' || lang === 'yue'
-        ? "返回首頁" 
-        : "Return Home";
+
+      const isZhFamily = lang === 'zh' || lang === 'nan' || lang === 'hak' || lang === 'yue' || lang === 'lzh';
+      const title = isZhFamily ? '糟糕！' : 'Oops!';
+      const message = isZhFamily
+        ? '發生畫面渲染錯誤，請重新整理或返回首頁。'
+        : 'EchoWing encountered a rendering error. Please refresh or return home.';
+      const btn = isZhFamily ? '返回首頁' : 'Return Home';
 
       return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-[var(--c-bg)] text-[var(--c-text)] p-6">
