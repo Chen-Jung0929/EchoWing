@@ -392,6 +392,13 @@ const ms = {
     ERR_UNKNOWN_BACKEND: "Pelayan membalas dengan ralat, sila cuba sebentar lagi.",
   },
   xaiEducation: {
+  "animations": {
+    "audioToSpec": "Gelombang audio dipetakan ke dalam sel masa-frekuensi.",
+    "slidingWindow": "Setiap tetingkap menerima skor spesisnya sendiri.",
+    "deconvolution": "Skor tetingkap yang bertindih diunjurkan ke bawah untuk membentuk lengkung aktiviti yang berterusan.",
+    "occlusion": "Menyembunyikan segmen audio penting menyebabkan keyakinan merosot.",
+    "confidence": "Keyakinan"
+  },
   "navLabel": "Cara Ia Berfungsi / XAI",
   "homeLabel": "Laman Utama",
   "eyebrow": "Halaman Pendidikan EchoWing",
