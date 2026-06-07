@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function DeconvolutionAnimation() {
+export function DeconvolutionAnimation({ dict }) {
   const windows = [
     { start: 10, width: 30, score: 0.3 },
     { start: 25, width: 30, score: 0.8 },
@@ -43,7 +43,7 @@ export function DeconvolutionAnimation() {
       </div>
 
       <p className="anim-caption mt-4 text-xs text-center text-[var(--c-text)]/60">
-        Overlapping window scores project downwards to form a continuous activity curve.
+        {dict?.xaiEducation?.animations?.deconvolution || 'Overlapping window scores project downwards to form a continuous activity curve.'}
       </p>
     </div>
   );

@@ -98,13 +98,13 @@ export default function KiwiAnimation() {
         }}
       >
         <img
-          src="/kiwi-fruit.png"
+          src="/kiwi-fruit.webp"
           alt=""
           className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none opacity-15"
         />
 
         <img
-          src="/kiwi-fruit.png"
+          src="/kiwi-fruit.webp"
           alt="Loading progress"
           className="absolute inset-0 w-full h-full object-contain select-none pointer-events-none"
           style={{
@@ -130,7 +130,7 @@ export default function KiwiAnimation() {
         }}
       >
         <img
-          src={`/kiwi${frame}.png`}
+          src={`/kiwi${frame}.webp`}
           alt="Walking Kiwi"
           onError={() => setImageError(true)}
           className="w-full h-full object-contain drop-shadow-md select-none"

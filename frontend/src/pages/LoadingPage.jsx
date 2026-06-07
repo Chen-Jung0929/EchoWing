@@ -1,8 +1,10 @@
 import React from 'react';
+import usePageMeta from '../hooks/usePageMeta';
 import KiwiAnimation from '../features/loading/KiwiAnimation';
 import { useAudioAnalysisContext } from '../context/AudioAnalysisContext';
 
 export default function LoadingPage({ dict, isDarkMode }) {
+  usePageMeta(dict.loadingTitle || '分析中...');
   const { loadingHint } = useAudioAnalysisContext();
   return (
     <div

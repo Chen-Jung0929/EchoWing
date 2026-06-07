@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function SlidingWindowAnimation() {
+export function SlidingWindowAnimation({ dict }) {
   const windows = [
     { start: 0, width: 22, score: 0.12 },
     { start: 16, width: 22, score: 0.38 },
@@ -34,7 +34,7 @@ export function SlidingWindowAnimation() {
       </div>
 
       <p className="anim-caption mt-4 text-xs text-center text-[var(--c-text)]/60">
-        Each window receives its own species score.
+        {dict?.xaiEducation?.animations?.slidingWindow || 'Each window receives its own species score.'}
       </p>
     </div>
   );

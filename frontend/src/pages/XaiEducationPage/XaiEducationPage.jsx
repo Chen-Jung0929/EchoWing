@@ -1,4 +1,6 @@
 import React, { useEffect } from 'react';
+import usePageMeta from '../../hooks/usePageMeta';
+import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import './XaiEducationPage.css';
 import { MathBlock } from './math/MathBlock.jsx';
@@ -8,25 +10,47 @@ import { DeconvolutionAnimation } from './animations/DeconvolutionAnimation.jsx'
 import { OcclusionXaiAnimation } from './animations/OcclusionXaiAnimation.jsx';
 import { xaiSections } from './content/xaiEducationContent.js';
 
-function AnimationSlot({ type }) {
+function AnimationSlot({ type, dict }) {
   switch (type) {
     case 'spectrogram':
-      return <AudioToSpectrogramAnimation />;
+      return <AudioToSpectrogramAnimation dict={dict} />;
     case 'slidingWindow':
-      return <SlidingWindowAnimation />;
+      return <SlidingWindowAnimation dict={dict} />;
     case 'deconvolution':
-      return <DeconvolutionAnimation />;
+      return <DeconvolutionAnimation dict={dict} />;
     case 'occlusion':
-      return <OcclusionXaiAnimation />;
+      return <OcclusionXaiAnimation dict={dict} />;
     default:
       return null;
   }
 }
 
 export default function XaiEducationPage({ dict }) {
-  const navigate = useNavigate();
   const xaiDict = dict.xaiEducation || {};
+  usePageMeta(xaiDict.navLabel || 'How It Works', xaiDict.subtitle);
+  const navigate = useNavigate();
   const sections = xaiDict.sections || [];
+
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.id = 'xai-structured-data';
+    script.textContent = JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "TechArticle",
+      "headline": xaiDict.title || "How EchoWing Works - Explainable AI for Bird Sound Recognition",
+      "description": xaiDict.subtitle || "Learn how EchoWing uses deep learning and explainable AI to identify bird species from audio recordings.",
+      "url": "https://echo-wing.vercel.app/how-it-works",
+      "author": { "@type": "Organization", "name": "EchoWing Team" },
+      "inLanguage": document.documentElement.lang,
+      "isPartOf": { "@type": "WebApplication", "name": "EchoWing" }
+    });
+    document.head.appendChild(script);
+    return () => {
+      const el = document.getElementById('xai-structured-data');
+      if (el) el.remove();
+    };
+  }, [xaiDict]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -37,12 +61,12 @@ export default function XaiEducationPage({ dict }) {
       <div className="max-w-4xl mx-auto px-6">
         
         <div className="mb-8">
-          <button
-            onClick={() => navigate('/')}
-            className="text-sm font-bold text-[var(--c-primary)] hover:text-[var(--c-text)] transition-colors flex items-center gap-2"
+          <Link
+            to="/"
+            className="text-sm font-bold text-[var(--c-primary)] hover:text-[var(--c-text)] transition-colors flex items-center gap-2 no-underline"
           >
             <span aria-hidden="true">←</span> {xaiDict.backToHome || 'Back to Home'}
-          </button>
+          </Link>
         </div>
 
         <header className="xai-hero mb-16 text-center">
@@ -126,7 +150,7 @@ export default function XaiEducationPage({ dict }) {
                 </div>
 
                 <div className="xai-section-visual w-full md:w-5/12 shrink-0">
-                  <AnimationSlot type={contentMeta.animation} />
+                  <AnimationSlot type={contentMeta.animation} dict={dict} />
                 </div>
               </article>
             );

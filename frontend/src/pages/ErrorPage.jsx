@@ -1,7 +1,9 @@
 import React from 'react';
+import usePageMeta from '../hooks/usePageMeta';
 import { useAudioAnalysisContext } from '../context/AudioAnalysisContext';
 
 export default function ErrorPage({ dict, isDarkMode }) {
+  usePageMeta(dict.errorTitle || '發生錯誤');
   const { errorMessage, resetToLanding } = useAudioAnalysisContext();
   return (
     <div

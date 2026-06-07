@@ -30,7 +30,7 @@ export default function DayHeroScene() {
       />
 
       <img
-        src="/day/light-sun.png"
+        src="/day/light-sun.webp"
         alt=""
         className={`absolute left-1/2 top-[10%] w-[42vw] max-w-[620px] min-w-[360px] -translate-x-1/2 select-none transition-all duration-[1600ms] ease-out ${
           entered ? 'scale-100 opacity-75' : 'scale-90 opacity-0'
@@ -43,14 +43,14 @@ export default function DayHeroScene() {
         }`}
       >
         <img
-          src="/day/light-cloud.png"
+          src="/day/light-cloud.webp"
           alt=""
           className="w-full h-auto select-none animate-day-cloud-float"
         />
       </div>
 
       <img
-        src="/day/light-left-tree.png"
+        src="/day/light-left-tree.webp"
         alt=""
         className={`absolute left-[0vw] bottom-[2%] w-[48vw] max-w-[760px] min-w-[430px] select-none transition-all duration-[1400ms] ease-out ${
           entered
@@ -60,7 +60,7 @@ export default function DayHeroScene() {
       />
 
       <img
-        src="/day/light-right-tree.png"
+        src="/day/light-right-tree.webp"
         alt=""
         className={`absolute right-[-20vw] bottom-[-20%] w-[48vw] max-w-[800px] min-w-[450px] select-none transition-all duration-[1500ms] ease-out ${
           entered

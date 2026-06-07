@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function OcclusionXaiAnimation() {
+export function OcclusionXaiAnimation({ dict }) {
   const bars = Array.from({ length: 18 }, (_, index) => {
     const center = 8;
     const distance = Math.abs(index - center);
@@ -25,7 +25,7 @@ export function OcclusionXaiAnimation() {
 
       {/* Confidence Meter */}
       <div className="confidence-meter mt-4 flex items-center gap-3">
-        <span className="text-xs uppercase font-bold tracking-wider text-[var(--c-text)]/50">Confidence</span>
+        <span className="text-xs uppercase font-bold tracking-wider text-[var(--c-text)]/50">{dict.xaiEducation?.animations?.confidence || 'Confidence'}</span>
         <div className="meter-track flex-1 h-3 rounded-full bg-[var(--c-text)]/10 overflow-hidden">
           <div className="meter-fill h-full bg-[var(--c-primary)] rounded-full" />
         </div>
@@ -45,8 +45,8 @@ export function OcclusionXaiAnimation() {
         ))}
       </div>
 
-      <p className="anim-caption mt-4 text-xs text-center text-[var(--c-text)]/60">
-        Masking an important audio segment causes the confidence to drop.
+      <p className="mt-4 text-xs text-center text-[var(--c-text)]/60">
+        {dict?.xaiEducation?.animations?.occlusion || 'Masking an important audio segment causes the confidence to drop.'}
       </p>
     </div>
   );

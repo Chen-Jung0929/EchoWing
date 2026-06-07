@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function AudioToSpectrogramAnimation() {
+export function AudioToSpectrogramAnimation({ dict }) {
   return (
     <div className="anim-card audio-to-spec" aria-label="Audio waveform converting to spectrogram animation">
       <div className="flex items-center justify-between w-full h-[120px]">
@@ -33,7 +33,7 @@ export function AudioToSpectrogramAnimation() {
 
       </div>
       <p className="mt-4 text-xs text-center text-[var(--c-text)]/60">
-        Audio waves are mapped into time-frequency cells.
+        {dict?.xaiEducation?.animations?.audioToSpec || 'Audio waves are mapped into time-frequency cells.'}
       </p>
     </div>
   );

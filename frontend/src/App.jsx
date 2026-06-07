@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
-import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation , Link } from 'react-router-dom';
 import { MdLanguage, MdDarkMode, MdLightMode, MdHelpOutline } from 'react-icons/md';
 
 import { detectBrowserLanguage, getDict, LANG_OPTIONS } from './i18n';
@@ -124,29 +124,12 @@ function AppLayout() {
           <div className="max-w-6xl mx-auto px-6 py-4 flex justify-between items-center">
             <div className="flex items-center gap-2">
               <img src="/logo.png" alt="EchoWing" className="w-10 h-10" />
-              <div
-                className="text-xl font-black tracking-wider text-[var(--c-text)] cursor-pointer"
-                onClick={() => navigate('/')}
-              >
-                EchoWing
-              </div>
+              <Link to="/" className="text-xl font-black tracking-wider text-[var(--c-text)] no-underline">EchoWing</Link>
             </div>
 
             <div className="hidden md:flex items-center gap-6 text-sm font-bold text-[var(--c-text)]/70 mr-auto ml-8">
-              <button
-                type="button"
-                onClick={() => navigate('/')}
-                className="nav-link-button"
-              >
-                {dict.xaiEducation?.homeLabel || 'Home'}
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/how-it-works')}
-                className="nav-link-button"
-              >
-                {dict.xaiEducation?.navLabel || 'How It Works / XAI'}
-              </button>
+              <Link to="/" className="nav-link-button no-underline">{dict.xaiEducation?.homeLabel || 'Home'}</Link>
+              <Link to="/how-it-works" className="nav-link-button no-underline">{dict.xaiEducation?.navLabel || 'How It Works / XAI'}</Link>
             </div>
 
             <div className="flex items-center gap-1">
@@ -230,10 +213,20 @@ function AppLayout() {
               <Route path="/result" element={<ResultPage dict={dict} lang={lang} isDarkMode={isDarkMode} />} />
               <Route path="/error" element={<ErrorPage dict={dict} isDarkMode={isDarkMode} />} />
               <Route path="/how-it-works" element={<XaiEducationPage dict={dict} />} />
+              <Route path="*" element={<NotFoundPage dict={dict} />} />
             </Routes>
           </Suspense>
         </main>
 
+        
+        <footer className="relative z-10 border-t border-[var(--c-text)]/10 py-6 text-center text-sm text-[var(--c-text)]/50">
+          <div className="max-w-6xl mx-auto px-6">
+            <p>© {new Date().getFullYear()} EchoWing Team. {dict.footerRights || 'All rights reserved.'}</p>
+            <p className="mt-1">
+              {dict.footerDescription || 'AI-powered bird sound recognition platform.'}
+            </p>
+          </div>
+        </footer>
         <GuideModal
           key={`${guideOpen}-${guideSection}`}
           open={guideOpen}

@@ -34,7 +34,7 @@ export default function NightHeroScene() {
       <div className="night-star-field" />
 
       <img
-        src="/night/night-left-tree.png"
+        src="/night/night-left-tree.webp"
         alt=""
         className={`absolute left-[0vw] bottom-[-10%] w-[48vw] max-w-[760px] min-w-[430px] select-none transition-all duration-[1400ms] ease-out ${
           entered
@@ -44,7 +44,7 @@ export default function NightHeroScene() {
       />
 
       <img
-        src="/night/night-right-tree.png"
+        src="/night/night-right-tree.webp"
         alt=""
         className={`absolute right-[-15vw] bottom-[-25%] w-[48vw] max-w-[1600px] min-w-[900px] select-none transition-all duration-[1500ms] ease-out ${
           entered

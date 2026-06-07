@@ -1,4 +1,5 @@
 import React, { useRef, useState, useMemo } from 'react';
+import usePageMeta from '../hooks/usePageMeta';
 import { MdCloudUpload, MdHelpOutline } from 'react-icons/md';
 import { useAudioAnalysisContext } from '../context/AudioAnalysisContext';
 import AudioRecorder from '../components/AudioRecorder/AudioRecorder';
@@ -8,6 +9,7 @@ import { isInAppBrowser } from '../utils/inAppBrowser';
 import { DEFAULT_MODEL_SELECTION, formatLandingModelOption, LANDING_MODEL_OPTIONS } from '../utils/modelLabel';
 
 export default function LandingPage({ dict, openGuide }) {
+  usePageMeta(dict.title || 'AI 鳥類聲學辨識', dict.subtitle);
   const {
     selectedFile, setSelectedFile,
     isRecordedFile, setIsRecordedFile,

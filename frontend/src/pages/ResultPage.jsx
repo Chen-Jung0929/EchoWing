@@ -1,9 +1,11 @@
 import React, { useEffect } from 'react';
+import usePageMeta from '../hooks/usePageMeta';
 import ResultPanel from '../features/results/ResultPanel';
 import { useAudioAnalysisContext } from '../context/AudioAnalysisContext';
 import { useNavigate } from 'react-router-dom';
 
 export default function ResultPage({ dict, lang, isDarkMode }) {
+  usePageMeta(dict.resultTitle || '辨識結果');
   const navigate = useNavigate();
   const { predictionResult, resetToLanding, spectrogramByIndex } = useAudioAnalysisContext();
 
