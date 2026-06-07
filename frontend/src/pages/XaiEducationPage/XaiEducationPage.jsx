@@ -3,6 +3,7 @@ import usePageMeta from '../../hooks/usePageMeta';
 import { Link } from 'react-router-dom';
 import './XaiEducationPage.css';
 import { MathBlock } from './math/MathBlock.jsx';
+import { MathText } from './math/MathText.jsx';
 import { AudioToSpectrogramAnimation } from './animations/AudioToSpectrogramAnimation.jsx';
 import { SlidingWindowAnimation } from './animations/SlidingWindowAnimation.jsx';
 import { DeconvolutionAnimation } from './animations/DeconvolutionAnimation.jsx';
@@ -132,15 +133,16 @@ export default function XaiEducationPage({ dict }) {
                   </h2>
                   <div className="space-y-4 text-[var(--c-text)]/80 leading-relaxed mb-6">
                     {section.paragraphs.map((text, idx) => (
-                      <p key={idx}>{text}</p>
+                      <p key={idx}><MathText text={text} /></p>
                     ))}
                   </div>
 
-                  {contentMeta.formula ? (
+                  {(contentMeta.formula || section.formula) ? (
                     <div className="my-8 p-6 bg-[var(--c-card)] rounded-2xl border border-[var(--c-text)]/5 shadow-sm overflow-x-auto">
-                      <MathBlock label={section.formulaCaption}>
-                        {contentMeta.formula}
-                      </MathBlock>
+                      <MathBlock
+                        math={contentMeta.formula || section.formula}
+                        label={section.formulaCaption}
+                      />
                     </div>
                   ) : null}
 

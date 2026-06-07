@@ -188,3 +188,18 @@
     transform: scaleX(0.6) !important;
   }
 }
+
+/* KaTeX inherits theme text color (default KaTeX uses black). */
+.math-block .katex,
+.math-inline .katex {
+  color: var(--c-text);
+  font-size: 1.05rem;
+}
+
+.math-inline .katex {
+  font-size: 1em;
+}
+
+.xai-section-copy .math-inline .katex {
+  font-size: 0.95em;
+}

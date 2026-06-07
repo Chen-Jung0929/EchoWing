@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MdClose } from 'react-icons/md';
 import { formatMessage } from '../../i18n';
@@ -46,13 +46,18 @@ export default function NearbyRecordsModal({
 }) {
   const titleId = useId();
   const [radiusKm, setRadiusKm] = useState(5);
+  const radiusKmRef = useRef(5);
+  const fetchGenerationRef = useRef(0);
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState('');
   const [records, setRecords] = useState([]);
   const [coords, setCoords] = useState(null);
 
+  const initialLat = initialCoordinates?.latitude;
+  const initialLng = initialCoordinates?.longitude;
+
   const loadRecords = useCallback(
-    async (latitude, longitude, radius) => {
+    async (latitude, longitude, radius, generation) => {
       setStatus('loading');
       setError('');
       try {
@@ -62,9 +67,11 @@ export default function NearbyRecordsModal({
           radiusKm: radius,
           limit: 20,
         });
+        if (generation !== fetchGenerationRef.current) return;
         setRecords(list);
         setStatus('done');
       } catch (err) {
+        if (generation !== fetchGenerationRef.current) return;
         setRecords([]);
         setError(err instanceof Error ? err.message : String(err));
         setStatus('error');
@@ -76,11 +83,13 @@ export default function NearbyRecordsModal({
   useEffect(() => {
     if (!open) {
       const t = setTimeout(() => {
+        fetchGenerationRef.current += 1;
         setStatus('idle');
         setError('');
         setRecords([]);
         setCoords(null);
         setRadiusKm(5);
+        radiusKmRef.current = 5;
       }, 0);
       return () => clearTimeout(t);
     }
@@ -91,12 +100,10 @@ export default function NearbyRecordsModal({
       setStatus('loading');
       setError('');
 
-      let resolved = initialCoordinates;
-      if (
-        !resolved ||
-        !Number.isFinite(resolved.latitude) ||
-        !Number.isFinite(resolved.longitude)
-      ) {
+      let resolved = null;
+      if (Number.isFinite(initialLat) && Number.isFinite(initialLng)) {
+        resolved = { latitude: initialLat, longitude: initialLng };
+      } else {
         try {
           resolved = await fetchCurrentCoordinates();
         } catch {
@@ -117,15 +124,23 @@ export default function NearbyRecordsModal({
       }
 
       setCoords(resolved);
-      await loadRecords(resolved.latitude, resolved.longitude, radiusKm);
+      const generation = fetchGenerationRef.current + 1;
+      fetchGenerationRef.current = generation;
+      await loadRecords(
+        resolved.latitude,
+        resolved.longitude,
+        radiusKmRef.current,
+        generation
+      );
     }
 
     resolveAndFetch();
 
     return () => {
       cancelled = true;
+      fetchGenerationRef.current += 1;
     };
-  }, [open, initialCoordinates, loadRecords]);
+  }, [open, initialLat, initialLng, loadRecords]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -138,10 +153,13 @@ export default function NearbyRecordsModal({
 
   const handleRadiusChange = (e) => {
     const next = Number(e.target.value);
+    if (!Number.isFinite(next)) return;
     setRadiusKm(next);
-    if (coords) {
-      loadRecords(coords.latitude, coords.longitude, next);
-    }
+    radiusKmRef.current = next;
+    if (!coords) return;
+    const generation = fetchGenerationRef.current + 1;
+    fetchGenerationRef.current = generation;
+    loadRecords(coords.latitude, coords.longitude, next, generation);
   };
 
   const recordMarkers = useMemo(
@@ -200,13 +218,14 @@ export default function NearbyRecordsModal({
               {dict.nearbyRecordsRadiusLabel}
             </label>
             <select
-              value={radiusKm}
+              value={String(radiusKm)}
               onChange={handleRadiusChange}
-              disabled={status === 'loading' || status === 'no_location'}
+              disabled={status === 'no_location'}
+              aria-busy={status === 'loading'}
               className={selectClass}
             >
               {RADIUS_OPTIONS.map((km) => (
-                <option key={km} value={km}>
+                <option key={km} value={String(km)}>
                   {formatMessage(dict.nearbyRecordsRadiusOption, { km })}
                 </option>
               ))}
