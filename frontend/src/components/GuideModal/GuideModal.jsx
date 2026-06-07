@@ -104,9 +104,9 @@ export default function GuideModal({
               {dict.guideModelsComparison}
             </p>
             <div className="space-y-3">
-              {dict.guideModels.map((model) => (
+              {(Array.isArray(dict?.guideModels) ? dict.guideModels : []).map((model) => (
                 <article
-                  key={model.name}
+                  key={model?.name || Math.random()}
                   className="rounded-xl border border-[var(--c-text)]/10 bg-[var(--c-card)]/60 p-4"
                 >
                   <h4 className="font-black text-[var(--c-text)]">{model.name}</h4>

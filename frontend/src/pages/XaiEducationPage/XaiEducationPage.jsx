@@ -27,7 +27,7 @@ function AnimationSlot({ type, dict }) {
 export default function XaiEducationPage({ dict }) {
   const xaiDict = dict.xaiEducation || {};
   usePageMeta(xaiDict.navLabel, xaiDict.subtitle);
-    const sections = xaiDict.sections || [];
+  const sections = Array.isArray(xaiDict.sections) ? xaiDict.sections : [];
 
   useEffect(() => {
     const script = document.createElement('script');

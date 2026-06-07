@@ -73,8 +73,7 @@ const lzh = {
   "taskLabel": "聲學辨識",
   "modelUsed": "所用模型",
   "modelSelectionLabel": "模型",
-  "modelTagFast": "速",
-  "modelPerchFast": "Perch v2 Fast (Google TFLite)",
+  "modelPerchFast": 'Perch v2 (Google)',
   "modelBirdnet": "BirdNET v2.4 (Cornell)",
   "modelSilic": "SILIC (Academia Sinica)",
   "modelHintLearnMore": "詳觀",
@@ -234,6 +233,7 @@ const lzh = {
       "window": "五秒",
       "type": "專案模型",
       "source": "Academia Sinica",
+      "link": "https://github.com/RedbirdTaiwan/silic",
       "citation": "中研院所造，五秒一窗。"
     }
   ],

@@ -73,8 +73,7 @@ const ko = {
   "taskLabel": "음향 인식 분석",
   "modelUsed": "사용 모델",
   "modelSelectionLabel": "모델",
-  "modelTagFast": "빠름",
-  "modelPerchFast": "Perch v2 Fast (Google TFLite)",
+  "modelPerchFast": 'Perch v2 (Google)',
   "modelBirdnet": "BirdNET v2.4 (Cornell)",
   "modelSilic": "SILIC (Academia Sinica)",
   "modelHintLearnMore": "자세히 보기",
@@ -218,6 +217,7 @@ const ko = {
       "window": "5초",
       "type": "범용 조류 음향 모델",
       "source": "Google Research",
+      "link": "https://github.com/RedbirdTaiwan/silic",
       "citation": "Google Research에서 개발한 조류 음향 모델입니다.",
       "link": "https://github.com/google-research/perch"
     },
@@ -226,6 +226,7 @@ const ko = {
       "window": "3초",
       "type": "조류 음향 분류 모델",
       "source": "Cornell Lab of Ornithology",
+      "link": "https://github.com/RedbirdTaiwan/silic",
       "citation": "Cornell Lab of Ornithology에서 제공하는 조류 음향 분류 모델입니다.",
       "link": "https://birdnet.cornell.edu/"
     },
@@ -234,6 +235,7 @@ const ko = {
       "window": "5초",
       "type": "실험적 / 프로젝트 전용 모델",
       "source": "Academia Sinica",
+      "link": "https://github.com/RedbirdTaiwan/silic",
       "citation": "Academia Sinica에서 유래한 실험적 조류 음향 모델입니다."
     }
   ],

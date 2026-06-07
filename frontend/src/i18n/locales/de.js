@@ -74,8 +74,7 @@ const de = {
   taskLabel: "Akustische Analyse",
   modelUsed: "Modell",
   modelSelectionLabel: "Modell",
-  modelTagFast: "schnell",
-  "modelPerchFast": "Perch v2 Fast (Google TFLite)",
+  "modelPerchFast": 'Perch v2 (Google)',
   modelBirdnet: "BirdNET v2.4 (Cornell)",
   modelSilic: "SILIC (Academia Sinica)",
   modelHintLearnMore: "Mehr erfahren",
@@ -235,6 +234,7 @@ const de = {
       window: "5 Sekunden",
       type: "Experimentelles / projektspezifisches Modell",
       source: "Academia Sinica",
+      link: 'https://github.com/RedbirdTaiwan/silic',
       citation: "Academia Sinica-Vogelakustikmodell mit 5-Sekunden-Analysefenstern."
     }
   ],

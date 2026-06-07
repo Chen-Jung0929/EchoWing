@@ -9,27 +9,21 @@ export function normalizeModelName(modelName) {
   return 'birdnet';
 }
 
-/** 首頁模型選單（皆為 fast 推論路徑）。 */
 export const LANDING_MODEL_OPTIONS = [
-  { value: 'birdnet', tag: 'fast' },
-  { value: 'silic', tag: 'fast' },
-  { value: 'perch-fast', tag: 'fast' },
+  { value: 'birdnet' },
+  { value: 'silic' },
+  { value: 'perch-fast' },
 ];
 
 export const DEFAULT_MODEL_SELECTION = 'birdnet';
 
-function modelOptionTag(_modelName, dict) {
-  return dict.modelTagFast;
-}
 
 /**
  * @param {string | undefined | null} modelName
  * @param {import('../i18n').LocaleMessages} dict
  */
 export function formatLandingModelOption(modelName, dict) {
-  const name = getModelDisplayLabel(modelName, dict);
-  const tag = modelOptionTag(modelName, dict);
-  return `${name} · ${tag}`;
+  return getModelDisplayLabel(modelName, dict);
 }
 
 /**

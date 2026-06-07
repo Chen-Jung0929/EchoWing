@@ -73,8 +73,7 @@ const yue = {
   "taskLabel": "聲學辨識分析",
   "modelUsed": "使用模型",
   "modelSelectionLabel": "模型",
-  "modelTagFast": "fast",
-  "modelPerchFast": "Perch v2 Fast (Google TFLite)",
+  "modelPerchFast": 'Perch v2 (Google)',
   "modelBirdnet": "BirdNET v2.4 (Cornell)",
   "modelSilic": "SILIC (Academia Sinica)",
   "modelHintLearnMore": "了解更多",
@@ -234,6 +233,7 @@ const yue = {
       "window": "5 秒",
       "type": "實驗性／專案特定模型",
       "source": "Academia Sinica",
+      "link": "https://github.com/RedbirdTaiwan/silic",
       "citation": "中央研究院團隊開發嘅鳥類聲學辨識模型，用 5 秒分析窗推論。"
     }
   ],

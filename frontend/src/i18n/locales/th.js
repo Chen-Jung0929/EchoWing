@@ -73,8 +73,7 @@ const th = {
   "taskLabel": "การวิเคราะห์และระบุเสียง",
   "modelUsed": "โมเดลที่ใช้",
   "modelSelectionLabel": "โมเดล",
-  "modelTagFast": "เร็ว",
-  "modelPerchFast": "Perch v2 Fast (Google TFLite)",
+  "modelPerchFast": 'Perch v2 (Google)',
   "modelBirdnet": "BirdNET v2.4 (Cornell)",
   "modelSilic": "SILIC (Academia Sinica)",
   "modelHintLearnMore": "เรียนรู้เพิ่มเติม",
@@ -234,6 +233,7 @@ const th = {
       "window": "5 วินาที",
       "type": "โมเดลการทดลอง",
       "source": "Academia Sinica",
+      "link": "https://github.com/RedbirdTaiwan/silic",
       "citation": "โมเดลเสียงนกของ Academia Sinica ใช้หน้าต่าง 5 วินาที"
     }
   ],

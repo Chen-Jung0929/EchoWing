@@ -73,8 +73,7 @@ const ja = {
   "taskLabel": "音響識別分析",
   "modelUsed": "使用モデル",
   "modelSelectionLabel": "モデル",
-  "modelTagFast": "高速",
-  "modelPerchFast": "Perch v2 Fast (Google TFLite)",
+  "modelPerchFast": 'Perch v2 (Google)',
   "modelBirdnet": "BirdNET v2.4 (Cornell)",
   "modelSilic": "SILIC (Academia Sinica)",
   "modelHintLearnMore": "詳しく見る",
@@ -218,6 +217,7 @@ const ja = {
       "window": "5秒",
       "type": "汎用鳥類音響モデル",
       "source": "Google Research",
+      "link": "https://github.com/RedbirdTaiwan/silic",
       "citation": "Google Researchが開発した鳥類音響モデルです。",
       "link": "https://github.com/google-research/perch"
     },
@@ -226,6 +226,7 @@ const ja = {
       "window": "3秒",
       "type": "鳥類音響分類モデル",
       "source": "Cornell Lab of Ornithology",
+      "link": "https://github.com/RedbirdTaiwan/silic",
       "citation": "Cornell Lab of Ornithologyが提供する鳥類音響分類モデルです。",
       "link": "https://birdnet.cornell.edu/"
     },
@@ -234,6 +235,7 @@ const ja = {
       "window": "5秒",
       "type": "実験的・プロジェクト固有モデル",
       "source": "Academia Sinica",
+      "link": "https://github.com/RedbirdTaiwan/silic",
       "citation": "Academia Sinicaに由来する実験的な鳥類音響モデルです。"
     }
   ],

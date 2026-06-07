@@ -66,42 +66,27 @@ if (import.meta.env && import.meta.env.DEV) {
   messages.pseudo = createPseudoLocale(messages.en);
 }
 
-function createSafeDict(dict, fallbackDict, path = '') {
-  if (typeof Proxy === 'undefined') return dict;
-  
-  return new Proxy(dict, {
-    get(target, prop) {
-      if (typeof prop === 'symbol' || prop === '$$typeof' || prop === 'toJSON') {
-        return target[prop];
-      }
-      
-      let val = target[prop];
-      let isMissing = !(prop in target) || val === undefined;
-      
-      if (isMissing) {
-        const fullPath = path ? `${path}.${prop}` : prop;
-        if (import.meta.env && import.meta.env.DEV) {
-          console.warn(`[i18n] Missing key: ${fullPath}`);
-          return `[missing: ${fullPath}]`;
-        } else {
-          console.warn(`[i18n] Missing key in production: ${fullPath}. Falling back to English.`);
-          val = fallbackDict ? fallbackDict[prop] : undefined;
-        }
-      }
-      
-      if (val && typeof val === 'object' && !Array.isArray(val)) {
-        return createSafeDict(val, fallbackDict?.[prop], path ? `${path}.${prop}` : prop);
-      }
-      
-      if (Array.isArray(val)) {
-         return val.map((v, i) => 
-           (v && typeof v === 'object') ? createSafeDict(v, fallbackDict?.[prop]?.[i], `${path ? path + '.' : ''}${prop}[${i}]`) : v
-         );
-      }
-      
-      return val;
+function deepMerge(base, override) {
+  if (Array.isArray(base)) {
+    return Array.isArray(override) ? override : base;
+  }
+
+  if (
+    base &&
+    typeof base === 'object' &&
+    !Array.isArray(base) &&
+    override &&
+    typeof override === 'object' &&
+    !Array.isArray(override)
+  ) {
+    const out = { ...base };
+    for (const key of Object.keys(override)) {
+      out[key] = key in base ? deepMerge(base[key], override[key]) : override[key];
     }
-  });
+    return out;
+  }
+
+  return override === undefined || override === null ? base : override;
 }
 
 /**
@@ -109,8 +94,8 @@ function createSafeDict(dict, fallbackDict, path = '') {
  * @returns {LocaleMessages}
  */
 export function getDict(lang) {
-  const baseDict = messages[lang] || messages.en;
-  return createSafeDict(baseDict, messages.en);
+  const selected = messages[lang] ?? messages.en;
+  return deepMerge(messages.en, selected);
 }
 
 /**
