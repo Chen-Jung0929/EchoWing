@@ -2,6 +2,10 @@
 const fil = {
   title: 'EchoWing',
   subtitle: 'Pagkilala sa Tunog ng Ibon',
+  notFound: 'Ang pahinang hinahanap mo ay hindi umiiral.',
+  notAvailable: 'Wala',
+  unknownError: 'Hindi kilalang backend error',
+
   uploadBtn: 'Mag-upload ng audio o video',
   uploadFormatsHint:
     'WAV, MP3, FLAC, OGG, M4A, AAC, WEBM; gagamitin ang audio track ng mga video file (max 30 s, 20 MB).',
@@ -547,6 +551,49 @@ const fil = {
         }
     ]
   }
+,
+  loaderPreprocessing: 'Pino-proseso at pinuputol ang audio',
+  loaderPreprocessingHint: 'Pinipilit na Mono, binababa ang sampling sa 32kHz, at hinahati sa 5-segundong bahagi gamit ang Web Audio API sa frontend.',
+  spectrogramEventLabels: 'Mga label ng oras ng kaganapan ng species',
+  xaiGenerating: 'Binubuo ang XAI...',
+  xaiGeneratingHint: 'Kinakalkula ang interpretability heatmap... Maaari mong i-save, ibahagi, o i-print ang ulat kapag tapos na.',
+  spectrogramNoData: 'Walang spectrogram data',
+  spectrogramTitle: 'Spectrogram',
+  spectrogramDescription: 'X-axis ay oras, Y-axis ay Mel frequency; ang mga puting taluktok sa translucent na bahagi sa ibaba ay nagpapakita ng XAI temporal importance (mas mataas ay mas kritikal).',
+  spectrogramClickToEnlarge: 'I-click ang spectrogram para palakihin',
+  spectrogramOverviewSummary: 'Pangkalahatang-ideya · {segmentCount} segments · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramChunkSummary: 'Analysis window {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramEnlarge: 'Palakihin ang spectrogram',
+  xaiRedHeatmapHint: 'Ang mas malalim na pula ay nagpapahiwatig ng mas mataas na atensyon mula sa AI model habang kinikilala.',
+  visualizerChunkSummary: 'Bahagi {chunkIndex} · 5.0s · 32kHz · Mono',
+  pageMetaTitleSuffix: 'EchoWing - AI Bird Sound Recognition',
+  loadingTitle: 'Sinusuri...',
+  apiErrorAudioFormat: 'Nabigo ang kahilingan sa pagsusuri ng audio',
+  apiErrorStream: 'Nabigo ang kahilingan sa pagsusuri ng audio stream',
+  voteDisclaimer: 'Disclaimer: Ang mga AI model sa website na ito ay nagbibigay lamang ng pagsusuri at mga mungkahi, hindi mga pinal na desisyon. Hindi namin ginagarantiyahan ang ganap na katumpakan.',
+  voteEmptyOverview: 'Walang mga bahagi na umabot sa {threshold}% confidence threshold. Walang maaasahang pangkalahatang-ideya ng species na magagamit.',
+  voteEmptySuggestion: 'Isaalang-alang ang pag-record muli ng isang bahagi na may malinaw na tawag ng ibon, o suriin ang mga kandidatong mababa ang kumpyansa at suporta sa pagpapasya bawat bahagi.',
+  voteResultOverview: 'Buod ng boto: Lumabas ang {species} sa Top predictions para sa {votes}/{validCount} analysis windows (kabuuang rate ng boto na {pct}%). Pangunahin sa mga bahagi na {windows}.',
+  voteResultSuggestion: 'Gamitin ang pangkalahatang-ideya bilang sanggunian para sa buong recording. Kung malaki ang pagkakaiba ng mga bahagi, i-click ang timeline para sa mga detalye.',
+  distanceMeters: '{meters} m',
+  distanceKm: '{km} km',
+  durationSeconds: '{s} s',
+  durationMinSec: '{m} m {s} s',
+  pdfCheckEmptyPage: 'Masyadong kaunti ang nilalaman ng pahina {page} (posibleng blangko)',
+  pdfCheckOrphanHeading: 'Maaaring may naulilang pamagat ang pahina {page} sa ibaba',
+  pdfCheckUnsearchable: 'Hindi makapag-extract ng sapat na text ang PDF (hindi ma-search)',
+  pdfCheckTooManyPages: 'Abnormal na bilang ng pahina: {count} pahina (inaasahan ≤ {max})',
+  spectrogramXLabel: 'Oras (segundo)',
+  spectrogramYLabel: 'Mel frequency',
+  spectrogramIntensity: 'Intensity',
+  timelineSingleEventEdge: 'Natagpuan ang {species} sa {time}s (kumpyansa ng kaganapan {pct}%). Ang kaganapang ito ay malapit sa dulo ng recording, maaaring mas mababa ang deconvolution coverage, mangyaring sumangguni nang may pag-iingat.',
+  timelineSingleEventNormal: 'Natagpuan ang {species} sa {time}s, kumpyansa ng kaganapan {pct}% (normal threshold {minPct}%). Ipinapahiwatig nito ang malakas na katangian ng tunog ng species sa panahong ito.',
+  timelineSingleEventSuggestion: 'Nahuhulog ang kaganapang ito sa analysis window {window}. Iminumungkahi ang cross-referencing kasama ang spectrogram at XAI temporal importance, at pag-verify gamit ang field observations o mga larawan.',
+  timelineNoEvents: 'Walang natukoy ang timeline na malinaw na kaganapan ng vocalization na umabot sa confidence threshold (normal ≥{minPct}%, gilid ≥{boundaryPct}%).',
+  timelineNoEventsSuggestion: 'Iminumungkahi na suriin ang buong spectrogram at orihinal na audio. Kung inaasahan ang mga tawag ng ibon, subukang mag-record muli sa isang mas tahimik na kapaligiran o pahabain ang tagal.',
+  timelineMultipleEvents: 'Nakita ng timeline ang {count} na kaganapan ng species, {speciesCount} na uri ng ibon; ang pinakamataas na kumpyansa ng kaganapan ay {species} ({pct}%).',
+  timelineMultipleEventsSuggestion: 'Iminumungkahi ang paggamit ng mga kaganapan sa timeline bilang isang sanggunian na buod. Mag-click sa isang kaganapan upang tingnan ang mga species at spectrogram para sa panahong iyon. Kung ginagamit para sa ecological surveys, dagdagan ng field observations o mga larawan.',
+  pdfRangeTo: '{from} hanggang {to}'
 };
 
 export default fil;

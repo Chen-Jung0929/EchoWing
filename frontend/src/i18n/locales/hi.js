@@ -2,6 +2,10 @@
 const hi = {
   title: 'EchoWing',
   subtitle: 'पक्षी ध्वनि पहचान',
+  notFound: 'आप जिस पेज को खोज रहे हैं वह मौजूद नहीं है।',
+  notAvailable: 'उपलब्ध नहीं',
+  unknownError: 'अज्ञात बैकएंड त्रुटि',
+
   uploadBtn: 'ऑडियो या वीडियो अपलोड करें',
   uploadFormatsHint:
     'WAV, MP3, FLAC, OGG, M4A, AAC, WEBM; वीडियो फ़ाइलें अपने ऑडियो ट्रैक का उपयोग करती हैं (अधिकतम 30 सेकंड, 20 MB)।',
@@ -547,6 +551,49 @@ const hi = {
         }
     ]
   }
+,
+  loaderPreprocessing: 'ऑडियो को प्रोसेस और चंक किया जा रहा है',
+  loaderPreprocessingHint: 'फ़्रंटएंड पर Web Audio API के माध्यम से मोनो, 32kHz डाउनसैंपलिंग और 5-सेकंड चंकिंग की जा रही है।',
+  spectrogramEventLabels: 'प्रजाति घटना समय लेबल',
+  xaiGenerating: 'XAI जनरेट हो रहा है...',
+  xaiGeneratingHint: 'इंटरप्रिटेबिलिटी हीटमैप की गणना की जा रही है... समाप्त होने पर आप रिपोर्ट को सहेज सकते हैं, साझा कर सकते हैं या प्रिंट कर सकते हैं।',
+  spectrogramNoData: 'कोई स्पेक्ट्रोग्राम डेटा नहीं',
+  spectrogramTitle: 'स्पेक्ट्रोग्राम',
+  spectrogramDescription: 'X-अक्ष समय है, Y-अक्ष Mel आवृत्ति है; नीचे पारदर्शी क्षेत्र में सफेद चोटियां XAI लौकिक महत्व को इंगित करती हैं (अधिक महत्वपूर्ण है)।',
+  spectrogramClickToEnlarge: 'बड़ा करने के लिए स्पेक्ट्रोग्राम पर क्लिक करें',
+  spectrogramOverviewSummary: 'अवलोकन · {segmentCount} खंड · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramChunkSummary: 'विश्लेषण विंडो {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramEnlarge: 'स्पेक्ट्रोग्राम बड़ा करें',
+  xaiRedHeatmapHint: 'गहरा लाल रंग पहचान के दौरान AI मॉडल के अधिक ध्यान को दर्शाता है।',
+  visualizerChunkSummary: 'खंड {chunkIndex} · 5.0s · 32kHz · मोनो',
+  pageMetaTitleSuffix: 'EchoWing - AI पक्षी ध्वनि पहचान',
+  loadingTitle: 'विश्लेषण हो रहा है...',
+  apiErrorAudioFormat: 'ऑडियो विश्लेषण अनुरोध विफल',
+  apiErrorStream: 'ऑडियो स्ट्रीम विश्लेषण अनुरोध विफल',
+  voteDisclaimer: 'अस्वीकरण: इस वेबसाइट पर AI मॉडल केवल विश्लेषण और सुझाव प्रदान करते हैं, अंतिम निर्णय नहीं। हम पूर्ण सटीकता की गारंटी नहीं देते हैं, न ही हम भविष्यवाणी के वादे करते हैं।',
+  voteEmptyOverview: 'कोई भी खंड {threshold}% विश्वास सीमा तक नहीं पहुंचा। कोई विश्वसनीय प्रजाति अवलोकन उपलब्ध नहीं है।',
+  voteEmptySuggestion: 'स्पष्ट पक्षी कॉल के साथ एक खंड को फिर से रिकॉर्ड करने पर विचार करें, या कम विश्वास वाले उम्मीदवारों और निर्णय समर्थन खंड दर खंड की जांच करें।',
+  voteResultOverview: 'वोट सारांश: {species} {votes}/{validCount} विश्लेषण विंडो के लिए शीर्ष भविष्यवाणियों में दिखाई दिया (समग्र वोट दर {pct}%)। मुख्य रूप से खंडों {windows} में।',
+  voteResultSuggestion: 'संपूर्ण रिकॉर्डिंग के संदर्भ के रूप में अवलोकन का उपयोग करें। यदि खंड बहुत भिन्न हैं, तो विवरण के लिए समयरेखा पर क्लिक करें।',
+  distanceMeters: '{meters} m',
+  distanceKm: '{km} km',
+  durationSeconds: '{s} s',
+  durationMinSec: '{m} m {s} s',
+  pdfCheckEmptyPage: 'पृष्ठ {page} में सामग्री बहुत कम है (संभवतः खाली है)',
+  pdfCheckOrphanHeading: 'पृष्ठ {page} के निचले भाग में एक अनाथ शीर्षक हो सकता है',
+  pdfCheckUnsearchable: 'PDF पर्याप्त पाठ नहीं निकाल सकता (खोजने योग्य नहीं)',
+  pdfCheckTooManyPages: 'असामान्य पृष्ठ संख्या: {count} पृष्ठ (अपेक्षित ≤ {max})',
+  spectrogramXLabel: 'समय (सेकंड)',
+  spectrogramYLabel: 'Mel आवृत्ति',
+  spectrogramIntensity: 'तीव्रता',
+  timelineSingleEventEdge: '{time}s पर {species} का पता चला (घटना विश्वास {pct}%)। यह घटना रिकॉर्डिंग के किनारे के पास है, डिकोनवोल्यूशन कवरेज कम हो सकता है, कृपया सावधानी से संदर्भ लें।',
+  timelineSingleEventNormal: '{time}s पर {species} का पता चला, घटना विश्वास {pct}% (सामान्य सीमा {minPct}%)। यह इस अवधि में मजबूत प्रजाति ध्वनिक विशेषताओं को इंगित करता है।',
+  timelineSingleEventSuggestion: 'यह घटना विश्लेषण विंडो {window} में आती है। स्पेक्ट्रोग्राम और XAI लौकिक महत्व के साथ क्रॉस-रेफ़रेंसिंग का सुझाव दें, और फ़ील्ड अवलोकनों या छवियों के साथ सत्यापन करें।',
+  timelineNoEvents: 'समयरेखा ने विश्वास सीमा (सामान्य ≥{minPct}%, किनारे ≥{boundaryPct}%) तक पहुंचने वाली कोई स्पष्ट स्वर घटना का पता नहीं लगाया।',
+  timelineNoEventsSuggestion: 'पूर्ण स्पेक्ट्रोग्राम और मूल ऑडियो की समीक्षा करने का सुझाव दें। यदि पक्षी कॉल की उम्मीद थी, तो शांत वातावरण में फिर से रिकॉर्ड करने या अवधि बढ़ाने का प्रयास करें।',
+  timelineMultipleEvents: 'समयरेखा ने {count} प्रजाति की घटनाओं, {speciesCount} पक्षी प्रजातियों का पता लगाया; उच्चतम घटना विश्वास {species} ({pct}%) है।',
+  timelineMultipleEventsSuggestion: 'संदर्भ सारांश के रूप में समयरेखा घटनाओं का उपयोग करने का सुझाव दें। उस अवधि के लिए प्रजातियों और स्पेक्ट्रोग्राम को देखने के लिए किसी घटना पर क्लिक करें। यदि पारिस्थितिक सर्वेक्षण के लिए उपयोग किया जाता है, तो फ़ील्ड अवलोकनों या छवियों के साथ पूरक करें।',
+  pdfRangeTo: '{from} से {to}'
 };
 
 export default hi;

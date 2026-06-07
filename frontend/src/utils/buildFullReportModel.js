@@ -76,7 +76,7 @@ export function buildFullReportModel({
     sourceName,
     modelName,
     confidenceThreshold: resolvedThreshold,
-    analysisId: firstOk?.analysis_id ?? chunks[0]?.analysis_id ?? 'report',
+    analysisId: firstOk?.analysis_id || chunks[0]?.analysis_id || 'report',
     generatedAt: new Date().toISOString(),
     decisionSupport: buildTimelineDecisionSupport(timeline, { windowSec, dict }),
     okChunkCount: okChunks.length,

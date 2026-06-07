@@ -33,7 +33,7 @@ export function SlidingWindowAnimation({ dict }) {
       </div>
 
       <p className="anim-caption mt-4 text-xs text-center text-[var(--c-text)]/60">
-        {dict?.xaiEducation?.animations?.slidingWindow || 'Each window receives its own species score.'}
+        {dict?.xaiEducation?.animations?.slidingWindow}
       </p>
     </div>
   );

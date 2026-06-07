@@ -1,5 +1,8 @@
 /** @type {import('../index.js').LocaleMessages} */
 const ms = {
+  notFound: 'Halaman yang anda cari tidak wujud.',
+  notAvailable: 'Tiada',
+  unknownError: 'Ralat bahagian belakang tidak diketahui',
   title: "EchoWing",
   subtitle: "Pengenalpastian bunyi burung",
   uploadBtn: "Muat naik audio atau video",
@@ -519,6 +522,49 @@ const ms = {
     }
   ]
 }
+,
+  loaderPreprocessing: 'Sedang memproses dan memotong audio',
+  loaderPreprocessingHint: 'Memaksa Mono, menurunkan sampel ke 32kHz, dan memotong kepada segmen 5 saat melalui Web Audio API pada bahagian hadapan.',
+  spectrogramEventLabels: 'Label masa acara spesies',
+  xaiGenerating: 'Menjana XAI...',
+  xaiGeneratingHint: 'Menghitung peta haba kebolehtafsiran... Anda boleh menyimpan, berkongsi, atau mencetak laporan setelah selesai.',
+  spectrogramNoData: 'Tiada data spektrogram',
+  spectrogramTitle: 'Spektrogram',
+  spectrogramDescription: 'Paksi-X ialah masa, paksi-Y ialah kekerapan Mel; puncak putih di kawasan separuh lutsinar di bawah menunjukkan kepentingan masa XAI (lebih tinggi lebih kritikal).',
+  spectrogramClickToEnlarge: 'Klik spektrogram untuk membesarkan',
+  spectrogramOverviewSummary: 'Gambaran keseluruhan · {segmentCount} segmen · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramChunkSummary: 'Tetingkap analisis {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramEnlarge: 'Besarkan spektrogram',
+  xaiRedHeatmapHint: 'Merah yang lebih pekat menunjukkan perhatian yang lebih tinggi dari model AI semasa pengecaman.',
+  visualizerChunkSummary: 'Segmen {chunkIndex} · 5.0s · 32kHz · Mono',
+  pageMetaTitleSuffix: 'EchoWing - Pengenalan Bunyi Burung AI',
+  loadingTitle: 'Menganalisis...',
+  apiErrorAudioFormat: 'Permintaan analisis audio gagal',
+  apiErrorStream: 'Permintaan analisis strim audio gagal',
+  voteDisclaimer: 'Penafian: Model AI di laman web ini hanya memberikan analisis dan cadangan, bukan keputusan akhir. Kami tidak menjamin ketepatan mutlak, tidak juga kami membuat janji ramalan.',
+  voteEmptyOverview: 'Tiada segmen yang mencapai ambang keyakinan {threshold}%. Tiada gambaran keseluruhan spesies yang boleh dipercayai.',
+  voteEmptySuggestion: 'Pertimbangkan untuk merakam semula segmen dengan panggilan burung yang jelas, atau periksa calon berkeyakinan rendah dan sokongan keputusan bahagian demi bahagian.',
+  voteResultOverview: 'Ringkasan undian: {species} muncul dalam ramalan teratas untuk tetingkap analisis {votes}/{validCount} (kadar undian keseluruhan {pct}%). Terutamanya dalam segmen {windows}.',
+  voteResultSuggestion: 'Gunakan gambaran keseluruhan sebagai rujukan untuk keseluruhan rakaman. Jika segmen sangat berbeza, klik garis masa untuk mendapatkan butiran.',
+  distanceMeters: '{meters} m',
+  distanceKm: '{km} km',
+  durationSeconds: '{s} s',
+  durationMinSec: '{m} m {s} s',
+  pdfCheckEmptyPage: 'Halaman {page} mempunyai kandungan yang terlalu sedikit (mungkin kosong)',
+  pdfCheckOrphanHeading: 'Halaman {page} mungkin mempunyai tajuk yatim di bahagian bawah',
+  pdfCheckUnsearchable: 'PDF tidak dapat mengekstrak teks yang cukup (tidak boleh dicari)',
+  pdfCheckTooManyPages: 'Jumlah halaman tidak normal: {count} halaman (dijangkakan ≤ {max})',
+  spectrogramXLabel: 'Masa (saat)',
+  spectrogramYLabel: 'Kekerapan Mel',
+  spectrogramIntensity: 'Intensiti',
+  timelineSingleEventEdge: '{species} dikesan pada {time}s (keyakinan acara {pct}%). Peristiwa ini berhampiran tepi rakaman, liputan dekonvolusi mungkin lebih rendah, sila rujuk dengan berhati-hati.',
+  timelineSingleEventNormal: '{species} dikesan pada {time}s, keyakinan acara {pct}% (ambang biasa {minPct}%). Ini menunjukkan ciri akustik spesies yang kuat dalam tempoh ini.',
+  timelineSingleEventSuggestion: 'Peristiwa ini jatuh dalam tetingkap analisis {window}. Cadangkan rujukan silang dengan spektrogram dan kepentingan masa XAI, dan sahkan dengan pemerhatian medan atau imej.',
+  timelineNoEvents: 'Garis masa tidak mengesan sebarang peristiwa penyuaraan yang jelas yang mencapai ambang keyakinan (biasa ≥{minPct}%, tepi ≥{boundaryPct}%).',
+  timelineNoEventsSuggestion: 'Cadangkan menyemak spektrogram penuh dan audio asal. Jika panggilan burung dijangka, cuba rakam semula dalam persekitaran yang lebih sunyi atau memanjangkan tempoh.',
+  timelineMultipleEvents: 'Garis masa mengesan {count} peristiwa spesies, {speciesCount} spesies burung; keyakinan acara tertinggi ialah {species} ({pct}%).',
+  timelineMultipleEventsSuggestion: 'Cadangkan menggunakan acara garis masa sebagai ringkasan rujukan. Klik acara untuk melihat spesies dan spektrogram untuk tempoh itu. Jika digunakan untuk tinjauan ekologi, lengkapkan dengan pemerhatian medan atau imej.',
+  pdfRangeTo: '{from} hingga {to}'
 };
 
 export default ms;

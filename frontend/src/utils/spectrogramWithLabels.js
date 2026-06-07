@@ -179,8 +179,9 @@ export function renderSpectrogramWithLabels(spectrogram, options = {}) {
   if (showAxes) {
     ctx.fillStyle = '#4b5563';
     ctx.font = '11px Helvetica, Arial, sans-serif';
-    const xLabel = lang === 'zh' ? '時間 (秒)' : 'Time (seconds)';
-    const yLabel = lang === 'zh' ? 'Mel 頻率' : 'Mel frequency';
+    const dict = getDict(lang);
+  const xLabel = dict.spectrogramXLabel || 'Time (seconds)';
+    const yLabel = dict.spectrogramYLabel || 'Mel frequency';
     ctx.textAlign = 'center';
     ctx.fillText(xLabel, axisPadL + resolvedPlotW / 2, plotY + plotSize.height + 16);
     ctx.save();
@@ -196,7 +197,7 @@ export function renderSpectrogramWithLabels(spectrogram, options = {}) {
     ctx.font = '9px Helvetica, Arial, sans-serif';
     ctx.textAlign = 'left';
     ctx.fillStyle = '#6b7280';
-    ctx.fillText(lang === 'zh' ? '強度' : 'Intensity', legendX, legendY - 2);
+    ctx.fillText(dict.spectrogramIntensity || 'Intensity', legendX, legendY - 2);
     const grad = ctx.createLinearGradient(legendX, legendY + 4, legendX + 100, legendY + 4);
     grad.addColorStop(0, 'rgb(15,23,42)');
     grad.addColorStop(0.35, 'rgb(59,130,246)');

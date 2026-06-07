@@ -180,7 +180,7 @@ export function chunkTimeRangeLabel(startSec, windowSec = CHUNK_DURATION_SEC) {
  * @param {string} [modelName]
  */
 export function displayChunksForModel(chunks, modelName) {
-  const model = modelName ?? chunks?.[0]?.model_name ?? 'perch';
+  const model = modelName || chunks?.[0]?.model_name || 'perch';
   const windowSec = modelWindowSec(model);
   const seen = new Set();
   const out = [];

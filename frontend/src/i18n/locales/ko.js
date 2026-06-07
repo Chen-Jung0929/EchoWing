@@ -1,5 +1,8 @@
 /** @type {import('../index.js').LocaleMessages} */
 const ko = {
+  notFound: '찾으시는 페이지가 없습니다.',
+  notAvailable: '해당 없음',
+  unknownError: '알 수 없는 백엔드 오류',
   "title": "EchoWing",
   "subtitle": "새소리 인식",
   "uploadBtn": "오디오 또는 동영상 업로드",
@@ -206,7 +209,7 @@ const ko = {
     "모델을 선택하고 “처리 및 식별”을 누릅니다.",
     "예측, 스펙트로그램, XAI, 활동 타임라인을 확인합니다.",
     "필요한 경우에만 명시적으로 확인하여 현장 메모를 저장합니다.",
-    "In in-app browsers (Messenger, Instagram, etc.), recording may be unavailable—upload a file or open in Safari/Chrome instead."
+    "인앱 브라우저(Messenger, Instagram 등)에서는 녹음이 불가능할 수 있습니다. 대신 파일을 업로드하거나 Safari/Chrome에서 열어주세요."
   ],
   "guideModelsTitle": "모델 안내",
   "guideModels": [
@@ -253,7 +256,7 @@ const ko = {
     "선택한 모델에 맞는 분석 창으로 나누고 후보 종을 예측합니다.",
     "예비 결과를 먼저 스트리밍한 뒤 XAI 히트맵을 생성합니다.",
     "XAI와 타임라인은 모델 민감도에 대한 추정이며 생물학적 사실을 보장하지 않습니다.",
-    "The timeline estimates activity from window-level evidence and should be interpreted cautiously."
+    "타임라인은 창 수준의 증거를 기반으로 활동을 추정하므로 신중하게 해석해야 합니다."
   ],
   "guidePrivacyTitle": "개인정보 및 데이터 사용",
   "guidePrivacyBody": "업로드한 오디오는 분석을 위해 처리되며 영구 저장하거나 모델 학습에 사용하지 않는 것이 원칙입니다. 현장 메모, 관찰자 메모, GPS는 사용자가 저장을 명시적으로 확인하고 Google Sheets 연동이 설정된 경우에만 전송됩니다. 민감한 사적 대화나 식별 가능한 사람 음성이 포함된 파일은 업로드하지 마세요.",
@@ -519,6 +522,49 @@ const ko = {
         }
     ]
 }
+,
+  loaderPreprocessing: '오디오 전처리 및 청크 분할 중',
+  loaderPreprocessingHint: '프론트엔드에서 Web Audio API를 사용하여 모노 변환, 32kHz 다운샘플링 및 5초 세그먼트 분할을 수행 중입니다.',
+  spectrogramEventLabels: '종 이벤트 시간 레이블',
+  xaiGenerating: 'XAI 생성 중...',
+  xaiGeneratingHint: '해석 가능성 히트맵을 계산 중입니다... 완료 후 보고서를 저장, 공유 또는 인쇄할 수 있습니다.',
+  spectrogramNoData: '스펙트로그램 데이터 없음',
+  spectrogramTitle: '스펙트로그램',
+  spectrogramDescription: 'X축은 시간, Y축은 Mel 주파수입니다. 아래 반투명 영역의 흰색 피크는 XAI의 시간적 중요성을 나타냅니다(높을수록 중요).',
+  spectrogramClickToEnlarge: '스펙트로그램을 클릭하여 확대',
+  spectrogramOverviewSummary: '개요 · {segmentCount} 세그먼트 · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramChunkSummary: '분석 창 {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramEnlarge: '스펙트로그램 확대',
+  xaiRedHeatmapHint: '빨간색이 진할수록 인식 중 AI 모델의 관심도가 높음을 나타냅니다.',
+  visualizerChunkSummary: '세그먼트 {chunkIndex} · 5.0s · 32kHz · Mono',
+  pageMetaTitleSuffix: 'EchoWing - AI 조류 소리 인식',
+  loadingTitle: '분석 중...',
+  apiErrorAudioFormat: '오디오 분석 요청 실패',
+  apiErrorStream: '오디오 스트림 분석 요청 실패',
+  voteDisclaimer: '면책 조항: 이 웹사이트의 AI 모델은 분석 및 제안만 제공하며 최종 결정을 내리지 않습니다. 우리는 절대적인 정확성을 보장하지 않으며 예측 약속이나 행동 보장도 하지 않습니다.',
+  voteEmptyOverview: '어떤 세그먼트도 {threshold}% 신뢰도 임계값에 도달하지 않았습니다. 신뢰할 수 있는 종 개요가 없습니다.',
+  voteEmptySuggestion: '새소리가 선명한 세그먼트를 다시 녹음하거나 낮은 신뢰도의 후보 및 결정 지원을 세그먼트별로 확인하는 것을 고려하세요.',
+  voteResultOverview: '투표 요약: {species}이(가) {votes}/{validCount} 분석 창의 상위 예측에 나타났습니다(전체 투표율 {pct}%). 주로 세그먼트 {windows}에 있습니다.',
+  voteResultSuggestion: '전체 녹음의 참고 자료로 개요를 사용하세요. 세그먼트가 크게 다를 경우 타임라인을 클릭하여 세부 정보를 확인하세요.',
+  distanceMeters: '{meters} m',
+  distanceKm: '{km} km',
+  durationSeconds: '{s} 초',
+  durationMinSec: '{m} 분 {s} 초',
+  pdfCheckEmptyPage: '{page} 페이지의 내용이 너무 적습니다(빈 페이지일 수 있음).',
+  pdfCheckOrphanHeading: '{page} 페이지 하단에 고립된 제목이 있을 수 있습니다.',
+  pdfCheckUnsearchable: 'PDF에서 텍스트를 충분히 추출할 수 없습니다(검색 불가).',
+  pdfCheckTooManyPages: '비정상적인 페이지 수: {count} 페이지(예상 ≤ {max})',
+  spectrogramXLabel: '시간(초)',
+  spectrogramYLabel: '멜 주파수',
+  spectrogramIntensity: '강도',
+  timelineSingleEventEdge: '{time}초에 {species}이(가) 감지되었습니다(이벤트 신뢰도 {pct}%). 이 이벤트는 녹음 가장자리에 가까워 디콘볼루션 범위가 낮을 수 있으므로 주의해서 참고하세요.',
+  timelineSingleEventNormal: '{time}초에 {species}이(가) 감지되었습니다. 이벤트 신뢰도 {pct}%(일반 임계값 {minPct}%). 이는 해당 기간에 강력한 종 음향 특징이 있음을 나타냅니다.',
+  timelineSingleEventSuggestion: '이 이벤트는 분석 창 {window}에 속합니다. 스펙트로그램 및 XAI 시간적 중요성과 교차 참조하고 현장 관찰이나 이미지로 확인하는 것을 권장합니다.',
+  timelineNoEvents: '타임라인에서 신뢰도 임계값(일반 ≥{minPct}%, 가장자리 ≥{boundaryPct}%)에 도달하는 뚜렷한 발성 이벤트를 감지하지 못했습니다.',
+  timelineNoEventsSuggestion: '전체 스펙트로그램 및 원본 오디오를 검토하는 것을 권장합니다. 새소리가 예상되는 경우 더 조용한 환경에서 다시 녹음하거나 녹음 시간을 연장해 보세요.',
+  timelineMultipleEvents: '타임라인에서 {count}개의 종 이벤트, {speciesCount}종의 조류를 감지했습니다. 가장 높은 이벤트 신뢰도는 {species}({pct}%)입니다.',
+  timelineMultipleEventsSuggestion: '타임라인 이벤트를 참고 요약으로 사용하는 것을 권장합니다. 이벤트를 클릭하면 해당 기간의 종과 스펙트로그램을 볼 수 있습니다. 생태 조사에 사용하는 경우 현장 관찰이나 이미지를 보충하세요.',
+  pdfRangeTo: '{from} ~ {to}'
 };
 
 export default ko;

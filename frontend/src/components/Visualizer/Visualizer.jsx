@@ -76,15 +76,9 @@ export default function Visualizer({
     drawWaveform();
   }, [audioBlob, attentionWeights, chunkIndex]);
 
-  const title = dict?.attentionWeights ?? 'Attention Weights';
-  const hint =
-    lang === 'zh'
-      ? '越深的紅色代表 AI 模型在辨識時的關注度越高'
-      : 'Deeper red indicates higher model attention during identification';
-  const meta =
-    lang === 'zh'
-      ? `片段 ${chunkIndex + 1} · 5.0s · 32kHz · Mono`
-      : `Segment ${chunkIndex + 1} · 5.0s · 32kHz · Mono`;
+  const title = dict?.attentionWeights ;
+  const hint = dict?.xaiRedHeatmapHint;
+  const meta = dict?.visualizerChunkSummary?.replace('{chunkIndex}', chunkIndex + 1);
 
   return (
     <div

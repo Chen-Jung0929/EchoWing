@@ -24,7 +24,7 @@ export default function BackendResultPanel({
           dict={dict}
           lang={lang}
           isOverview={opts.isOverview ?? true}
-          speciesVariant={opts.speciesVariant ?? 'timeline'}
+          speciesVariant={opts.speciesVariant || 'timeline'}
           selectionLabel={opts.selectionLabel ?? ''}
           confidenceThreshold={
             resolveConfidenceThreshold(

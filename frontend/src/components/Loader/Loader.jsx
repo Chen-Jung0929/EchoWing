@@ -54,7 +54,7 @@ export default function Loader({ progress, audioBuffer }) {
 
   return (
     <div className="flex flex-col items-center p-8 bg-[#1a2b42] rounded-3xl shadow-lg border border-white/10 relative">
-      <h3 className="text-xl font-bold tracking-widest text-[#f5f5f5] mb-6">正在預處理與切割音訊...</h3>
+      <h3 className="text-xl font-bold tracking-widest text-[#f5f5f5] mb-6">{dict?.loaderPreprocessing}...</h3>
       
       {/* 聲波圖畫布 */}
       <canvas 
@@ -117,7 +117,7 @@ export default function Loader({ progress, audioBuffer }) {
       </div>
       
       <p className="text-xs text-gray-400 mt-6 text-center italic">
-        正在利用 Web Audio API 在前端進行強制單聲道、32kHz 降採樣與 5 秒切割。
+        {dict?.loaderPreprocessingHint}
       </p>
     </div>
   );

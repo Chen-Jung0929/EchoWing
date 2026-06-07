@@ -11,7 +11,10 @@
     "test:locales": "node scripts/validate-locales.mjs",
     "test:i18n": "node scripts/validate-i18n.mjs",
     "test:pdf": "node scripts/validate-pdf-module.mjs",
-    "test:timeline": "node scripts/validate-timeline.mjs"
+    "test:timeline": "node scripts/validate-timeline.mjs",
+    "test:i18n:hardcoded": "node scripts/find-hardcoded-ui-strings.mjs",
+    "verify:i18n": "npm run test:i18n && npm run test:i18n:hardcoded && npm run build",
+    "i18n:create": "node scripts/create-locale-template.mjs"
   },
   "dependencies": {
     "@vercel/speed-insights": "^2.0.0",

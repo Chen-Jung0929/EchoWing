@@ -23,11 +23,11 @@ function buildPdfFilename(sourceName) {
   const pad = (n) => String(n).padStart(2, '0');
   const hhmmss = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
   const yyyymmdd = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}`;
-  const base = (sourceName || 'unknown')
+  const base = (sourceName || 'audio')
     .replace(/\.[^/.]+$/, '')
     .replace(/[<>:"/\\|?*\s]+/g, '_')
     .replace(/_+/g, '_')
-    .replace(/^_|_$/g, '') || 'unknown';
+    .replace(/^_|_$/g, '') || 'audio';
   return `${base}_FullReport_${hhmmss}_${yyyymmdd}.pdf`;
 }
 

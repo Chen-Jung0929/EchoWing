@@ -32,7 +32,7 @@ export function AudioToSpectrogramAnimation({ dict }) {
 
       </div>
       <p className="mt-4 text-xs text-center text-[var(--c-text)]/60">
-        {dict?.xaiEducation?.animations?.audioToSpec || 'Audio waves are mapped into time-frequency cells.'}
+        {dict?.xaiEducation?.animations?.audioToSpec}
       </p>
     </div>
   );

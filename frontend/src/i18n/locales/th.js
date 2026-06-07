@@ -1,5 +1,8 @@
 /** @type {import('../index.js').LocaleMessages} */
 const th = {
+  notFound: 'ไม่พบหน้าที่คุณค้นหา',
+  notAvailable: 'ไม่มีข้อมูล',
+  unknownError: 'ข้อผิดพลาดแบ็กเอนด์ที่ไม่รู้จัก',
   "title": "EchoWing",
   "subtitle": "การระบุเสียงนก",
   "uploadBtn": "อัปโหลดเสียงหรือวิดีโอ",
@@ -206,7 +209,7 @@ const th = {
     "เลือกโมเดลและคลิก 'วิเคราะห์และระบุชนิด'",
     "ดูการคาดการณ์ สเปกโตรแกรม XAI และไทม์ไลน์",
     "บันทึกข้อมูลภาคสนามหากจำเป็น",
-    "In in-app browsers (Messenger, Instagram, etc.), recording may be unavailable—upload a file or open in Safari/Chrome instead."
+    "ในเบราว์เซอร์ในแอป (Messenger, Instagram ฯลฯ) อาจไม่สามารถบันทึกเสียงได้ โปรดอัปโหลดไฟล์หรือเปิดใน Safari/Chrome แทน"
   ],
   "guideModelsTitle": "โมเดลที่อ้างอิง",
   "guideModels": [
@@ -519,6 +522,49 @@ const th = {
         }
     ]
 }
+,
+  loaderPreprocessing: 'กำลังประมวลผลล่วงหน้าและแบ่งช่วงเสียง',
+  loaderPreprocessingHint: 'บังคับเป็นโมโน ลดความถี่การสุ่มตัวอย่างเป็น 32kHz และแบ่งเป็นช่วง 5 วินาทีผ่าน Web Audio API บนฟรอนต์เอนด์',
+  spectrogramEventLabels: 'ป้ายกำกับเวลาเหตุการณ์ชนิดพันธุ์',
+  xaiGenerating: 'กำลังสร้าง XAI...',
+  xaiGeneratingHint: 'กำลังคำนวณแผนผังความร้อนที่ตีความได้... คุณสามารถบันทึก แชร์ หรือพิมพ์รายงานเมื่อเสร็จสิ้น',
+  spectrogramNoData: 'ไม่มีข้อมูลสเปกโตรแกรม',
+  spectrogramTitle: 'สเปกโตรแกรม',
+  spectrogramDescription: 'แกน X คือเวลา แกน Y คือความถี่ Mel; ยอดแหลมสีขาวในบริเวณโปร่งแสงด้านล่างบ่งชี้ถึงความสำคัญทางเวลาของ XAI (ยิ่งสูงยิ่งสำคัญ)',
+  spectrogramClickToEnlarge: 'คลิกที่สเปกโตรแกรมเพื่อขยาย',
+  spectrogramOverviewSummary: 'ภาพรวม · {segmentCount} ส่วน · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramChunkSummary: 'หน้าต่างวิเคราะห์ {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramEnlarge: 'ขยายสเปกโตรแกรม',
+  xaiRedHeatmapHint: 'สีแดงที่เข้มกว่าบ่งบอกถึงความสนใจที่สูงขึ้นจากโมเดล AI ในระหว่างการจดจำ',
+  visualizerChunkSummary: 'ส่วน {chunkIndex} · 5.0s · 32kHz · โมโน',
+  pageMetaTitleSuffix: 'EchoWing - แพลตฟอร์มการจดจำเสียงนก AI',
+  loadingTitle: 'กำลังวิเคราะห์...',
+  apiErrorAudioFormat: 'คำขอวิเคราะห์เสียงล้มเหลว',
+  apiErrorStream: 'คำขอวิเคราะห์สตรีมเสียงล้มเหลว',
+  voteDisclaimer: 'ข้อจำกัดความรับผิดชอบ: โมเดล AI บนเว็บไซต์นี้ให้เพียงการวิเคราะห์และข้อเสนอแนะ ไม่ใช่การตัดสินใจขั้นสุดท้าย เราไม่รับประกันความถูกต้องแม่นยำ 100% หรือให้คำมั่นสัญญาในการทำนาย',
+  voteEmptyOverview: 'ไม่มีส่วนใดที่ถึงเกณฑ์ความเชื่อมั่น {threshold}% ไม่มีภาพรวมของชนิดพันธุ์ที่เชื่อถือได้',
+  voteEmptySuggestion: 'พิจารณาบันทึกส่วนที่มีเสียงนกชัดเจนอีกครั้ง หรือตรวจสอบผู้สมัครที่มีความเชื่อมั่นต่ำและส่วนสนับสนุนการตัดสินใจทีละส่วน',
+  voteResultOverview: 'สรุปผลโหวต: {species} ปรากฏในการทำนายอันดับสูงสุดสำหรับหน้าต่างวิเคราะห์ {votes}/{validCount} (อัตราการโหวตโดยรวม {pct}%) ส่วนใหญ่อยู่ในส่วน {windows}',
+  voteResultSuggestion: 'ใช้ภาพรวมเป็นข้อมูลอ้างอิงสำหรับการบันทึกทั้งหมด หากส่วนต่างๆ แตกต่างกันมาก ให้คลิกไทม์ไลน์เพื่อดูรายละเอียด',
+  distanceMeters: '{meters} ม.',
+  distanceKm: '{km} กม.',
+  durationSeconds: '{s} วินาที',
+  durationMinSec: '{m} นาที {s} วินาที',
+  pdfCheckEmptyPage: 'หน้าที่ {page} มีเนื้อหาน้อยเกินไป (อาจว่างเปล่า)',
+  pdfCheckOrphanHeading: 'หน้าที่ {page} อาจมีหัวเรื่องที่ถูกทิ้งไว้ด้านล่าง',
+  pdfCheckUnsearchable: 'PDF ไม่สามารถดึงข้อความได้เพียงพอ (ไม่สามารถค้นหาได้)',
+  pdfCheckTooManyPages: 'จำนวนหน้าผิดปกติ: {count} หน้า (คาดหวัง ≤ {max})',
+  spectrogramXLabel: 'เวลา (วินาที)',
+  spectrogramYLabel: 'ความถี่ Mel',
+  spectrogramIntensity: 'ความเข้ม',
+  timelineSingleEventEdge: 'ตรวจพบ {species} ที่ {time}s (ความเชื่อมั่นของเหตุการณ์ {pct}%) เหตุการณ์นี้อยู่ใกล้ขอบการบันทึก ความครอบคลุมการแยกจุดภาพอาจต่ำลง โปรดใช้อ้างอิงอย่างระมัดระวัง',
+  timelineSingleEventNormal: 'ตรวจพบ {species} ที่ {time}s ความเชื่อมั่นของเหตุการณ์ {pct}% (เกณฑ์ปกติ {minPct}%) สิ่งนี้บ่งชี้ถึงคุณสมบัติทางเสียงของชนิดพันธุ์ที่แข็งแกร่งในช่วงเวลานี้',
+  timelineSingleEventSuggestion: 'เหตุการณ์นี้ตกอยู่ในหน้าต่างวิเคราะห์ {window} ขอแนะนำให้อ้างอิงแบบไขว้กับสเปกโตรแกรมและความสำคัญทางเวลาของ XAI และตรวจสอบด้วยการสังเกตการณ์ภาคสนามหรือภาพ',
+  timelineNoEvents: 'ไทม์ไลน์ไม่พบเหตุการณ์การเปล่งเสียงที่ชัดเจนซึ่งถึงเกณฑ์ความเชื่อมั่น (ปกติ ≥{minPct}%, ขอบ ≥{boundaryPct}%)',
+  timelineNoEventsSuggestion: 'ขอแนะนำให้ตรวจสอบสเปกโตรแกรมแบบเต็มและเสียงต้นฉบับ หากคาดว่าจะมีเสียงนก ให้ลองบันทึกใหม่ในสภาพแวดล้อมที่เงียบกว่าหรือยืดระยะเวลาออกไป',
+  timelineMultipleEvents: 'ไทม์ไลน์พบเหตุการณ์ชนิดพันธุ์ {count} รายการ นก {speciesCount} ชนิด; ความเชื่อมั่นของเหตุการณ์สูงสุดคือ {species} ({pct}%)',
+  timelineMultipleEventsSuggestion: 'แนะนำให้ใช้เหตุการณ์ในไทม์ไลน์เป็นข้อมูลอ้างอิงสรุป คลิกที่เหตุการณ์เพื่อดูชนิดพันธุ์และสเปกโตรแกรมสำหรับช่วงเวลานั้น หากใช้สำหรับการสำรวจทางนิเวศวิทยา ให้เสริมด้วยการสังเกตการณ์ภาคสนามหรือภาพ',
+  pdfRangeTo: '{from} ถึง {to}'
 };
 
 export default th;

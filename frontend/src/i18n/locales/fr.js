@@ -1,7 +1,14 @@
 /** @type {import('../index.js').LocaleMessages} */
 const fr = {
+  notFound: 'La page que vous recherchez n\'existe pas.',
+  notAvailable: 'N/D',
+  unknownError: 'Erreur backend inconnue',
   title: "EchoWing",
   subtitle: "Identification des chants d’oiseaux",
+  
+  
+  
+
   uploadBtn: "Importer un audio ou une vidéo",
   uploadFormatsHint: "WAV, MP3, FLAC, OGG, M4A, AAC, WEBM et vidéos courantes (5–30 s, 20 Mo max.).",
   fileTypeUnsupported: "Type de fichier non pris en charge. Utilisez WAV, MP3, FLAC, OGG, M4A, AAC, WEBM ou un format vidéo courant.",
@@ -519,6 +526,49 @@ const fr = {
     }
   ]
 }
+,
+  loaderPreprocessing: "Prétraitement et découpage de l'audio",
+  loaderPreprocessingHint: "Forçage du mode Mono, sous-échantillonnage à 32 kHz et découpage en segments de 5 secondes via l'API Web Audio sur l'interface.",
+  spectrogramEventLabels: "Étiquettes de temps d'événement d'espèce",
+  xaiGenerating: 'Génération de XAI...',
+  xaiGeneratingHint: "Calcul de la carte thermique d'interprétabilité... Vous pouvez enregistrer, partager ou imprimer le rapport une fois terminé.",
+  spectrogramNoData: 'Aucune donnée de spectrogramme',
+  spectrogramTitle: 'Spectrogramme',
+  spectrogramDescription: "L'axe des X est le temps, l'axe des Y est la fréquence Mel ; les pics blancs dans la zone translucide ci-dessous indiquent l'importance temporelle XAI (plus c'est haut, plus c'est critique).",
+  spectrogramClickToEnlarge: "Cliquez sur le spectrogramme pour l'agrandir",
+  spectrogramOverviewSummary: 'Aperçu · {segmentCount} segments · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramChunkSummary: "Fenêtre d'analyse {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}",
+  spectrogramEnlarge: 'Agrandir le spectrogramme',
+  xaiRedHeatmapHint: "Un rouge plus foncé indique une plus grande attention du modèle d'IA lors de la reconnaissance.",
+  visualizerChunkSummary: 'Segment {chunkIndex} · 5,0 s · 32 kHz · Mono',
+  pageMetaTitleSuffix: "EchoWing - Reconnaissance vocale d'oiseaux par IA",
+  loadingTitle: 'Analyse en cours...',
+  apiErrorAudioFormat: "Échec de la demande d'analyse audio",
+  apiErrorStream: "Échec de la demande d'analyse de flux audio",
+  voteDisclaimer: "Avis de non-responsabilité : Les modèles d'IA sur ce site Web fournissent uniquement des analyses et des suggestions, pas des décisions finales. Nous ne garantissons pas une exactitude absolue.",
+  voteEmptyOverview: "Aucun segment n'a atteint le seuil de confiance de {threshold}%. Aucun aperçu fiable des espèces n'est disponible.",
+  voteEmptySuggestion: "Pensez à réenregistrer un segment avec des chants d'oiseaux clairs, ou examinez les candidats à faible confiance et l'aide à la décision section par section.",
+  voteResultOverview: "Résumé des votes : {species} est apparu dans les meilleures prédictions pour {votes}/{validCount} fenêtres d'analyse (taux de vote global {pct}%). Principalement dans les segments {windows}.",
+  voteResultSuggestion: "Utilisez l'aperçu comme référence pour l'intégralité de l'enregistrement. Si les segments varient considérablement, cliquez sur la chronologie pour plus de détails.",
+  distanceMeters: '{meters} m',
+  distanceKm: '{km} km',
+  durationSeconds: '{s} s',
+  durationMinSec: '{m} m {s} s',
+  pdfCheckEmptyPage: 'La page {page} a trop peu de contenu (peut-être vide)',
+  pdfCheckOrphanHeading: 'La page {page} pourrait avoir un titre orphelin en bas',
+  pdfCheckUnsearchable: 'Le PDF ne peut pas extraire suffisamment de texte (non consultable)',
+  pdfCheckTooManyPages: 'Nombre de pages anormal : {count} pages (attendu ≤ {max})',
+  spectrogramXLabel: 'Temps (secondes)',
+  spectrogramYLabel: 'Fréquence Mel',
+  spectrogramIntensity: 'Intensité',
+  timelineSingleEventEdge: "{species} détecté à {time}s (confiance de l'événement {pct}%). Cet événement est près du bord de l'enregistrement, la couverture de déconvolution peut être plus faible, veuillez vous y référer avec prudence.",
+  timelineSingleEventNormal: "{species} détecté à {time}s, confiance de l'événement {pct}% (seuil normal {minPct}%). Cela indique de fortes caractéristiques acoustiques de l'espèce pendant cette période.",
+  timelineSingleEventSuggestion: "Cet événement se situe dans la fenêtre d'analyse {window}. Suggérez de croiser les références avec le spectrogramme et l'importance temporelle XAI, et de vérifier avec des observations sur le terrain ou des images.",
+  timelineNoEvents: "La chronologie n'a détecté aucun événement de vocalisation distinct atteignant le seuil de confiance (normal ≥{minPct}%, bord ≥{boundaryPct}%).",
+  timelineNoEventsSuggestion: "Suggérer de revoir le spectrogramme complet et l'audio d'origine. Si des chants d'oiseaux étaient attendus, essayez de réenregistrer dans un environnement plus calme ou de prolonger la durée.",
+  timelineMultipleEvents: "La chronologie a détecté {count} événements d'espèces, {speciesCount} espèces d'oiseaux ; la confiance de l'événement la plus élevée est {species} ({pct}%).",
+  timelineMultipleEventsSuggestion: "Suggérer d'utiliser les événements de la chronologie comme résumé de référence. Cliquez sur un événement pour afficher l'espèce et le spectrogramme pour cette période. S'il est utilisé pour des enquêtes écologiques, complétez par des observations sur le terrain ou des images.",
+  pdfRangeTo: '{from} à {to}'
 };
 
 export default fr;

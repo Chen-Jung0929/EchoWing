@@ -2,6 +2,10 @@
 const hak = {
   title: 'EchoWing',
   subtitle: '鳥仔聲辨識',
+  notFound: '找不到您要找的頁面。',
+  notAvailable: '無',
+  unknownError: '未知的後端錯誤',
+
   uploadBtn: '上傳音訊或係影片',
   uploadFormatsHint:
     '支援 WAV、MP3、FLAC、OGG、M4A、AAC、WEBM；影片會擷取音訊（單一檔案盡長 30 秒、上限 20MB）',
@@ -539,6 +543,49 @@ const hak = {
         }
     ]
   }
+,
+  loaderPreprocessing: '當在預處理同切割音訊',
+  loaderPreprocessingHint: '當在利用 Web Audio API 在前端進行強制單聲道、32kHz 降採樣同 5 秒切割。',
+  spectrogramEventLabels: '物種事件時間標籤',
+  xaiGenerating: 'XAI生成中...',
+  xaiGeneratingHint: '可解釋性熱圖計算中，完成後可儲存、分享或列印報告',
+  spectrogramNoData: '還無頻譜資料',
+  spectrogramTitle: '音訊頻譜圖',
+  spectrogramDescription: '橫軸為時間、縱軸為 Mel 頻率；頻譜下方半透明區塊內白色尖峰為 XAI 時間重要性（越高越關鍵）',
+  spectrogramClickToEnlarge: '點擊頻譜圖可放大檢視',
+  spectrogramOverviewSummary: '總覽 · {segmentCount} 段 · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramChunkSummary: '分析窗 {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramEnlarge: '放大檢視頻譜圖',
+  xaiRedHeatmapHint: '越深的紅色代表 AI 模型在辨識時的關注度越高',
+  visualizerChunkSummary: '片段 {chunkIndex} · 5.0s · 32kHz · Mono',
+  pageMetaTitleSuffix: 'EchoWing - AI 鳥類聲學辨識平台',
+  loadingTitle: '分析中...',
+  apiErrorAudioFormat: '音訊分析請求失敗',
+  apiErrorStream: '音訊串流分析請求失敗',
+  voteDisclaimer: '免責聲明：本網站之 AI 模組僅提供分析與行動建議，不作最後決定。本平台不保證辨識結果之絕對正確性，亦不構成預測承諾、最終決策或行為保證。',
+  voteEmptyOverview: '各片段皆未達 {threshold}% 信心門檻，無可靠物種辨識總覽。',
+  voteEmptySuggestion: '建議重新錄製含清晰鳥鳴的片段，或逐段查看低信心候選與決策輔助說明。',
+  voteResultOverview: '投票彙整：{species} 在 {votes}/{validCount} 個分析窗的 Top 預測中出現（整體得票率 {pct}%）。主要出現於片段 {windows}。',
+  voteResultSuggestion: '建議以總覽結果為整段錄音的參考；若各片段差異大，請點選時間軸查看分段詳情。',
+  distanceMeters: '{meters} 公尺',
+  distanceKm: '{km} 公里',
+  durationSeconds: '{s} 秒',
+  durationMinSec: '{m} 分 {s} 秒',
+  pdfCheckEmptyPage: '第 {page} 頁內容過少（疑似空白頁）',
+  pdfCheckOrphanHeading: '第 {page} 頁底部可能有 orphan heading',
+  pdfCheckUnsearchable: 'PDF 無法抽取足夠文字（不可搜尋）',
+  pdfCheckTooManyPages: '頁數異常：{count} 頁（預期約 ≤ {max}）',
+  spectrogramXLabel: '時間 (秒)',
+  spectrogramYLabel: 'Mel 頻率',
+  spectrogramIntensity: '強度',
+  timelineSingleEventEdge: '於 {time}s 偵測到 {species}（事件信心 {pct}%）。此事件接近錄音邊界，反卷積覆蓋率可能較低，請謹慎參考。',
+  timelineSingleEventNormal: '於 {time}s 偵測到 {species}，事件信心 {pct}%（一般事件門檻 {minPct}%）。此數值顯示該時段有強烈之物種聲學特徵。',
+  timelineSingleEventSuggestion: '此事件落在 {window} 分析窗。建議對照頻譜圖與 XAI 時間重要性，並以實地觀察或影像作二次確認。',
+  timelineNoEvents: '時間軸未偵測到達事件信心門檻（一般事件 ≥{minPct}%、邊界 ≥{boundaryPct}%）的明顯鳴叫事件。',
+  timelineNoEventsSuggestion: '建議對照全段頻譜與原始音訊；若預期有鳥鳴，可嘗試在較安靜環境重新錄製或延長錄音時間。',
+  timelineMultipleEvents: '時間軸偵測到 {count} 個物種事件、{speciesCount} 種鳥類；最高事件信心為 {species}（{pct}%）。',
+  timelineMultipleEventsSuggestion: '建議以時間軸事件作為整段錄音的參考摘要；點選事件可檢視該時段物種與頻譜。若用於生態調查，請輔以實地觀察或影像確認。',
+  pdfRangeTo: '{from} 至 {to}'
 };
 
 export default hak;

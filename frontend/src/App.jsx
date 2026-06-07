@@ -3,7 +3,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { BrowserRouter, Routes, Route, useLocation , Link } from 'react-router-dom';
 import { MdLanguage, MdDarkMode, MdLightMode, MdHelpOutline } from 'react-icons/md';
 
-import { detectBrowserLanguage, getDict, LANG_OPTIONS } from './i18n';
+import { detectBrowserLanguage, getDict, LANGUAGE_OPTIONS } from './i18n';
 import Tooltip from './components/Tooltip/Tooltip';
 import GuideModal from './components/GuideModal/GuideModal';
 import PrivacyNotice from './components/PrivacyNotice/PrivacyNotice';
@@ -47,7 +47,7 @@ function AppLayout() {
   
   useEffect(() => {
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
-    const htmlLang = LANG_OPTIONS.find(o => o.code === lang)?.htmlLang || lang;
+    const htmlLang = LANGUAGE_OPTIONS.find(o => o.code === lang)?.htmlLang || lang;
     document.documentElement.lang = htmlLang;
   }, [lang]);
 
@@ -167,7 +167,7 @@ function AppLayout() {
                 {isMenuOpen && (
                   <div className="absolute right-0 top-full mt-2 max-h-[70vh] w-56 overflow-y-auto rounded-2xl border border-[var(--c-text)]/10 bg-[var(--c-card)]/95 p-2 shadow-2xl backdrop-blur-md">
                     <div className="flex flex-col gap-1" role="listbox" aria-label={dict.languageMenuLabel}>
-                      {LANG_OPTIONS.map(({ code, label }) => (
+                      {LANGUAGE_OPTIONS.map(({ code, label }) => (
                         <button
                           key={code}
                           type="button"

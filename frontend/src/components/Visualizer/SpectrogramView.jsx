@@ -70,7 +70,7 @@ function SpectrogramEventSegmentLabels({
       className="relative w-full border-b border-[var(--c-text)]/10 bg-[var(--c-bg)]/55"
       style={{ height }}
       role="list"
-      aria-label={lang === 'zh' ? '物種事件時間標籤' : 'Species event time labels'}
+      aria-label={dict?.spectrogramEventLabels}
     >
       {segments.map((seg) => {
         const spanSec = seg.end - seg.start + 1;
@@ -300,13 +300,13 @@ function SpectrogramEnlargeModal({
       <button
         type="button"
         className="fixed inset-0 z-[240] cursor-default bg-black/55"
-        aria-label={dict?.spectrogramEnlargeClose ?? 'Close enlarged view'}
+        aria-label={dict?.spectrogramEnlargeClose }
         onClick={onClose}
       />
       <div
         role="dialog"
         aria-modal="true"
-        aria-label={dict?.spectrogramEnlarge ?? 'View spectrogram larger'}
+        aria-label={dict?.spectrogramEnlarge }
         className="fixed left-1/2 top-1/2 z-[250] flex max-h-[92vh] w-[min(92vw,72rem)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-2xl border border-[var(--c-text)]/10 bg-[var(--c-card)] shadow-2xl"
       >
         <div className="flex items-start justify-between gap-3 border-b border-[var(--c-text)]/10 px-4 py-3">
@@ -317,7 +317,7 @@ function SpectrogramEnlargeModal({
           <button
             type="button"
             onClick={onClose}
-            aria-label={dict?.spectrogramEnlargeClose ?? 'Close enlarged view'}
+            aria-label={dict?.spectrogramEnlargeClose }
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--c-text)]/10 text-[var(--c-text)] transition-colors hover:bg-[var(--c-bg)]/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--c-primary)]"
           >
             <MdClose size={20} aria-hidden />
@@ -381,13 +381,8 @@ export default function SpectrogramView({
   }, [xaiHeatmap, spectrogram]);
 
   const hasXai = Boolean(alignedXai?.length) && !xaiGenerating;
-  const generatingLabel =
-    dict?.xaiGenerating ?? (lang === 'zh' ? 'XAI生成中...' : 'Generating XAI…');
-  const generatingHint =
-    dict?.xaiGeneratingHint ??
-    (lang === 'zh'
-      ? '可解釋性熱圖計算中，完成後可儲存、分享或列印報告'
-      : 'Computing explainability heatmaps; save, share, and print unlock when done');
+  const generatingLabel = dict?.xaiGenerating;
+  const generatingHint = dict?.xaiGeneratingHint;
 
   useEffect(() => {
     if (!isSummary || compact) return;
@@ -435,23 +430,21 @@ export default function SpectrogramView({
   if (!spectrogram) {
     return (
       <p style={{ color: '#64748b', fontSize: '0.875rem' }}>
-        {lang === 'zh' ? '尚無頻譜資料' : 'No spectrogram data'}
+        {dict?.spectrogramNoData}
       </p>
     );
   }
 
-  const title = dict?.spectrogramTitle ?? (lang === 'zh' ? '音訊頻譜圖' : 'Spectrogram');
+  const title = dict?.spectrogramTitle;
   const hint =
     dict?.spectrogramXaiHint ??
     dict?.spectrogramHint ??
-    (lang === 'zh'
-      ? '橫軸為時間、縱軸為 Mel 頻率；頻譜下方半透明區塊內白色尖峰為 XAI 時間重要性（越高越關鍵）'
-      : 'Time vs Mel frequency; white spikes on the semi-transparent strip below show XAI time importance (taller = more important)');
+    dict?.spectrogramDescription;
   const durationSec = estimateSpectrogramDurationSec(spectrogram).toFixed(1);
 
   const enlargePrefix =
     dict?.spectrogramEnlargeHint ??
-    (lang === 'zh' ? '點擊頻譜圖可放大檢視' : 'Click the spectrogram to enlarge');
+    dict?.spectrogramClickToEnlarge;
 
   const hintLines = compact
     ? splitHintBySemicolon(hint)
@@ -459,12 +452,8 @@ export default function SpectrogramView({
 
   const meta =
     isSummary
-      ? lang === 'zh'
-        ? `總覽 · ${segmentCount ?? 1} 段 · ${durationSec}s · ${spectrogram.time_frames}×${spectrogram.freq_bins}`
-        : `Overview · ${segmentCount ?? 1} segments · ${durationSec}s · ${spectrogram.time_frames}×${spectrogram.freq_bins}`
-      : lang === 'zh'
-        ? `分析窗 ${chunkIndex + 1} · ${durationSec}s · ${spectrogram.time_frames}×${spectrogram.freq_bins}`
-        : `Window ${chunkIndex + 1} · ${durationSec}s · ${spectrogram.time_frames}×${spectrogram.freq_bins}`;
+      ? dict?.spectrogramOverviewSummary?.replace('{segmentCount}', segmentCount ?? 1).replace('{durationSec}', durationSec).replace('{time_frames}', spectrogram.time_frames).replace('{freq_bins}', spectrogram.freq_bins)
+      : dict?.spectrogramChunkSummary?.replace('{chunkIndex}', chunkIndex + 1).replace('{durationSec}', durationSec).replace('{time_frames}', spectrogram.time_frames).replace('{freq_bins}', spectrogram.freq_bins);
 
   const shellStyle = compact
     ? { background: '#ffffff', padding: '1rem', borderRadius: '0.5rem' }
@@ -491,7 +480,7 @@ export default function SpectrogramView({
         borderRadius: '0.75rem',
       };
 
-  const enlargeLabel = dict?.spectrogramEnlarge ?? (lang === 'zh' ? '放大檢視頻譜圖' : 'View spectrogram larger');
+  const enlargeLabel = dict?.spectrogramEnlarge;
 
   return (
     <div style={shellStyle}>

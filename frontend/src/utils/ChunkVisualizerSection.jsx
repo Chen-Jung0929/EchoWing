@@ -24,7 +24,7 @@ export default function ChunkVisualizerSection({
   getLocalizedText = null,
   shellMarginTop = null,
 }) {
-  const modelName = resultChunks?.[0]?.model_name ?? chunk?.model_name ?? 'perch';
+  const modelName = resultChunks?.[0]?.model_name || chunk?.model_name || 'perch';
   const windowSec = modelWindowSec(modelName);
 
   if (isSummary) {

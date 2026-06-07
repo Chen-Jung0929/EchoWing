@@ -1,5 +1,8 @@
 /** @type {import('../index.js').LocaleMessages} */
 const ja = {
+  notFound: 'お探しのページは見つかりません。',
+  notAvailable: 'N/A',
+  unknownError: '不明なバックエンドエラー',
   "title": "EchoWing",
   "subtitle": "鳥の音声識別",
   "uploadBtn": "音声または動画をアップロード",
@@ -206,7 +209,7 @@ const ja = {
     "モデルを選び、「処理して識別」を押します。",
     "予測、スペクトログラム、XAI、活動タイムラインを確認します。",
     "必要な場合のみ、明示的に確認してフィールドノートを保存します。",
-    "In in-app browsers (Messenger, Instagram, etc.), recording may be unavailable—upload a file or open in Safari/Chrome instead."
+    "アプリ内ブラウザ（Messenger、Instagramなど）では録音が利用できない場合があります。代わりにファイルをアップロードするか、Safari/Chromeで開いてください。"
   ],
   "guideModelsTitle": "モデルについて",
   "guideModels": [
@@ -253,7 +256,7 @@ const ja = {
     "選択モデルに合わせて分析窓へ分割し、候補種を予測します。",
     "予備結果を先に表示し、その後XAIヒートマップを生成します。",
     "XAIとタイムラインはモデルの感度を示す推定であり、生物学的な真実を保証しません。",
-    "The timeline estimates activity from window-level evidence and should be interpreted cautiously."
+    "タイムラインはウィンドウレベルの証拠からアクティビティを推定するものであり、慎重に解釈する必要があります。"
   ],
   "guidePrivacyTitle": "プライバシーとデータ利用",
   "guidePrivacyBody": "アップロード音声は解析のために処理され、恒久保存やモデル学習には使用しない方針です。フィールドノート、観察メモ、GPSは、ユーザーが保存を明示的に確認し、Google Sheets連携が設定されている場合のみ送信されます。個人的な会話や識別可能な人声を含む音声はアップロードしないでください。",
@@ -519,6 +522,49 @@ const ja = {
         }
     ]
 }
+,
+  loaderPreprocessing: '音声の事前処理とチャンク化を行っています',
+  loaderPreprocessingHint: 'Web Audio APIを使用して、フロントエンドでモノラル化、32kHzへのダウンサンプリング、5秒間のチャンク化を行っています。',
+  spectrogramEventLabels: '種族イベントの時間ラベル',
+  xaiGenerating: 'XAIを生成中...',
+  xaiGeneratingHint: '解釈可能性ヒートマップを計算中... 完了後にレポートを保存、共有、または印刷できます。',
+  spectrogramNoData: 'スペクトログラムデータがありません',
+  spectrogramTitle: 'スペクトログラム',
+  spectrogramDescription: '横軸は時間、縦軸はMel周波数です。下の半透明領域内の白いピークはXAIの時間の重要性を示します（高いほど重要）。',
+  spectrogramClickToEnlarge: 'スペクトログラムをクリックして拡大',
+  spectrogramOverviewSummary: '概要 · {segmentCount} セグメント · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramChunkSummary: '分析ウィンドウ {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramEnlarge: 'スペクトログラムを拡大',
+  xaiRedHeatmapHint: '赤が濃いほど、認識時のAIモデルの注目度が高いことを示します。',
+  visualizerChunkSummary: 'セグメント {chunkIndex} · 5.0s · 32kHz · Mono',
+  pageMetaTitleSuffix: 'EchoWing - AI鳥類鳴き声認識',
+  loadingTitle: '分析中...',
+  apiErrorAudioFormat: '音声分析リクエストが失敗しました',
+  apiErrorStream: '音声ストリーム分析リクエストが失敗しました',
+  voteDisclaimer: '免責事項：当ウェブサイトのAIモデルは分析および提案のみを提供し、最終決定を下すものではありません。私たちは絶対的な正確性を保証せず、予測の約束や行動の保証も行いません。',
+  voteEmptyOverview: 'どのセグメントも{threshold}%の信頼度閾値に達していません。信頼できる種別の概要はありません。',
+  voteEmptySuggestion: '鳥の鳴き声がはっきり聞こえるセグメントを再録音するか、低信頼度の候補と決定支援をセグメントごとに確認することを検討してください。',
+  voteResultOverview: '投票の概要：{species}は{votes}/{validCount}の分析ウィンドウのトップ予測に表示されました（全体的な投票率{pct}%）。主にセグメント{windows}にあります。',
+  voteResultSuggestion: '録音全体の参考として概要を使用してください。セグメントが大きく異なる場合は、タイムラインをクリックして詳細を確認してください。',
+  distanceMeters: '{meters} m',
+  distanceKm: '{km} km',
+  durationSeconds: '{s} 秒',
+  durationMinSec: '{m} 分 {s} 秒',
+  pdfCheckEmptyPage: '{page}ページのコンテンツが少なすぎます（空白の可能性があります）',
+  pdfCheckOrphanHeading: '{page}ページの下部に孤立した見出しがある可能性があります',
+  pdfCheckUnsearchable: 'PDFから十分なテキストを抽出できません（検索不可）',
+  pdfCheckTooManyPages: '異常なページ数：{count}ページ（予想≤{max}）',
+  spectrogramXLabel: '時間（秒）',
+  spectrogramYLabel: 'メル周波数',
+  spectrogramIntensity: '強度',
+  timelineSingleEventEdge: '{time}秒に{species}を検出しました（イベント信頼度{pct}%）。このイベントは録音の端に近く、デコンボリューションのカバレッジが低い可能性があるため、注意して参照してください。',
+  timelineSingleEventNormal: '{time}秒に{species}を検出しました。イベント信頼度は{pct}%（通常閾値{minPct}%）です。これはこの期間に強い種族の音響特徴があることを示しています。',
+  timelineSingleEventSuggestion: 'このイベントは分析ウィンドウ{window}に分類されます。スペクトログラムやXAIの時間の重要性と照らし合わせ、現地での観察や画像で再確認することをお勧めします。',
+  timelineNoEvents: 'タイムラインは、信頼度閾値（通常≥{minPct}%、エッジ≥{boundaryPct}%）に達する明確な発声イベントを検出しませんでした。',
+  timelineNoEventsSuggestion: '全体のスペクトログラムと元の音声を確認することをお勧めします。鳥の鳴き声が予想される場合は、より静かな環境で再録音するか、時間を延長してみてください。',
+  timelineMultipleEvents: 'タイムラインは{count}個の種族イベント、{speciesCount}種の鳥を検出しました。最高のイベント信頼度は{species}（{pct}%）です。',
+  timelineMultipleEventsSuggestion: 'タイムラインイベントを参考概要として使用することをお勧めします。イベントをクリックすると、その期間の種族とスペクトログラムを表示できます。生態調査に使用する場合は、現地での観察や画像を補足してください。',
+  pdfRangeTo: '{from}から{to}'
 };
 
 export default ja;

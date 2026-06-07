@@ -36,8 +36,8 @@ export default function XaiEducationPage({ dict }) {
     script.textContent = JSON.stringify({
       "@context": "https://schema.org",
       "@type": "TechArticle",
-      "headline": xaiDict.title || "How EchoWing Works - Explainable AI for Bird Sound Recognition",
-      "description": xaiDict.subtitle || "Learn how EchoWing uses deep learning and explainable AI to identify bird species from audio recordings.",
+      "headline": xaiDict.title,
+      "description": xaiDict.subtitle,
       "url": "https://echo-wing.vercel.app/how-it-works",
       "author": { "@type": "Organization", "name": "EchoWing Team" },
       "inLanguage": document.documentElement.lang,
@@ -48,7 +48,7 @@ export default function XaiEducationPage({ dict }) {
       const el = document.getElementById('xai-structured-data');
       if (el) el.remove();
     };
-  }, [xaiDict]);
+  }, [xaiDict.title, xaiDict.subtitle]);
 
   useEffect(() => {
     window.scrollTo(0, 0);

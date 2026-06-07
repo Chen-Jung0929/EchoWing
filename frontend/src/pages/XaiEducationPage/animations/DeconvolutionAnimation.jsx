@@ -42,7 +42,7 @@ export function DeconvolutionAnimation({ dict }) {
       </div>
 
       <p className="anim-caption mt-4 text-xs text-center text-[var(--c-text)]/60">
-        {dict?.xaiEducation?.animations?.deconvolution || 'Overlapping window scores project downwards to form a continuous activity curve.'}
+        {dict?.xaiEducation?.animations?.deconvolution}
       </p>
     </div>
   );

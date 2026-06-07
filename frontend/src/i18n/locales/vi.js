@@ -2,6 +2,10 @@
 const vi = {
   title: 'EchoWing',
   subtitle: 'Nhận dạng Âm thanh Chim',
+  notFound: 'Không tìm thấy trang bạn đang tìm.',
+  notAvailable: 'Không có',
+  unknownError: 'Lỗi backend không xác định',
+
   uploadBtn: 'Tải lên âm thanh hoặc video',
   uploadFormatsHint:
     'WAV, MP3, FLAC, OGG, M4A, AAC, WEBM; tệp video sẽ sử dụng đoạn âm thanh của chúng (tối đa 30 s, 20 MB).',
@@ -547,6 +551,49 @@ const vi = {
         }
     ]
   }
+,
+  loaderPreprocessing: 'Đang tiền xử lý và cắt âm thanh',
+  loaderPreprocessingHint: 'Đang ép kiểu Mono, giảm lấy mẫu xuống 32kHz và cắt thành các phân đoạn 5 giây qua Web Audio API trên giao diện.',
+  spectrogramEventLabels: 'Nhãn thời gian sự kiện loài',
+  xaiGenerating: 'Đang tạo XAI...',
+  xaiGeneratingHint: 'Đang tính toán bản đồ nhiệt khả năng giải thích... Bạn có thể lưu, chia sẻ hoặc in báo cáo sau khi hoàn tất.',
+  spectrogramNoData: 'Không có dữ liệu phổ đồ',
+  spectrogramTitle: 'Phổ đồ',
+  spectrogramDescription: 'Trục X là thời gian, trục Y là tần số Mel; các đỉnh màu trắng trong vùng trong suốt bên dưới chỉ ra tầm quan trọng về thời gian của XAI (càng cao càng quan trọng).',
+  spectrogramClickToEnlarge: 'Nhấp vào phổ đồ để phóng to',
+  spectrogramOverviewSummary: 'Tổng quan · {segmentCount} đoạn · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramChunkSummary: 'Cửa sổ phân tích {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramEnlarge: 'Phóng to phổ đồ',
+  xaiRedHeatmapHint: 'Màu đỏ đậm hơn cho thấy mức độ chú ý cao hơn từ mô hình AI trong quá trình nhận dạng.',
+  visualizerChunkSummary: 'Phân đoạn {chunkIndex} · 5.0s · 32kHz · Mono',
+  pageMetaTitleSuffix: 'EchoWing - Nhận dạng âm thanh chim AI',
+  loadingTitle: 'Đang phân tích...',
+  apiErrorAudioFormat: 'Yêu cầu phân tích âm thanh không thành công',
+  apiErrorStream: 'Yêu cầu phân tích luồng âm thanh không thành công',
+  voteDisclaimer: 'Tuyên bố từ chối trách nhiệm: Các mô hình AI trên trang web này chỉ cung cấp phân tích và đề xuất, không phải là quyết định cuối cùng. Chúng tôi không đảm bảo độ chính xác tuyệt đối, cũng không đưa ra các hứa hẹn dự đoán.',
+  voteEmptyOverview: 'Không có phân đoạn nào đạt đến ngưỡng tin cậy {threshold}%. Không có tổng quan về loài đáng tin cậy.',
+  voteEmptySuggestion: 'Cân nhắc ghi âm lại phân đoạn có tiếng chim rõ ràng hoặc xem xét các ứng cử viên có độ tin cậy thấp và phần hỗ trợ quyết định theo từng phần.',
+  voteResultOverview: 'Tóm tắt bình chọn: {species} xuất hiện trong các dự đoán Hàng đầu cho {votes}/{validCount} cửa sổ phân tích (tỷ lệ bình chọn tổng thể {pct}%). Chủ yếu ở các phân đoạn {windows}.',
+  voteResultSuggestion: 'Sử dụng tổng quan làm tài liệu tham khảo cho toàn bộ bản ghi. Nếu các phân đoạn khác nhau nhiều, hãy nhấp vào dòng thời gian để biết chi tiết.',
+  distanceMeters: '{meters} m',
+  distanceKm: '{km} km',
+  durationSeconds: '{s} giây',
+  durationMinSec: '{m} p {s} giây',
+  pdfCheckEmptyPage: 'Trang {page} có quá ít nội dung (có thể bị trống)',
+  pdfCheckOrphanHeading: 'Trang {page} có thể có tiêu đề bị mồ côi ở dưới cùng',
+  pdfCheckUnsearchable: 'PDF không thể trích xuất đủ văn bản (không thể tìm kiếm)',
+  pdfCheckTooManyPages: 'Số trang bất thường: {count} trang (dự kiến ≤ {max})',
+  spectrogramXLabel: 'Thời gian (giây)',
+  spectrogramYLabel: 'Tần số Mel',
+  spectrogramIntensity: 'Cường độ',
+  timelineSingleEventEdge: 'Đã phát hiện {species} tại {time}s (độ tin cậy của sự kiện {pct}%). Sự kiện này gần rìa của bản ghi, phạm vi phủ sóng deconvolution có thể thấp hơn, vui lòng tham khảo cẩn thận.',
+  timelineSingleEventNormal: 'Đã phát hiện {species} tại {time}s, độ tin cậy của sự kiện {pct}% (ngưỡng bình thường {minPct}%). Điều này cho thấy các đặc điểm âm thanh của loài mạnh mẽ trong khoảng thời gian này.',
+  timelineSingleEventSuggestion: 'Sự kiện này rơi vào cửa sổ phân tích {window}. Đề xuất đối chiếu với phổ đồ và tầm quan trọng về thời gian XAI, đồng thời xác minh bằng quan sát thực địa hoặc hình ảnh.',
+  timelineNoEvents: 'Dòng thời gian không phát hiện sự kiện phát âm rõ rệt nào đạt đến ngưỡng tin cậy (bình thường ≥{minPct}%, rìa ≥{boundaryPct}%).',
+  timelineNoEventsSuggestion: 'Đề xuất xem xét toàn bộ phổ đồ và âm thanh gốc. Nếu dự kiến có tiếng chim, hãy thử ghi âm lại trong môi trường yên tĩnh hơn hoặc kéo dài thời gian.',
+  timelineMultipleEvents: 'Dòng thời gian đã phát hiện {count} sự kiện loài, {speciesCount} loài chim; độ tin cậy của sự kiện cao nhất là {species} ({pct}%).',
+  timelineMultipleEventsSuggestion: 'Đề xuất sử dụng các sự kiện dòng thời gian làm tóm tắt tham khảo. Nhấp vào một sự kiện để xem loài và phổ đồ cho khoảng thời gian đó. Nếu được sử dụng cho các cuộc khảo sát sinh thái, hãy bổ sung bằng các quan sát thực địa hoặc hình ảnh.',
+  pdfRangeTo: '{from} đến {to}'
 };
 
 export default vi;

@@ -8,7 +8,7 @@ import { useEffect } from 'react';
 export default function usePageMeta(title, description) {
   useEffect(() => {
     // Set title
-    document.title = title ? `${title} | EchoWing` : 'EchoWing - AI 鳥類聲學辨識平台';
+    document.title = title ? `${title} | EchoWing` : (dict?.pageMetaTitleSuffix || 'EchoWing');
     
     // Set meta description
     if (description) {
@@ -20,7 +20,7 @@ export default function usePageMeta(title, description) {
 
     // Cleanup: restore default on unmount
     return () => {
-      document.title = 'EchoWing - AI 鳥類聲學辨識平台 | Bird Sound Recognition';
+      document.title = dict?.pageMetaTitleSuffix || 'EchoWing';
     };
   }, [title, description]);
 }

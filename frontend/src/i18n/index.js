@@ -14,61 +14,103 @@ import vi from './locales/vi.js';
 import fil from './locales/fil.js';
 import fr from './locales/fr.js';
 import es from './locales/es.js';
+import pt from './locales/pt.js';
+import it from './locales/it.js';
+import nl from './locales/nl.js';
 import de from './locales/de.js';
 
+import { LANGUAGE_OPTIONS, SUPPORTED_LANGS, DEFAULT_LANG, detectBrowserLanguage } from './languages.js';
+
 /** @typedef {typeof zh} LocaleMessages */
-/** @typedef {'zh' | 'en' | 'nan' | 'hak' | 'lzh' | 'yue' | 'ja' | 'ko' | 'th' | 'ms' | 'id' | 'hi' | 'vi' | 'fil' | 'fr' | 'es' | 'de'} LangCode */
 
-const messages = { zh, en, nan, hak, lzh, yue, ja, ko, th, ms, id, hi, vi, fil, fr, es, de };
-export const SUPPORTED_LANGS = Object.keys(messages);
+const messages = { zh, en, nan, hak, lzh, yue, ja, ko, th, ms, id, hi, vi, fil, fr, es, pt, it, nl, de };
 
-export const LANG_OPTIONS = [
-  { code: 'zh', label: '中文', htmlLang: 'zh-TW' },
-  { code: 'en', label: 'English', htmlLang: 'en' },
-  { code: 'nan', label: '台語', htmlLang: 'nan-TW' },
-  { code: 'hak', label: '客語', htmlLang: 'hak-TW' },
-  { code: 'lzh', label: '文言文', htmlLang: 'lzh' },
-  { code: 'yue', label: '粵語', htmlLang: 'yue-Hant' },
-  { code: 'ja', label: '日本語', htmlLang: 'ja' },
-  { code: 'ko', label: '한국어', htmlLang: 'ko' },
-  { code: 'th', label: 'ไทย', htmlLang: 'th' },
-  { code: 'ms', label: 'Bahasa Melayu', htmlLang: 'ms' },
-  { code: 'id', label: 'Bahasa Indonesia', htmlLang: 'id' },
-  { code: 'hi', label: 'हिन्दी', htmlLang: 'hi' },
-  { code: 'vi', label: 'Tiếng Việt', htmlLang: 'vi' },
-  { code: 'fil', label: 'Filipino', htmlLang: 'fil' },
-  { code: 'fr', label: 'Français', htmlLang: 'fr' },
-  { code: 'es', label: 'Español', htmlLang: 'es' },
-  { code: 'de', label: 'Deutsch', htmlLang: 'de' },
-];
+function pseudoLocalizeString(str) {
+  const map = {
+    'a': 'å', 'b': 'ƀ', 'c': 'ç', 'd': 'ď', 'e': 'è', 'f': 'ƒ', 'g': 'ğ', 'h': 'ħ', 'i': 'î', 'j': 'ĵ',
+    'k': 'ķ', 'l': 'ļ', 'm': 'ṁ', 'n': 'ñ', 'o': 'õ', 'p': 'þ', 'q': 'q', 'r': 'ř', 's': 'š', 't': 'ţ',
+    'u': 'û', 'v': 'ṽ', 'w': 'ŵ', 'x': 'x', 'y': 'ý', 'z': 'ž',
+    'A': 'Å', 'B': 'Ɓ', 'C': 'Ç', 'D': 'Ď', 'E': 'È', 'F': 'Ƒ', 'G': 'Ğ', 'H': 'Ħ', 'I': 'Î', 'J': 'Ĵ',
+    'K': 'Ķ', 'L': 'Ļ', 'M': 'Ṁ', 'N': 'Ñ', 'O': 'Õ', 'P': 'Þ', 'Q': 'Q', 'R': 'Ř', 'S': 'Š', 'T': 'Ţ',
+    'U': 'Û', 'V': 'Ṽ', 'W': 'Ŵ', 'X': 'X', 'Y': 'Ý', 'Z': 'Ž'
+  };
+  const IGNORED = ['XAI', 'PDF', 'API', 'SSE', 'PCEN', 'Perch', 'BirdNET', 'SILIC', 'Threads', 'X', 'Facebook'];
+  if (IGNORED.includes(str)) return str;
+  
+  const transformed = str.replace(/(?:\{[^}]+\})|([a-zA-Z])/g, (match, letter) => {
+    if (!letter) return match;
+    return map[letter] || letter;
+  });
+  
+  return `[!! ${transformed} !!]`;
+}
 
-export function detectBrowserLanguage() {
-  if (typeof navigator === 'undefined') return 'en';
-  const code = String(navigator.languages?.[0] ?? navigator.language ?? 'en').toLowerCase();
-  if (code.startsWith('yue') || code.startsWith('zh-hk') || code.startsWith('zh-mo')) return 'yue';
-  if (code.startsWith('zh')) return 'zh';
-  if (code.startsWith('nan')) return 'nan';
-  if (code.startsWith('hak')) return 'hak';
-  if (code.startsWith('ja')) return 'ja';
-  if (code.startsWith('ko')) return 'ko';
-  if (code.startsWith('th')) return 'th';
-  if (code.startsWith('ms')) return 'ms';
-  if (code.startsWith('id')) return 'id';
-  if (code.startsWith('hi')) return 'hi';
-  if (code.startsWith('vi')) return 'vi';
-  if (code.startsWith('fil') || code.startsWith('tl')) return 'fil';
-  if (code.startsWith('fr')) return 'fr';
-  if (code.startsWith('es')) return 'es';
-  if (code.startsWith('de')) return 'de';
-  return 'en';
+function createPseudoLocale(sourceObj) {
+  if (typeof sourceObj === 'string') {
+    return pseudoLocalizeString(sourceObj);
+  }
+  if (Array.isArray(sourceObj)) {
+    return sourceObj.map(createPseudoLocale);
+  }
+  if (typeof sourceObj === 'object' && sourceObj !== null) {
+    const res = {};
+    for (const key in sourceObj) {
+      res[key] = createPseudoLocale(sourceObj[key]);
+    }
+    return res;
+  }
+  return sourceObj;
+}
+
+if (import.meta.env && import.meta.env.DEV) {
+  messages.pseudo = createPseudoLocale(messages.en);
+}
+
+function createSafeDict(dict, fallbackDict, path = '') {
+  if (typeof Proxy === 'undefined') return dict;
+  
+  return new Proxy(dict, {
+    get(target, prop) {
+      if (typeof prop === 'symbol' || prop === '$$typeof' || prop === 'toJSON') {
+        return target[prop];
+      }
+      
+      let val = target[prop];
+      let isMissing = !(prop in target) || val === undefined;
+      
+      if (isMissing) {
+        const fullPath = path ? `${path}.${prop}` : prop;
+        if (import.meta.env && import.meta.env.DEV) {
+          console.warn(`[i18n] Missing key: ${fullPath}`);
+          return `[missing: ${fullPath}]`;
+        } else {
+          console.warn(`[i18n] Missing key in production: ${fullPath}. Falling back to English.`);
+          val = fallbackDict ? fallbackDict[prop] : undefined;
+        }
+      }
+      
+      if (val && typeof val === 'object' && !Array.isArray(val)) {
+        return createSafeDict(val, fallbackDict?.[prop], path ? `${path}.${prop}` : prop);
+      }
+      
+      if (Array.isArray(val)) {
+         return val.map((v, i) => 
+           (v && typeof v === 'object') ? createSafeDict(v, fallbackDict?.[prop]?.[i], `${path ? path + '.' : ''}${prop}[${i}]`) : v
+         );
+      }
+      
+      return val;
+    }
+  });
 }
 
 /**
- * @param {LangCode | string} lang
+ * @param {string} lang
  * @returns {LocaleMessages}
  */
 export function getDict(lang) {
-  return { ...messages.en, ...(messages[lang] ?? messages.en) };
+  const baseDict = messages[lang] || messages.en;
+  return createSafeDict(baseDict, messages.en);
 }
 
 /**
@@ -77,10 +119,12 @@ export function getDict(lang) {
  * @param {Record<string, string | number>} [params]
  */
 export function formatMessage(template, params = {}) {
+  if (!template) return template;
   return Object.entries(params).reduce(
     (str, [key, value]) => str.replaceAll(`{${key}}`, String(value)),
     template
   );
 }
 
-export { zh, en, nan, hak, lzh, yue, ja, ko, th, ms, id, hi, vi, fil, fr, es, de };
+export { LANGUAGE_OPTIONS, SUPPORTED_LANGS, DEFAULT_LANG, detectBrowserLanguage };
+export { zh, en, nan, hak, lzh, yue, ja, ko, th, ms, id, hi, vi, fil, fr, es, pt, it, nl, de };

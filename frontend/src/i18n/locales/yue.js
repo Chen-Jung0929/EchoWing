@@ -1,5 +1,8 @@
 /** @type {import('../index.js').LocaleMessages} */
 const yue = {
+  notFound: '您搵嘅頁面唔存在。',
+  notAvailable: '無',
+  unknownError: '未知嘅後端錯誤',
   "title": "EchoWing",
   "subtitle": "雀鳥聲音辨識",
   "uploadBtn": "上載音訊或影片",
@@ -519,6 +522,49 @@ const yue = {
         }
     ]
 }
+,
+  loaderPreprocessing: '處理緊同埋切割緊音訊',
+  loaderPreprocessingHint: '用緊 Web Audio API 喺前端強制轉單聲道、32kHz 降採樣同 5 秒切割。',
+  spectrogramEventLabels: '物種事件時間標籤',
+  xaiGenerating: 'XAI生成緊...',
+  xaiGeneratingHint: '可解釋性熱圖計算緊，搞掂之後可以儲存、分享或者印報告。',
+  spectrogramNoData: '未有頻譜資料',
+  spectrogramTitle: '音訊頻譜圖',
+  spectrogramDescription: '橫軸係時間，縱軸係 Mel 頻率；頻譜下面半透明區塊入面嘅白色尖峰係 XAI 時間重要性（越高越關鍵）',
+  spectrogramClickToEnlarge: '點擊頻譜圖可以放大睇',
+  spectrogramOverviewSummary: '總覽 · {segmentCount} 段 · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramChunkSummary: '分析窗 {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramEnlarge: '放大睇頻譜圖',
+  xaiRedHeatmapHint: '越深嘅紅色代表 AI 模型喺辨識嗰陣嘅關注度越高',
+  visualizerChunkSummary: '片段 {chunkIndex} · 5.0s · 32kHz · Mono',
+  pageMetaTitleSuffix: 'EchoWing - AI 雀鳥聲學辨識平台',
+  loadingTitle: '分析緊...',
+  apiErrorAudioFormat: '音訊分析請求失敗',
+  apiErrorStream: '音訊串流分析請求失敗',
+  voteDisclaimer: '免責聲明：本網站嘅 AI 模組淨係提供分析同行動建議，唔作最後決定。本平台唔保證辨識結果絕對啱，亦唔構成預測承諾、最終決策或者行為保證。',
+  voteEmptyOverview: '所有片段都未達 {threshold}% 信心門檻，冇可靠嘅物種辨識總覽。',
+  voteEmptySuggestion: '建議重新錄過一段有清晰雀鳥聲嘅，或者逐段睇吓低信心候選同決策輔助說明。',
+  voteResultOverview: '投票彙整：{species} 喺 {votes}/{validCount} 個分析窗嘅 Top 預測入面出現（整體得票率 {pct}%）。主要出現喺片段 {windows}。',
+  voteResultSuggestion: '建議用總覽結果做成段錄音嘅參考；如果各片段差好多，請點時間軸睇分段詳情。',
+  distanceMeters: '{meters} 米',
+  distanceKm: '{km} 公里',
+  durationSeconds: '{s} 秒',
+  durationMinSec: '{m} 分 {s} 秒',
+  pdfCheckEmptyPage: '第 {page} 頁內容太少（疑似空白頁）',
+  pdfCheckOrphanHeading: '第 {page} 頁底可能有 orphan heading',
+  pdfCheckUnsearchable: 'PDF 抽唔到足夠文字（冇得搜尋）',
+  pdfCheckTooManyPages: '頁數異常：{count} 頁（預計大概 ≤ {max}）',
+  spectrogramXLabel: '時間 (秒)',
+  spectrogramYLabel: 'Mel 頻率',
+  spectrogramIntensity: '強度',
+  timelineSingleEventEdge: '喺 {time}s 偵測到 {species}（事件信心 {pct}%）。呢個事件好近錄音邊界，反卷積覆蓋率可能較低，請謹慎參考。',
+  timelineSingleEventNormal: '喺 {time}s 偵測到 {species}，事件信心 {pct}%（一般門檻 {minPct}%）。呢個數值顯示該時段有強烈嘅物種聲學特徵。',
+  timelineSingleEventSuggestion: '呢個事件落喺 {window} 分析窗。建議對照頻譜圖同 XAI 時間重要性，並以實地觀察或影像做二次確認。',
+  timelineNoEvents: '時間軸未偵測到達到事件信心門檻（一般事件 ≥{minPct}%、邊界 ≥{boundaryPct}%）嘅明顯鳴叫事件。',
+  timelineNoEventsSuggestion: '建議對照全段頻譜同原始音訊；如果預期有雀鳥聲，可以試下喺安靜啲嘅環境重新錄製或者延長錄音時間。',
+  timelineMultipleEvents: '時間軸偵測到 {count} 個物種事件、{speciesCount} 種鳥類；最高事件信心係 {species}（{pct}%）。',
+  timelineMultipleEventsSuggestion: '建議用時間軸事件做參考摘要；點事件可以睇嗰個時段嘅物種同頻譜。如果用喺生態調查，請加埋實地觀察或者影像做確認。',
+  pdfRangeTo: '{from} 至 {to}'
 };
 
 export default yue;

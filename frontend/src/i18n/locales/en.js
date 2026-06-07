@@ -2,6 +2,10 @@
 const en = {
   title: 'EchoWing',
   subtitle: 'Bird Sound Recognition',
+  notFound: 'The page you are looking for does not exist.',
+  notAvailable: 'N/A',
+  unknownError: 'Unknown backend error',
+
   uploadBtn: 'Upload audio or video',
   uploadFormatsHint:
     'WAV, MP3, FLAC, OGG, M4A, AAC, WEBM; video files use their audio track (max 30 s, 20 MB).',
@@ -547,6 +551,49 @@ const en = {
         }
     ]
 }
+,
+  loaderPreprocessing: 'Preprocessing and chunking audio',
+  loaderPreprocessingHint: 'Forcing Mono, downsampling to 32kHz, and chunking into 5-second segments via Web Audio API on the frontend.',
+  spectrogramEventLabels: 'Species event time labels',
+  xaiGenerating: 'Generating XAI...',
+  xaiGeneratingHint: 'Computing interpretability heatmap... You can save, share, or print the report when finished.',
+  spectrogramNoData: 'No spectrogram data',
+  spectrogramTitle: 'Spectrogram',
+  spectrogramDescription: 'X-axis is time, Y-axis is Mel frequency; white peaks in the translucent area below indicate XAI temporal importance (higher is more critical).',
+  spectrogramClickToEnlarge: 'Click the spectrogram to enlarge',
+  spectrogramOverviewSummary: 'Overview · {segmentCount} segments · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramChunkSummary: 'Window {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramEnlarge: 'Enlarge spectrogram',
+  xaiRedHeatmapHint: 'Deeper red indicates higher attention from the AI model during recognition.',
+  visualizerChunkSummary: 'Segment {chunkIndex} · 5.0s · 32kHz · Mono',
+  pageMetaTitleSuffix: 'EchoWing - AI Bird Sound Recognition',
+  loadingTitle: 'Analyzing...',
+  apiErrorAudioFormat: 'Audio analysis request failed',
+  apiErrorStream: 'Audio stream analysis request failed',
+  voteDisclaimer: 'Disclaimer: The AI models on this website only provide analysis and suggestions, not final decisions. We do not guarantee absolute accuracy, nor do we make predictive promises or behavioral guarantees.',
+  voteEmptyOverview: 'No segments reached the {threshold}% confidence threshold. No reliable species overview available.',
+  voteEmptySuggestion: 'Consider re-recording a segment with clear bird calls, or examine low-confidence candidates and decision support section by section.',
+  voteResultOverview: 'Vote summary: {species} appeared in Top predictions for {votes}/{validCount} analysis windows (overall vote rate {pct}%). Mainly in segments {windows}.',
+  voteResultSuggestion: 'Use the overview as a reference for the entire recording. If segments vary greatly, click the timeline for details.',
+  distanceMeters: '{meters} m',
+  distanceKm: '{km} km',
+  durationSeconds: '{s} s',
+  durationMinSec: '{m} m {s} s',
+  pdfCheckEmptyPage: 'Page {page} has too little content (possibly blank)',
+  pdfCheckOrphanHeading: 'Page {page} might have an orphan heading at the bottom',
+  pdfCheckUnsearchable: 'PDF cannot extract enough text (unsearchable)',
+  pdfCheckTooManyPages: 'Abnormal page count: {count} pages (expected ≤ {max})',
+  spectrogramXLabel: 'Time (seconds)',
+  spectrogramYLabel: 'Mel frequency',
+  spectrogramIntensity: 'Intensity',
+  timelineSingleEventEdge: '{species} detected at {time}s (event confidence {pct}%). This event is near the recording edge, deconvolution coverage may be lower, please reference cautiously.',
+  timelineSingleEventNormal: '{species} detected at {time}s, event confidence {pct}% (normal threshold {minPct}%). This indicates strong species acoustic features in this period.',
+  timelineSingleEventSuggestion: 'This event falls in analysis window {window}. Suggest cross-referencing with spectrogram and XAI temporal importance, and verifying with field observations or images.',
+  timelineNoEvents: 'Timeline detected no distinct vocalization events reaching the confidence threshold (normal ≥{minPct}%, edge ≥{boundaryPct}%).',
+  timelineNoEventsSuggestion: 'Suggest reviewing the full spectrogram and original audio. If bird calls were expected, try re-recording in a quieter environment or extending the duration.',
+  timelineMultipleEvents: 'Timeline detected {count} species events, {speciesCount} bird species; highest event confidence is {species} ({pct}%).',
+  timelineMultipleEventsSuggestion: 'Suggest using timeline events as a reference summary. Click an event to view species and spectrogram for that period. If used for ecological surveys, supplement with field observations or images.',
+  pdfRangeTo: '{from} to {to}'
 };
 
 export default en;

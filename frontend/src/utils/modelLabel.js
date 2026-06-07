@@ -3,7 +3,7 @@
  * @returns {'perch' | 'perch-fast' | 'birdnet' | 'silic'}
  */
 export function normalizeModelName(modelName) {
-  const key = String(modelName ?? 'birdnet').toLowerCase();
+  const key = String(modelName || 'birdnet').toLowerCase();
   if (key === 'perch') return 'perch-fast';
   if (key === 'perch-fast' || key === 'birdnet' || key === 'silic') return key;
   return 'birdnet';

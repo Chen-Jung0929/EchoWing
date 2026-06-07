@@ -1,5 +1,8 @@
 /** @type {import('../index.js').LocaleMessages} */
 const lzh = {
+  notFound: '尋之頁無存。',
+  notAvailable: '無',
+  unknownError: '未知之後端錯誤',
   "title": "EchoWing",
   "subtitle": "辨鳥聲",
   "uploadBtn": "納音聲或影片",
@@ -519,6 +522,49 @@ const lzh = {
         }
     ]
 }
+,
+  loaderPreprocessing: '方理音訊而割之',
+  loaderPreprocessingHint: '方以 Web Audio API 於前端強為單聲道、降採樣至 32kHz 且割為五秒之段。',
+  spectrogramEventLabels: '物種事件之時標',
+  xaiGenerating: '方生 XAI...',
+  xaiGeneratingHint: '方計可釋性熱圖，畢則可存、分或印之。',
+  spectrogramNoData: '未有頻譜之料',
+  spectrogramTitle: '音訊頻譜之圖',
+  spectrogramDescription: '橫軸為時，縱軸為 Mel 頻率；頻譜下半明之區有白峰，示 XAI 之時重（愈高愈要）',
+  spectrogramClickToEnlarge: '按頻譜圖可廓而視之',
+  spectrogramOverviewSummary: '總覽 · {segmentCount} 段 · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramChunkSummary: '分析窗 {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}',
+  spectrogramEnlarge: '廓而視頻譜之圖',
+  xaiRedHeatmapHint: '愈深之紅，表 AI 於辨時愈為著意。',
+  visualizerChunkSummary: '段 {chunkIndex} · 5.0s · 32kHz · Mono',
+  pageMetaTitleSuffix: 'EchoWing - AI 鳥語辨識之平臺',
+  loadingTitle: '方析...',
+  apiErrorAudioFormat: '音訊分析之求敗矣',
+  apiErrorStream: '音訊串流分析之求敗矣',
+  voteDisclaimer: '免責之聲：本站之 AI 僅備分析與建言，非為定論。吾等不保其絕對無誤，亦不為預測之諾或行之保。',
+  voteEmptyOverview: '各段皆未達 {threshold}% 信度之限，無可信之物種總覽。',
+  voteEmptySuggestion: '議重錄含晰鳥音之段，或逐段察低信之選與決之助。',
+  voteResultOverview: '投之彙：{species} 於 {votes}/{validCount} 分析窗之首測中現（總得票率 {pct}%）。要見於段 {windows}。',
+  voteResultSuggestion: '議以總覽為全錄之參；若各段異大，請按時軸觀其詳。',
+  distanceMeters: '{meters} 米',
+  distanceKm: '{km} 里',
+  durationSeconds: '{s} 秒',
+  durationMinSec: '{m} 分 {s} 秒',
+  pdfCheckEmptyPage: '第 {page} 頁寡文（疑白）',
+  pdfCheckOrphanHeading: '第 {page} 頁底或有孤題',
+  pdfCheckUnsearchable: 'PDF 弗能取字（不可索）',
+  pdfCheckTooManyPages: '頁數異常：{count} 頁（期約 ≤ {max}）',
+  spectrogramXLabel: '時（秒）',
+  spectrogramYLabel: 'Mel 頻率',
+  spectrogramIntensity: '強',
+  timelineSingleEventEdge: '於 {time}s 偵 {species}（信度 {pct}%）。近於錄之涯，反卷覆率或低，慎參之。',
+  timelineSingleEventNormal: '於 {time}s 偵 {species}，信度 {pct}%（常限 {minPct}%）。此示該時有強之鳥聲特徵。',
+  timelineSingleEventSuggestion: '此事件落於 {window} 分析窗。議對頻譜與 XAI 之時重，復以實觀或影證之。',
+  timelineNoEvents: '時軸未察達限（常 ≥{minPct}%、崖 ≥{boundaryPct}%）之明鳴也。',
+  timelineNoEventsSuggestion: '議觀全譜與原音；若期有鳥鳴，試於靜處重錄或延時。',
+  timelineMultipleEvents: '時軸察 {count} 鳥事、{speciesCount} 鳥種；至高信度為 {species}（{pct}%）。',
+  timelineMultipleEventsSuggestion: '議以時軸之事為參；按之可觀該時鳥種與譜。若為生態之考，請輔以實觀或影證。',
+  pdfRangeTo: '{from} 至 {to}'
 };
 
 export default lzh;

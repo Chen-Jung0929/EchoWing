@@ -138,7 +138,7 @@ export const analyzeAudioChunks = async (chunks, metadata, opts = {}) => {
     return errorData;
   } catch (error) {
     if (error?.name === 'AbortError') throw error;
-    console.error('[API Error] 音訊分析請求失敗:', error);
+    console.error('[API Error]', error);
     throw error;
   }
 };
@@ -174,7 +174,7 @@ export const analyzeAudioFile = async (file, metadata, modelSelection = 'birdnet
     return errorData;
   } catch (error) {
     if (error?.name === 'AbortError') throw error;
-    console.error(`[API Error] 音訊分析請求失敗:`, error);
+    console.error(`[API Error]`, error);
     throw error;
   }
 };
@@ -207,14 +207,14 @@ export const analyzeAudioStream = async (
     typeof modelOrOptions === 'object' &&
     typeof modelOrOptions.onChunk === 'function'
   ) {
-    modelSelection = modelOrOptions.modelSelection ?? 'birdnet';
+    modelSelection = modelOrOptions.modelSelection || 'birdnet';
     chunkHandler = modelOrOptions.onChunk;
     signal = modelOrOptions.signal;
   } else if (typeof modelOrOptions === 'function') {
     chunkHandler = modelOrOptions;
     signal = onChunk?.signal ?? opts?.signal;
   } else {
-    modelSelection = modelOrOptions ?? 'birdnet';
+    modelSelection = modelOrOptions || 'birdnet';
     chunkHandler = onChunk;
     signal = opts?.signal;
   }
@@ -299,7 +299,7 @@ export const analyzeAudioStream = async (
     }
   } catch (error) {
     if (error?.name === 'AbortError') throw error;
-    console.error(`[API Error] 音訊串流分析請求失敗:`, error);
+    console.error(`[API Error]`, error);
     throw error;
   }
 };

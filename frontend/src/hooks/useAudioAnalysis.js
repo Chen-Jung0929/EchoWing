@@ -130,7 +130,7 @@ export function useAudioAnalysis(dict, onNavigate) {
     }
 
     if (file.size > 20 * 1024 * 1024) {
-      setErrorMessage(dict.fileTooLarge || 'File too large (max 20MB)');
+      setErrorMessage(dict.fileTooLarge);
       return;
     }
 
@@ -141,7 +141,7 @@ export function useAudioAnalysis(dict, onNavigate) {
         return;
       }
       if (duration != null && duration > MAX_AUDIO_DURATION_SEC + 0.5) {
-        setErrorMessage(dict.fileTooLong || 'File too long (max 30 seconds)');
+        setErrorMessage(dict.fileTooLong);
         return;
       }
     } catch (e) {
@@ -294,19 +294,19 @@ export function useAudioAnalysis(dict, onNavigate) {
             confidence_threshold: resolveConfidenceThreshold(mockResult.confidence_threshold),
             processed_at: new Date().toISOString(),
             prediction_duration_ms: predictionStartedAtRef.current ? Date.now() - predictionStartedAtRef.current : null,
-            backend_error: backendError.code ? dict.apiErrors?.[backendError.code] || dict[backendError.code] || backendError.message : backendError.message || 'Unknown backend error',
+            backend_error: backendError.code ? dict.apiErrors?.[backendError.code] || dict[backendError.code] || backendError.message : backendError.message || dict.unknownError,
           });
           onNavigate?.('/result');
           return;
         } catch (mockError) {
           console.error('Mock fallback failed:', mockError);
-          setErrorMessage(mockError.message || 'Backend and mock fallback both failed.');
+          setErrorMessage(mockError.message || dict.unknownError);
           onNavigate?.('/error');
           return;
         }
       }
 
-      setErrorMessage(backendError.code ? dict.apiErrors?.[backendError.code] || dict[backendError.code] || backendError.message : backendError.message || 'Unknown backend error');
+      setErrorMessage(backendError.code ? dict.apiErrors?.[backendError.code] || dict[backendError.code] || backendError.message : backendError.message || dict.unknownError);
       onNavigate?.('/error');
     } finally {
       setLoadingHint('');

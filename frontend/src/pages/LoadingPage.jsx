@@ -3,7 +3,7 @@ import KiwiAnimation from '../features/loading/KiwiAnimation';
 import { useAudioAnalysisContext } from '../context/AudioAnalysisContext';
 
 export default function LoadingPage({ dict, isDarkMode }) {
-  usePageMeta(dict.loadingTitle || '分析中...');
+  usePageMeta(dict.loadingTitle);
   const { loadingHint } = useAudioAnalysisContext();
   return (
     <div

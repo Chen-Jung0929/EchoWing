@@ -24,7 +24,7 @@ export function OcclusionXaiAnimation({ dict }) {
 
       {/* Confidence Meter */}
       <div className="confidence-meter mt-4 flex items-center gap-3">
-        <span className="text-xs uppercase font-bold tracking-wider text-[var(--c-text)]/50">{dict.xaiEducation?.animations?.confidence || 'Confidence'}</span>
+        <span className="text-xs uppercase font-bold tracking-wider text-[var(--c-text)]/50">{dict.xaiEducation?.animations?.confidence}</span>
         <div className="meter-track flex-1 h-3 rounded-full bg-[var(--c-text)]/10 overflow-hidden">
           <div className="meter-fill h-full bg-[var(--c-primary)] rounded-full" />
         </div>
@@ -45,7 +45,7 @@ export function OcclusionXaiAnimation({ dict }) {
       </div>
 
       <p className="mt-4 text-xs text-center text-[var(--c-text)]/60">
-        {dict?.xaiEducation?.animations?.occlusion || 'Masking an important audio segment causes the confidence to drop.'}
+        {dict?.xaiEducation?.animations?.occlusion}
       </p>
     </div>
   );
