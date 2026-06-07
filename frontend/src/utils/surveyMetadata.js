@@ -175,9 +175,31 @@ function requestGeolocationPosition(options) {
   });
 }
 
+/** @returns {Promise<boolean>} */
+export async function isGeolocationAvailable() {
+  if (typeof navigator === 'undefined' || !navigator.geolocation) return false;
+  if (!navigator.permissions?.query) return true;
+  try {
+    const status = await navigator.permissions.query({ name: 'geolocation' });
+    return status.state !== 'denied';
+  } catch {
+    return true;
+  }
+}
+
+function isGeolocationPermissionDenied(error) {
+  return Number(error?.code) === 1;
+}
+
 export async function fetchCurrentCoordinates() {
   if (typeof navigator === 'undefined' || !navigator.geolocation) {
     throw new Error('unsupported');
+  }
+
+  if (!(await isGeolocationAvailable())) {
+    const stored = readStoredCoordinates();
+    if (stored) return stored;
+    throw new Error('unavailable');
   }
 
   const attempts = [
@@ -197,6 +219,7 @@ export async function fetchCurrentCoordinates() {
       return coordinates;
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
+      if (isGeolocationPermissionDenied(error)) break;
     }
   }
 

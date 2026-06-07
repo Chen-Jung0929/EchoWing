@@ -3,7 +3,11 @@ import { createPortal } from 'react-dom';
 import { MdClose } from 'react-icons/md';
 import { formatMessage } from '../../i18n';
 import { queryNearbyRecords } from '../../services/surveySheet';
-import { fetchCurrentCoordinates, readStoredCoordinates } from '../../utils/surveyMetadata';
+import {
+  fetchCurrentCoordinates,
+  isGeolocationAvailable,
+  readStoredCoordinates,
+} from '../../utils/surveyMetadata';
 import { formatDistanceKm } from '../../utils/formatDistanceKm';
 import LocationMap, { RecordsOverviewMap } from '../LocationMap/LocationMap';
 
@@ -104,9 +108,13 @@ export default function NearbyRecordsModal({
       if (Number.isFinite(initialLat) && Number.isFinite(initialLng)) {
         resolved = { latitude: initialLat, longitude: initialLng };
       } else {
-        try {
-          resolved = await fetchCurrentCoordinates();
-        } catch {
+        if (await isGeolocationAvailable()) {
+          try {
+            resolved = await fetchCurrentCoordinates();
+          } catch {
+            resolved = readStoredCoordinates();
+          }
+        } else {
           resolved = readStoredCoordinates();
         }
       }

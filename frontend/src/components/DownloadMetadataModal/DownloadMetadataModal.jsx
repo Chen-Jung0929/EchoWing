@@ -5,6 +5,7 @@ import {
   createEmptySurveyMetadata,
   fetchCurrentCoordinates,
   formatCoordinatesLabel,
+  isGeolocationAvailable,
   normalizeSurveyMetadata,
   readStoredCoordinates,
   trimSurveyMetadata,
@@ -44,20 +45,36 @@ export default function DownloadMetadataModal({
   const wasOpenRef = useRef(false);
 
   const applyGeolocationToForm = useCallback(() => {
-    if (!navigator.geolocation) {
-      setLocationError(dict.locationUnsupported);
-      return;
-    }
     setLocationError('');
     setLocating(true);
-    fetchCurrentCoordinates()
-      .then(({ latitude, longitude }) => {
+    isGeolocationAvailable()
+      .then((available) => {
+        if (!available) {
+          const stored = readStoredCoordinates();
+          if (stored) {
+            setForm((prev) => ({
+              ...prev,
+              overview: {
+                ...prev.overview,
+                coordinates: stored,
+                location: formatCoordinatesLabel(stored),
+              },
+            }));
+            return null;
+          }
+          setLocationError(dict.locationUnsupported);
+          return null;
+        }
+        return fetchCurrentCoordinates();
+      })
+      .then((result) => {
+        if (!result) return;
         setForm((prev) => ({
           ...prev,
           overview: {
             ...prev.overview,
-            coordinates: { latitude, longitude },
-            location: formatCoordinatesLabel({ latitude, longitude }),
+            coordinates: { latitude: result.latitude, longitude: result.longitude },
+            location: formatCoordinatesLabel(result),
           },
         }));
       })
@@ -149,14 +166,12 @@ export default function DownloadMetadataModal({
       return undefined;
     }
 
-    if (!navigator.geolocation) {
-      return undefined;
-    }
-
     setLocating(true);
-    fetchCurrentCoordinates()
-      .then(({ latitude, longitude }) => {
-        applyCoordinates(latitude, longitude);
+    isGeolocationAvailable()
+      .then((available) => (available ? fetchCurrentCoordinates() : null))
+      .then((result) => {
+        if (!result || cancelled) return;
+        applyCoordinates(result.latitude, result.longitude);
       })
       .catch(() => {
         // 開啟表單時定位失敗不顯示錯誤，使用者可手動輸入或按「目前位置」重試
