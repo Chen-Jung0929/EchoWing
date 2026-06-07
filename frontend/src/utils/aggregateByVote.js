@@ -19,11 +19,12 @@ const DISCLAIMER = {
 /**
  * 投票聚合：僅統計各片段通過信心門檻的 top_species。
  * @param {ChunkEntry[]} chunks
- * @param {{ confidenceThreshold?: number }} [options]
+ * @param {{ confidenceThreshold?: number, windowSec?: number, dict?: object }} [options]
  */
 export function aggregateChunksByVote(chunks, options = {}) {
   const confidenceThreshold = options.confidenceThreshold ?? DEFAULT_CONFIDENCE_THRESHOLD;
   const windowSec = options.windowSec ?? modelWindowSec(chunks?.[0]?.model_name);
+  const dict = options.dict;
   const validChunks = (chunks ?? []).filter((c) => !c.error && c.predictions);
   if (validChunks.length === 0) return null;
 
@@ -86,30 +87,39 @@ export function aggregateChunksByVote(chunks, options = {}) {
       top_species,
       n,
       confidenceThreshold,
-      windowSec
+      windowSec,
+      dict
     ),
   };
 }
+
+import { formatMessage } from '../i18n';
 
 function buildSummaryDecisionSupport(
   topSpecies,
   validCount,
   threshold = DEFAULT_CONFIDENCE_THRESHOLD,
-  windowSec = 5
+  windowSec = 5,
+  dict = null
 ) {
   const thresholdPct = Math.round(threshold * 100);
+  const fallbackDict = dict?.decisionSupport;
 
   if (!topSpecies.length) {
     return {
-      risk_analysis: {
-        zh: `各片段皆未達 ${thresholdPct}% 信心門檻，無可靠物種辨識總覽。`,
-        en: `No segment met the ${thresholdPct}% confidence threshold; no reliable species summary.`,
-      },
-      action_recommendation: {
-        zh: '建議重新錄製含清晰鳥鳴的片段，或逐段查看低信心候選與決策輔助說明。',
-        en: 'Re-record with clearer bird calls, or review each segment’s reference candidates and decision support.',
-      },
-      disclaimer: DISCLAIMER,
+      risk_analysis: fallbackDict 
+        ? formatMessage(fallbackDict.noReliableSummaryRisk, { threshold: thresholdPct })
+        : {
+            zh: `各片段皆未達 ${thresholdPct}% 信心門檻，無可靠物種辨識總覽。`,
+            en: `No segment met the ${thresholdPct}% confidence threshold; no reliable species summary.`,
+          },
+      action_recommendation: fallbackDict
+        ? fallbackDict.noReliableSummaryAction
+        : {
+            zh: '建議重新錄製含清晰鳥鳴的片段，或逐段查看低信心候選與決策輔助說明。',
+            en: 'Re-record with clearer bird calls, or review each segment’s reference candidates and decision support.',
+          },
+      disclaimer: fallbackDict ? fallbackDict.disclaimer : DISCLAIMER,
     };
   }
 
@@ -118,23 +128,29 @@ function buildSummaryDecisionSupport(
   const votes = top.vote_count;
   const nameZh = top.name?.zh ?? top.species_id;
   const nameEn = top.name?.en ?? top.species_id;
+  const name = dict ? (top.name?.[dict.htmlLang?.split('-')[0]] ?? nameEn) : nameEn;
+  
   const chunkHint =
     top.chunk_indices?.length > 0
       ? top.chunk_indices
           .map((sec) => segmentNumberFromStart(sec, windowSec))
-          .join('、')
+          .join(dict ? (dict.htmlLang?.startsWith('zh') ? '、' : ', ') : ', ')
       : '—';
 
   return {
-    risk_analysis: {
-      zh: `投票彙整：${nameZh} 在 ${votes}/${validCount} 個分析窗的 Top 預測中出現（整體得票率 ${pct}%）。主要出現在窗 ${chunkHint}。`,
-      en: `Vote aggregate: ${nameEn} appeared in the top predictions of ${votes}/${validCount} window(s) (overall vote share ${pct}%). Most prominent in window(s) ${chunkHint}.`,
-    },
-    action_recommendation: {
-      zh: '建議以總覽結果為整段錄音的參考；若各片段差異大，請點選時間軸查看分段詳情。',
-      en: 'Use the summary as a reference for the full recording; if segments disagree, use the timeline to inspect each segment.',
-    },
-    disclaimer: DISCLAIMER,
+    risk_analysis: fallbackDict
+      ? formatMessage(fallbackDict.voteAggregateRisk, { name, votes, validCount, pct, chunkHint })
+      : {
+          zh: `投票彙整：${nameZh} 在 ${votes}/${validCount} 個分析窗的 Top 預測中出現（整體得票率 ${pct}%）。主要出現在窗 ${chunkHint}。`,
+          en: `Vote aggregate: ${nameEn} appeared in the top predictions of ${votes}/${validCount} window(s) (overall vote share ${pct}%). Most prominent in window(s) ${chunkHint}.`,
+        },
+    action_recommendation: fallbackDict
+      ? fallbackDict.useSummaryAction
+      : {
+          zh: '建議以總覽結果為整段錄音的參考；若各片段差異大，請點選時間軸查看分段詳情。',
+          en: 'Use the summary as a reference for the full recording; if segments disagree, use the timeline to inspect each segment.',
+        },
+    disclaimer: fallbackDict ? fallbackDict.disclaimer : DISCLAIMER,
   };
 }
 

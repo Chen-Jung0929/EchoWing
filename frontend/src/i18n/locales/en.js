@@ -396,6 +396,20 @@ const en = {
   pdfTimeSec: '{sec} s',
   pdfSegmentTitle: 'Segment {label} · {timeRange}',
   pdfFullRecordingSpectrogram: 'Full recording spectrogram',
+  decisionSupport: {
+    noReliableSummaryRisk: "No segment met the {threshold}% confidence threshold; no reliable species summary.",
+    noReliableSummaryAction: "Re-record with clearer bird calls, or review each segment’s reference candidates and decision support.",
+    voteAggregateRisk: "Vote aggregate: {name} appeared in the top predictions of {votes}/{validCount} window(s) (overall vote share {pct}%). Most prominent in window(s) {chunkHint}.",
+    useSummaryAction: "Use the summary as a reference for the full recording; if segments disagree, use the timeline to inspect each segment.",
+    boundaryEventRisk: "{name} detected at {peakTime}s (event confidence {pct}%). This event is near the recording boundary; deconvolution coverage may be lower—interpret with caution.",
+    generalEventRisk: "{name} detected at {peakTime}s with {pct}% event confidence (general threshold {minPct}%). This score combines deconvolved activity and temporal coverage.",
+    eventFallbackAction: "This event falls in analysis window {timeRange}. Cross-check the spectrogram and XAI time importance; confirm with field observation or visual evidence when possible.",
+    noTimelineEventsRisk: "The timeline shows no clear vocalization events above the event-confidence thresholds (general ≥{minPct}%, boundary ≥{boundaryPct}%).",
+    timelineFallbackAction: "Review the full spectrogram and original audio. If bird calls were expected, try re-recording in a quieter setting or using a longer clip.",
+    timelineSummaryRisk: "Timeline detected {eventCount} species event(s) across {speciesCount} species; highest event confidence is {name} ({pct}%, peak {peakTime}). Based on deconvolved timeline filtering, not per-window vote aggregation.",
+    timelineSummaryFallbackAction: "Use timeline events as a summary reference for the full recording; select an event to inspect that time window. For ecological surveys, confirm with field observation or visual evidence.",
+    disclaimer: "Disclaimer: The AI module provides analysis and decision-support suggestions only. It does not make final decisions or guarantee absolute correctness.",
+  },
 
   apiErrors: {
     ERR_SERVER_HTTP_ERROR: "Server responded with an error, please try again later.",
@@ -415,6 +429,13 @@ const en = {
     "flowLabel": "EchoWing Audio Analysis Pipeline",
     "takeawayLabel": "Takeaway:",
     "backToHome": "Back to Home",
+    "animations": {
+      "audioToSpec": "Audio waves are mapped into time-frequency cells.",
+      "slidingWindow": "Each window receives its own species score.",
+      "deconvolution": "Overlapping window scores project downwards to form a continuous activity curve.",
+      "occlusion": "Masking an important audio segment causes the confidence to drop.",
+      "confidence": "Confidence"
+    },
     "flowSteps": [
         {
             "icon": "🎙️",

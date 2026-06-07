@@ -368,6 +368,20 @@ const ko = {
   "pdfTimeSec": "{sec}초",
   "pdfSegmentTitle": "세그먼트 {label} · {timeRange}",
   "pdfFullRecordingSpectrogram": "전체 녹음 스펙트로그램",
+  "decisionSupport": {
+    "noReliableSummaryRisk": "모든 세그먼트가 {threshold}% 신뢰도 임계값에 도달하지 않아 신뢰할 수 있는 종 식별 개요가 없습니다.",
+    "noReliableSummaryAction": "새소리가 선명한 구간을 다시 녹음하거나, 각 세그먼트의 낮은 신뢰도 후보 및 의사 결정 지원 설명을 확인하세요.",
+    "voteAggregateRisk": "투표 집계: {name}이(가) {votes}/{validCount}개의 분석 창의 상위 예측에 나타났습니다(전체 득표율 {pct}%). 주로 창 {chunkHint}에 나타납니다.",
+    "useSummaryAction": "개요 결과를 전체 녹음의 참고용으로 사용하세요. 세그먼트 간 차이가 크면 타임라인을 클릭하여 세그먼트 세부 정보를 확인하세요.",
+    "boundaryEventRisk": "{peakTime}s에 {name}이(가) 감지되었습니다(이벤트 신뢰도 {pct}%). 이 이벤트는 녹음 경계에 가까워 디컨볼루션 커버리지가 낮을 수 있으므로 해석에 주의하세요.",
+    "generalEventRisk": "{peakTime}s에 {name}이(가) 감지되었습니다. 이벤트 신뢰도는 {pct}%입니다(일반 이벤트 임계값 {minPct}%). 이 수치는 디컨볼루션 활동과 시간 커버리지를 종합하여 추정한 것입니다.",
+    "eventFallbackAction": "이 이벤트는 분석 창 {timeRange}에 속합니다. 스펙트로그램 및 XAI 시간 중요도와 대조하고 가급적 현장 관찰이나 영상으로 다시 확인하세요.",
+    "noTimelineEventsRisk": "타임라인에서 이벤트 신뢰도 임계값(일반 이벤트 ≥{minPct}%, 경계 ≥{boundaryPct}%)에 도달한 뚜렷한 울음소리 이벤트가 감지되지 않았습니다.",
+    "timelineFallbackAction": "전체 스펙트로그램과 원본 오디오를 대조해 보세요. 새소리가 예상되는 경우 더 조용한 환경에서 다시 녹음하거나 녹음 시간을 연장해 보세요.",
+    "timelineSummaryRisk": "타임라인에서 {eventCount}개의 종 이벤트, {speciesCount}종의 조류가 감지되었습니다. 최고 이벤트 신뢰도는 {name}입니다({pct}%, 피크 {peakTime}). 결과는 창별 투표 집계가 아니라 디컨볼루션 타임라인과 이벤트 신뢰도를 기준으로 필터링됩니다.",
+    "timelineSummaryFallbackAction": "타임라인 이벤트를 전체 녹음에 대한 참고 요약으로 사용하세요. 이벤트를 클릭하면 해당 시간대의 종과 스펙트로그램을 볼 수 있습니다. 생태 조사에 사용하는 경우 현장 관찰이나 영상으로 확인하세요.",
+    "disclaimer": "면책 조항: 본 웹사이트의 AI 모듈은 분석 및 조치 권장 사항만 제공하며 최종 결정을 내리지 않습니다. 본 플랫폼은 인식 결과의 절대적인 정확성을 보장하지 않으며, 예측 약속, 최종 결정 또는 행동 보장을 구성하지 않습니다."
+  },
 
   apiErrors: {
     ERR_SERVER_HTTP_ERROR: "서버 오류가 발생했습니다",
@@ -387,6 +401,13 @@ const ko = {
     "flowLabel": "EchoWing 오디오 분석 파이프라인",
     "takeawayLabel": "요점:",
     "backToHome": "홈으로 돌아가기",
+    "animations": {
+      "audioToSpec": "음파가 시간-주파수 격자로 매핑됩니다.",
+      "slidingWindow": "각 시간 창은 자체 종 점수를 받습니다.",
+      "deconvolution": "겹치는 창의 점수가 투영되어 연속적인 활동 곡선을 형성합니다.",
+      "occlusion": "중요한 오디오 구간을 마스킹하면 신뢰도 점수가 떨어집니다.",
+      "confidence": "신뢰도 점수"
+    },
     "flowSteps": [
         {
             "icon": "🎙️",

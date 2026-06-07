@@ -368,6 +368,20 @@ const de = {
   pdfTimeSec: "{sec} s",
   pdfSegmentTitle: "Segmentieren Sie {label} · {timeRange}",
   pdfFullRecordingSpectrogram: "Vollständiges Aufzeichnungsspektrogramm",
+  decisionSupport: {
+    noReliableSummaryRisk: "Kein Segment hat den Konfidenzschwellenwert von {threshold}% erreicht; keine zuverlässige Artenzusammenfassung.",
+    noReliableSummaryAction: "Nehmen Sie mit deutlicheren Vogelrufen neu auf oder überprüfen Sie die Referenzkandidaten und die Entscheidungshilfe jedes Segments.",
+    voteAggregateRisk: "Stimmenaggregation: {name} erschien in den Top-Vorhersagen von {votes}/{validCount} Fenster(n) (Gesamtstimmenanteil {pct}%). Am auffälligsten in Fenster(n) {chunkHint}.",
+    useSummaryAction: "Verwenden Sie die Zusammenfassung als Referenz für die gesamte Aufnahme; wenn Segmente nicht übereinstimmen, verwenden Sie die Zeitleiste, um jedes Segment zu überprüfen.",
+    boundaryEventRisk: "{name} erkannt bei {peakTime}s (Ereigniskonfidenz {pct}%). Dieses Ereignis liegt nahe der Aufnahmegrenze; die Entfaltungsabdeckung könnte geringer sein, mit Vorsicht interpretieren.",
+    generalEventRisk: "{name} erkannt bei {peakTime}s mit {pct}% Ereigniskonfidenz (allgemeiner Schwellenwert {minPct}%). Diese Punktzahl kombiniert entfaltete Aktivität und zeitliche Abdeckung.",
+    eventFallbackAction: "Dieses Ereignis fällt in das Analysefenster {timeRange}. Überprüfen Sie das Spektrogramm und die XAI-Zeitwichtigkeit; bestätigen Sie dies wenn möglich durch Feldbeobachtungen oder visuelle Beweise.",
+    noTimelineEventsRisk: "Die Zeitleiste zeigt keine klaren Vokalisationsereignisse über den Ereignis-Konfidenzschwellenwerten (allgemein ≥{minPct}%, Grenze ≥{boundaryPct}%).",
+    timelineFallbackAction: "Überprüfen Sie das gesamte Spektrogramm und das Originalaudio. Wenn Vogelrufe erwartet wurden, versuchen Sie, in einer ruhigeren Umgebung oder mit einem längeren Clip neu aufzunehmen.",
+    timelineSummaryRisk: "Zeitleiste hat {eventCount} Artenereignis(se) über {speciesCount} Arten hinweg erkannt; höchste Ereigniskonfidenz ist {name} ({pct}%, Spitze {peakTime}). Basierend auf entfalteter Zeitleistenfilterung, nicht auf pro-Fenster Stimmenaggregation.",
+    timelineSummaryFallbackAction: "Verwenden Sie Zeitleistenereignisse als zusammenfassende Referenz für die gesamte Aufnahme; wählen Sie ein Ereignis aus, um dieses Zeitfenster zu überprüfen. Für ökologische Untersuchungen durch Feldbeobachtung oder visuelle Beweise bestätigen.",
+    disclaimer: "Haftungsausschluss: Das KI-Modul bietet nur Analyse- und Entscheidungshilfe-Vorschläge. Es trifft keine endgültigen Entscheidungen oder garantiert absolute Richtigkeit.",
+  },
 
   apiErrors: {
     ERR_SERVER_HTTP_ERROR: "Der Server hat mit einem Fehler geantwortet. Bitte versuchen Sie es später erneut.",
@@ -387,6 +401,13 @@ const de = {
   "flowLabel": "EchoWing Audio-Analyse-Pipeline",
   "takeawayLabel": "Fazit:",
   "backToHome": "Zurück zur Startseite",
+  "animations": {
+    "audioToSpec": "Schallwellen werden in Zeit-Frequenz-Zellen abgebildet.",
+    "slidingWindow": "Jedes Fenster erhält seine eigene Artenbewertung.",
+    "deconvolution": "Überlappende Fensterbewertungen werden nach unten projiziert, um eine kontinuierliche Aktivitätskurve zu bilden.",
+    "occlusion": "Das Maskieren eines wichtigen Audioabschnitts führt zu einem Abfall der Konfidenz.",
+    "confidence": "Konfidenz"
+  },
   "flowSteps": [
     {
       "icon": "🎙️",

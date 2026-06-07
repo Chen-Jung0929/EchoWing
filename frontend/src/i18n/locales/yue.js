@@ -368,14 +368,28 @@ const yue = {
   "pdfTimeSec": "{sec} 秒",
   "pdfSegmentTitle": "片段 {label} · {timeRange}",
   "pdfFullRecordingSpectrogram": "全段頻譜圖",
+  "decisionSupport": {
+    "noReliableSummaryRisk": "每個片段都未達到 {threshold}% 信心門檻，冇可靠嘅物種辨識總覽。",
+    "noReliableSummaryAction": "建議重新錄過有清晰雀叫嘅片段，或者逐段睇吓低信心候選同決策輔助說明。",
+    "voteAggregateRisk": "投票結果：{name} 喺 {votes}/{validCount} 個分析窗嘅 Top 預測入面出現（整體得票率 {pct}%）。主要出現喺窗 {chunkHint}。",
+    "useSummaryAction": "建議將總覽結果當做成段錄音嘅參考；如果各個片段爭好遠，可以撳時間軸睇返分段詳情。",
+    "boundaryEventRisk": "喺 {peakTime}s 偵測到 {name}（事件信心 {pct}%）。呢個事件好近錄音邊界，反卷積覆蓋率可能比較低，睇嗰陣要小心啲。",
+    "generalEventRisk": "喺 {peakTime}s 偵測到 {name}，事件信心 {pct}%（一般事件門檻 {minPct}%）。呢個數值係由反卷積活動同時間覆蓋率綜合估算得出。",
+    "eventFallbackAction": "呢個事件落喺 {timeRange} 分析窗。建議對照頻譜圖同 XAI 時間重要性，並用實地觀察或者影片做二次確認。",
+    "noTimelineEventsRisk": "時間軸未偵測到達到事件信心門檻（一般事件 ≥{minPct}%、邊界 ≥{boundaryPct}%）嘅明顯雀叫事件。",
+    "timelineFallbackAction": "建議對照全段頻譜同原始音訊；如果預期有雀叫，可以試吓喺靜啲嘅環境重新錄過或者錄耐啲。",
+    "timelineSummaryRisk": "時間軸偵測到 {eventCount} 個物種事件、{speciesCount} 種雀仔；最高事件信心係 {name}（{pct}%，峰值 {peakTime}）。結果係根據反卷積時間軸同事件信心篩選，唔係逐窗投票得出嘅。",
+    "timelineSummaryFallbackAction": "建議用時間軸事件做成段錄音嘅參考摘要；撳事件可以睇嗰段時間嘅物種同頻譜。如果用嚟做生態調查，請配合實地觀察或者影片確認。",
+    "disclaimer": "免責聲明：本網站嘅 AI 模組只會提供分析同行動建議，唔會做最後決定。本平台唔保證辨識結果百分百準確，亦唔構成預測承諾、最終決定或者行為保證。"
+  },
 
-  apiErrors: {
-    ERR_SERVER_HTTP_ERROR: "伺服器發生錯誤",
-    ERR_SERVER_NOT_READY: "伺服器未準備好",
-    ERR_BACKEND_TIMEOUT: "後端超時",
-    ERR_BACKEND_MODEL_FAILED: "模型執行失敗",
-    ERR_STREAM_CALLBACK_REQUIRED: "伺服器發生錯誤",
-    ERR_UNKNOWN_BACKEND: "伺服器發生錯誤",
+  "apiErrors": {
+    "ERR_SERVER_HTTP_ERROR": "伺服器發生錯誤",
+    "ERR_SERVER_NOT_READY": "伺服器未準備好",
+    "ERR_BACKEND_TIMEOUT": "後端超時",
+    "ERR_BACKEND_MODEL_FAILED": "模型執行失敗",
+    "ERR_STREAM_CALLBACK_REQUIRED": "伺服器發生錯誤",
+    "ERR_UNKNOWN_BACKEND": "伺服器發生錯誤"
   },
   xaiEducation: {
     "navLabel": "點樣運作 / XAI",
@@ -387,6 +401,13 @@ const yue = {
     "flowLabel": "EchoWing 音訊分析流程",
     "takeawayLabel": "重點：",
     "backToHome": "返去首頁",
+    "animations": {
+      "audioToSpec": "聲波會被映射成時間-頻率網格。",
+      "slidingWindow": "每個時間窗都會得到獨立嘅物種分數。",
+      "deconvolution": "重疊嘅時間窗分數向下投影，形成連續嘅活動曲線。",
+      "occlusion": "遮住重要嘅音訊片段會導致信心分數下降。",
+      "confidence": "信心分數"
+    },
     "flowSteps": [
         {
             "icon": "🎙️",

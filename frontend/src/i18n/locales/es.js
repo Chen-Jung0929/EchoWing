@@ -368,6 +368,20 @@ const es = {
   pdfTimeSec: "{seg} s",
   pdfSegmentTitle: "Segmento {etiqueta} · {timeRange}",
   pdfFullRecordingSpectrogram: "Espectrograma de grabación completo",
+  decisionSupport: {
+    noReliableSummaryRisk: "Ningún segmento alcanzó el umbral de confianza del {threshold}%; no hay un resumen de especies confiable.",
+    noReliableSummaryAction: "Vuelva a grabar con cantos de aves más claros, o revise los candidatos de referencia y el soporte de decisiones de cada segmento.",
+    voteAggregateRisk: "Agregación de votos: {name} apareció en las principales predicciones de {votes}/{validCount} ventana(s) (porcentaje de votos total {pct}%). Más prominente en la(s) ventana(s) {chunkHint}.",
+    useSummaryAction: "Use el resumen como referencia para toda la grabación; si los segmentos difieren, use la línea de tiempo para inspeccionar cada segmento.",
+    boundaryEventRisk: "{name} detectado a los {peakTime}s (confianza del evento {pct}%). Este evento está cerca del límite de la grabación; la cobertura de deconvolución puede ser menor, interprete con precaución.",
+    generalEventRisk: "{name} detectado a los {peakTime}s con {pct}% de confianza del evento (umbral general {minPct}%). Esta puntuación combina la actividad deconvolucionada y la cobertura temporal.",
+    eventFallbackAction: "Este evento ocurre en la ventana de análisis {timeRange}. Verifique el espectrograma y la importancia temporal de XAI; confirme con observación de campo o evidencia visual cuando sea posible.",
+    noTimelineEventsRisk: "La línea de tiempo no muestra eventos claros de vocalización por encima de los umbrales de confianza de eventos (general ≥{minPct}%, límite ≥{boundaryPct}%).",
+    timelineFallbackAction: "Revise el espectrograma completo y el audio original. Si se esperaban cantos de aves, intente volver a grabar en un entorno más silencioso o use un clip más largo.",
+    timelineSummaryRisk: "La línea de tiempo detectó {eventCount} evento(s) de especies de {speciesCount} especies; la confianza de evento más alta es {name} ({pct}%, pico {peakTime}). Basado en el filtrado de línea de tiempo deconvolucionada, no en la agregación de votos por ventana.",
+    timelineSummaryFallbackAction: "Use los eventos de la línea de tiempo como referencia de resumen para toda la grabación; seleccione un evento para inspeccionar esa ventana de tiempo. Para estudios ecológicos, confirme con observación de campo o evidencia visual.",
+    disclaimer: "Descargo de responsabilidad: El módulo de IA proporciona solo sugerencias de análisis y soporte de decisiones. No toma decisiones finales ni garantiza precisión absoluta.",
+  },
 
   apiErrors: {
     ERR_SERVER_HTTP_ERROR: "El servidor respondió con un error, inténtelo de nuevo más tarde.",
@@ -387,6 +401,13 @@ const es = {
   "flowLabel": "Canal de Análisis de Audio de EchoWing",
   "takeawayLabel": "Conclusión:",
   "backToHome": "Volver al Inicio",
+  "animations": {
+    "audioToSpec": "Las ondas de sonido se mapean en celdas de tiempo-frecuencia.",
+    "slidingWindow": "Cada ventana recibe su propia puntuación de especie.",
+    "deconvolution": "Las puntuaciones de las ventanas superpuestas se proyectan hacia abajo para formar una curva de actividad continua.",
+    "occlusion": "Enmascarar un segmento de audio importante hace que la confianza disminuya.",
+    "confidence": "Confianza"
+  },
   "flowSteps": [
     {
       "icon": "🎙️",

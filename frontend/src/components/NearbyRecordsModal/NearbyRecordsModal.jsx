@@ -117,7 +117,7 @@ export default function NearbyRecordsModal({
       }
 
       setCoords(resolved);
-      await loadRecords(resolved.latitude, resolved.longitude, 5);
+      await loadRecords(resolved.latitude, resolved.longitude, radiusKm);
     }
 
     resolveAndFetch();

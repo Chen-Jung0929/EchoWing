@@ -368,6 +368,20 @@ const id = {
   pdfTimeSec: "{detik} detik",
   pdfSegmentTitle: "Segmen {label} · {timeRange}",
   pdfFullRecordingSpectrogram: "Spektogram rekaman penuh",
+  decisionSupport: {
+    noReliableSummaryRisk: "Tidak ada segmen yang memenuhi ambang batas keyakinan {threshold}%; tidak ada ringkasan spesies yang dapat diandalkan.",
+    noReliableSummaryAction: "Rekam ulang dengan suara burung yang lebih jelas, atau tinjau kandidat referensi dan dukungan keputusan pada masing-masing segmen.",
+    voteAggregateRisk: "Agregat suara: {name} muncul dalam prediksi teratas di {votes}/{validCount} jendela (porsi suara keseluruhan {pct}%). Paling menonjol di jendela {chunkHint}.",
+    useSummaryAction: "Gunakan ringkasan sebagai referensi untuk seluruh rekaman; jika segmen tidak sesuai, gunakan linimasa untuk memeriksa setiap segmen.",
+    boundaryEventRisk: "{name} terdeteksi pada {peakTime}s (keyakinan peristiwa {pct}%). Peristiwa ini berada di dekat batas rekaman; cakupan dekonvolusi mungkin lebih rendah, tafsirkan dengan hati-hati.",
+    generalEventRisk: "{name} terdeteksi pada {peakTime}s dengan {pct}% keyakinan peristiwa (ambang batas umum {minPct}%). Skor ini menggabungkan aktivitas yang didekonvolusi dan cakupan temporal.",
+    eventFallbackAction: "Peristiwa ini berada dalam jendela analisis {timeRange}. Periksa silang spektrogram dan kepentingan waktu XAI; konfirmasikan dengan observasi lapangan atau bukti visual bila memungkinkan.",
+    noTimelineEventsRisk: "Linimasa tidak menunjukkan peristiwa vokalisasi yang jelas di atas ambang batas keyakinan peristiwa (umum ≥{minPct}%, batas ≥{boundaryPct}%).",
+    timelineFallbackAction: "Tinjau spektrogram lengkap dan audio asli. Jika suara burung diharapkan, cobalah merekam ulang di lingkungan yang lebih tenang atau gunakan klip yang lebih panjang.",
+    timelineSummaryRisk: "Linimasa mendeteksi {eventCount} peristiwa spesies di {speciesCount} spesies; keyakinan peristiwa tertinggi adalah {name} ({pct}%, puncak {peakTime}). Berdasarkan penyaringan linimasa yang didekonvolusi, bukan agregasi suara per jendela.",
+    timelineSummaryFallbackAction: "Gunakan peristiwa linimasa sebagai referensi ringkasan untuk seluruh rekaman; pilih peristiwa untuk memeriksa jendela waktu tersebut. Untuk survei ekologi, konfirmasikan dengan observasi lapangan atau bukti visual.",
+    disclaimer: "Penafian: Modul AI hanya menyediakan analisis dan saran dukungan keputusan. Modul ini tidak membuat keputusan akhir atau menjamin kebenaran mutlak.",
+  },
 
   apiErrors: {
     ERR_SERVER_HTTP_ERROR: "Server merespons dengan kesalahan, silakan coba lagi nanti.",
@@ -387,6 +401,13 @@ const id = {
   "flowLabel": "Alur Analisis Audio EchoWing",
   "takeawayLabel": "Kesimpulan:",
   "backToHome": "Kembali ke Beranda",
+  "animations": {
+    "audioToSpec": "Gelombang suara dipetakan ke dalam sel waktu-frekuensi.",
+    "slidingWindow": "Setiap jendela menerima skor spesiesnya sendiri.",
+    "deconvolution": "Skor jendela yang tumpang tindih diproyeksikan ke bawah untuk membentuk kurva aktivitas yang berkelanjutan.",
+    "occlusion": "Menyamarkan segmen audio yang penting menyebabkan tingkat kepercayaan turun.",
+    "confidence": "Kepercayaan"
+  },
   "flowSteps": [
     {
       "icon": "🎙️",

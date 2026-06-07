@@ -368,6 +368,20 @@ const ja = {
   "pdfTimeSec": "{sec} 秒",
   "pdfSegmentTitle": "セグメント {label} · {timeRange}",
   "pdfFullRecordingSpectrogram": "録音全体のスペクトログラム",
+  "decisionSupport": {
+    "noReliableSummaryRisk": "どのセグメントも信頼度しきい値{threshold}%に達していないため、信頼できる種識別の概要はありません。",
+    "noReliableSummaryAction": "鳥の鳴き声がはっきり聞こえるセグメントを再録音するか、各セグメントの低信頼度候補と意思決定サポートを確認してください。",
+    "voteAggregateRisk": "投票集計：{name} は {votes}/{validCount} 個の分析窓のトップ予測に出現しました（全体得票率 {pct}%）。主に窓 {chunkHint} に出現しています。",
+    "useSummaryAction": "録音全体の参考として概要結果を利用してください。セグメント間で差異が大きい場合は、タイムラインをクリックして詳細を確認してください。",
+    "boundaryEventRisk": "{peakTime}s に {name} が検出されました（イベント信頼度 {pct}%）。このイベントは録音の境界に近く、デコンボリューションのカバー率が低いため、解釈には注意が必要です。",
+    "generalEventRisk": "{peakTime}s に {name} が検出されました。イベント信頼度は {pct}% です（一般イベントしきい値 {minPct}%）。この数値はデコンボリューション活動と時間カバー率から総合的に推定されています。",
+    "eventFallbackAction": "このイベントは分析窓 {timeRange} に含まれています。スペクトログラムとXAIの時間の重要度を対照し、可能であれば実地観察や映像で再確認してください。",
+    "noTimelineEventsRisk": "タイムライン上で、イベント信頼度しきい値（一般イベント ≥{minPct}%、境界 ≥{boundaryPct}%）に達した明確な鳴き声イベントは検出されませんでした。",
+    "timelineFallbackAction": "録音全体のスペクトログラムと元の音声を対照してください。鳥の鳴き声が予想される場合は、より静かな環境で再録音するか、録音時間を延長してみてください。",
+    "timelineSummaryRisk": "タイムラインで {eventCount} 件のイベント、{speciesCount} 種の鳥類が検出されました。最高イベント信頼度は {name}（{pct}%、ピーク {peakTime}）です。結果はデコンボリューションタイムラインとイベント信頼度によりフィルタリングされており、窓ごとの投票集計ではありません。",
+    "timelineSummaryFallbackAction": "録音全体の参考概要としてタイムラインイベントを利用してください。イベントをクリックすると、その時間帯の種とスペクトログラムを確認できます。生態調査に使用する場合は、実地観察や映像での確認を併用してください。",
+    "disclaimer": "免責事項：本ウェブサイトのAIモジュールは分析と推奨行動を提供するのみであり、最終決定を下すものではありません。当プラットフォームは識別結果の絶対的な正確性を保証するものではなく、予測の確約、最終決定、または行動の保証を構成するものではありません。"
+  },
 
   apiErrors: {
     ERR_SERVER_HTTP_ERROR: "サーバーエラーが発生しました",
@@ -387,6 +401,13 @@ const ja = {
     "flowLabel": "EchoWing 音声分析パイプライン",
     "takeawayLabel": "ポイント：",
     "backToHome": "ホームに戻る",
+    "animations": {
+      "audioToSpec": "音波は時間と周波数のグリッドにマッピングされます。",
+      "slidingWindow": "各ウィンドウは独自の種スコアを受け取ります。",
+      "deconvolution": "重複するウィンドウのスコアが投影され、連続的な活動曲線が形成されます。",
+      "occlusion": "重要な音声セグメントをマスクすると、信頼度スコアが低下します。",
+      "confidence": "信頼度スコア"
+    },
     "flowSteps": [
         {
             "icon": "🎙️",

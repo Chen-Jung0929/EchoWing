@@ -12,9 +12,11 @@ export function MathBlock({ children, inline = false, label }) {
   }
 
   return (
-    <figure className="math-block" aria-label={label || children}>
-      <BlockMath math={children} />
-      {label ? <figcaption className="mt-2 text-sm text-[var(--c-text)]/70 text-center">{label}</figcaption> : null}
+    <figure className="math-block overflow-hidden" aria-label={label || children}>
+      <div className="overflow-x-auto pb-2 -mb-2">
+        <BlockMath math={children} />
+      </div>
+      {label ? <figcaption className="mt-4 text-sm text-[var(--c-text)]/70 text-center">{label}</figcaption> : null}
     </figure>
   );
 }

@@ -45,6 +45,7 @@ export function buildSurveySheetPayload({ result, surveyMetadata, dict, lang = '
   const summary = aggregateChunksByVote(chunks, {
     confidenceThreshold: resolveConfidenceThreshold(result.confidence_threshold),
     windowSec,
+    dict,
   });
 
   const overview = surveyMetadata.overview;

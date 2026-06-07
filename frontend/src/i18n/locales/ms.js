@@ -368,6 +368,20 @@ const ms = {
   pdfTimeSec: "{sec} s",
   pdfSegmentTitle: "Segmen {label} · {timeRange}",
   pdfFullRecordingSpectrogram: "Spektrogram rakaman penuh",
+  decisionSupport: {
+    noReliableSummaryRisk: "Tiada segmen yang memenuhi ambang keyakinan {threshold}%; tiada ringkasan spesies yang boleh dipercayai.",
+    noReliableSummaryAction: "Rakam semula dengan bunyi burung yang lebih jelas, atau semak calon rujukan dan sokongan keputusan bagi setiap segmen.",
+    voteAggregateRisk: "Agregat undian: {name} muncul dalam ramalan teratas di {votes}/{validCount} tetingkap (bahagian undian keseluruhan {pct}%). Paling menonjol di tetingkap {chunkHint}.",
+    useSummaryAction: "Gunakan ringkasan sebagai rujukan untuk rakaman penuh; jika segmen tidak sepadan, gunakan garis masa untuk memeriksa setiap segmen.",
+    boundaryEventRisk: "{name} dikesan pada {peakTime}s (keyakinan peristiwa {pct}%). Peristiwa ini berada berhampiran sempadan rakaman; liputan dekonvolusi mungkin lebih rendah, tafsirkan dengan berhati-hati.",
+    generalEventRisk: "{name} dikesan pada {peakTime}s dengan {pct}% keyakinan peristiwa (ambang umum {minPct}%). Skor ini menggabungkan aktiviti yang didekonvolusi dan liputan temporal.",
+    eventFallbackAction: "Peristiwa ini jatuh dalam tetingkap analisis {timeRange}. Semak silang spektrogram dan kepentingan masa XAI; sahkan dengan pemerhatian lapangan atau bukti visual jika boleh.",
+    noTimelineEventsRisk: "Garis masa tidak menunjukkan peristiwa penyuaraan yang jelas di atas ambang keyakinan peristiwa (umum ≥{minPct}%, sempadan ≥{boundaryPct}%).",
+    timelineFallbackAction: "Semak spektrogram penuh dan audio asal. Jika bunyi burung dijangkakan, cuba rakam semula dalam persekitaran yang lebih sunyi atau gunakan klip yang lebih panjang.",
+    timelineSummaryRisk: "Garis masa mengesan {eventCount} peristiwa spesies daripada {speciesCount} spesies; keyakinan peristiwa tertinggi ialah {name} ({pct}%, puncak {peakTime}). Berdasarkan penapisan garis masa dekonvolusi, bukan agregasi undian setiap tetingkap.",
+    timelineSummaryFallbackAction: "Gunakan peristiwa garis masa sebagai rujukan ringkasan untuk rakaman penuh; pilih peristiwa untuk memeriksa tetingkap masa tersebut. Untuk tinjauan ekologi, sahkan dengan pemerhatian lapangan atau bukti visual.",
+    disclaimer: "Penafian: Modul AI hanya menyediakan analisis dan cadangan sokongan keputusan. Ia tidak membuat keputusan akhir atau menjamin kebenaran mutlak.",
+  },
 
   apiErrors: {
     ERR_SERVER_HTTP_ERROR: "Pelayan membalas dengan ralat, sila cuba sebentar lagi.",

@@ -388,6 +388,20 @@ const zh = {
   pdfTimeSec: '{sec} 秒',
   pdfSegmentTitle: '片段 {label} · {timeRange}',
   pdfFullRecordingSpectrogram: '全段頻譜圖',
+  decisionSupport: {
+    noReliableSummaryRisk: "各片段皆未達 {threshold}% 信心門檻，無可靠物種辨識總覽。",
+    noReliableSummaryAction: "建議重新錄製含清晰鳥鳴的片段，或逐段查看低信心候選與決策輔助說明。",
+    voteAggregateRisk: "投票彙整：{name} 在 {votes}/{validCount} 個分析窗的 Top 預測中出現（整體得票率 {pct}%）。主要出現在窗 {chunkHint}。",
+    useSummaryAction: "建議以總覽結果為整段錄音的參考；若各片段差異大，請點選時間軸查看分段詳情。",
+    boundaryEventRisk: "於 {peakTime}s 偵測到 {name}（事件信心 {pct}%）。此事件接近錄音邊界，反卷積覆蓋率可能較低，解讀時請謹慎。",
+    generalEventRisk: "於 {peakTime}s 偵測到 {name}，事件信心 {pct}%（一般事件門檻 {minPct}%）。此數值由反卷積活動與時間覆蓋率綜合估算。",
+    eventFallbackAction: "此事件落在 {timeRange} 分析窗。建議對照頻譜圖與 XAI 時間重要性，並以實地觀察或影像作二次確認。",
+    noTimelineEventsRisk: "時間軸未偵測到達事件信心門檻（一般事件 ≥{minPct}%、邊界 ≥{boundaryPct}%）的明顯鳴叫事件。",
+    timelineFallbackAction: "建議對照全段頻譜與原始音訊；若預期有鳥鳴，可嘗試在較安靜環境重新錄製或延長錄音時間。",
+    timelineSummaryRisk: "時間軸偵測到 {eventCount} 個物種事件、{speciesCount} 種鳥類；最高事件信心為 {name}（{pct}%，峰值 {peakTime}）。結果依反卷積時間軸與事件信心篩選，非逐窗投票聚合。",
+    timelineSummaryFallbackAction: "建議以時間軸事件作為整段錄音的參考摘要；點選事件可檢視該時段物種與頻譜。若用於生態調查，請輔以實地觀察或影像確認。",
+    disclaimer: "免責聲明：本網站之 AI 模組僅提供分析與行動建議，不作最後決定。本平台不保證辨識結果之絕對正確性，亦不構成預測承諾、最終決策或行為保證。",
+  },
 
   apiErrors: {
     ERR_SERVER_HTTP_ERROR: "伺服器回應錯誤，請稍後再試。",
@@ -407,6 +421,13 @@ const zh = {
     "flowLabel": "EchoWing 聲音分析流程",
     "takeawayLabel": "如何解讀：",
     "backToHome": "回首頁",
+    "animations": {
+      "audioToSpec": "聲波被映射為時間-頻率網格。",
+      "slidingWindow": "每個時間窗都會獲得獨立的物種分數。",
+      "deconvolution": "重疊的時間窗分數向下投影，形成連續的活動曲線。",
+      "occlusion": "遮蔽重要的音訊片段會導致信心分數下降。",
+      "confidence": "信心分數"
+    },
     "flowSteps": [
         {
             "icon": "🎙️",

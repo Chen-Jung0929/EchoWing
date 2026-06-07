@@ -368,14 +368,28 @@ const lzh = {
   "pdfTimeSec": "{sec} 秒",
   "pdfSegmentTitle": "段 {label} · {timeRange}",
   "pdfFullRecordingSpectrogram": "全段頻譜",
+  "decisionSupport": {
+    "noReliableSummaryRisk": "各段皆未達 {threshold}% 信檻，無可信之物種總覽也。",
+    "noReliableSummaryAction": "宜重錄鳥鳴清朗之音，或逐段觀其微信之候與助決策之辭。",
+    "voteAggregateRisk": "票彙之果：{name} 見於 {votes}/{validCount} 析窗之首推（總得票率 {pct}%）。多見於窗 {chunkHint}。",
+    "useSummaryAction": "宜以總覽為全音之參；若各段相去甚遠，可按時間軸以觀詳情。",
+    "boundaryEventRisk": "於 {peakTime}s 察得 {name}（事信 {pct}%）。此事近於錄音之界，推演涵蓋或微，當慎解之。",
+    "generalEventRisk": "於 {peakTime}s 察得 {name}，事信 {pct}%（常事之檻 {minPct}%）。此數乃合推演與時覆而估也。",
+    "eventFallbackAction": "此事落於 {timeRange} 析窗。宜對照頻譜與 XAI 之時重，並以實地之察或影象驗之。",
+    "noTimelineEventsRisk": "時間軸未察達事信之檻（常事 ≥{minPct}%、界區 ≥{boundaryPct}%）之明朗鳴叫。",
+    "timelineFallbackAction": "宜勘全段頻譜與原音；若期有鳥鳴，可試於靜處重錄或延其時。",
+    "timelineSummaryRisk": "時間軸察得 {eventCount} 事、{speciesCount} 種鳥；至高事信為 {name}（{pct}%，至極 {peakTime}）。此果乃依時軸與事信所篩，非逐窗之票彙也。",
+    "timelineSummaryFallbackAction": "宜以時間軸之事作全段之參；點事可視其時之物與頻譜。若用於生態之查，宜以實地所見或影象輔驗之。",
+    "disclaimer": "免責之辭：本站 AI 僅供析理與策議，非為定讞。本臺不保其辨識之必確，亦不作預測之諾、終決或行事之保。"
+  },
 
-  apiErrors: {
-    ERR_SERVER_HTTP_ERROR: "伺服器有誤",
-    ERR_SERVER_NOT_READY: "伺服器未備",
-    ERR_BACKEND_TIMEOUT: "後端逾時",
-    ERR_BACKEND_MODEL_FAILED: "模型運行敗矣",
-    ERR_STREAM_CALLBACK_REQUIRED: "伺服器有誤",
-    ERR_UNKNOWN_BACKEND: "伺服器有誤",
+  "apiErrors": {
+    "ERR_SERVER_HTTP_ERROR": "伺服器有誤",
+    "ERR_SERVER_NOT_READY": "伺服器未備",
+    "ERR_BACKEND_TIMEOUT": "後端逾時",
+    "ERR_BACKEND_MODEL_FAILED": "模型運行敗矣",
+    "ERR_STREAM_CALLBACK_REQUIRED": "伺服器有誤",
+    "ERR_UNKNOWN_BACKEND": "伺服器有誤"
   },
   xaiEducation: {
     "navLabel": "原委 / XAI",
@@ -387,6 +401,13 @@ const lzh = {
     "flowLabel": "EchoWing 析音次第",
     "takeawayLabel": "要旨：",
     "backToHome": "歸首頁",
+    "animations": {
+      "audioToSpec": "聲波映為時頻網格。",
+      "slidingWindow": "各時窗皆獲其物種分數。",
+      "deconvolution": "交疊時窗之分數下投，成連貫之活動曲線。",
+      "occlusion": "掩蔽要音，則信心分數降。",
+      "confidence": "信心分數"
+    },
     "flowSteps": [
         {
             "icon": "🎙️",

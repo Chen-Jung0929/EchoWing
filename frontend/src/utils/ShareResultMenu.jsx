@@ -62,7 +62,7 @@ export default function ShareResultMenu({ open, onClose, getSharePayload, dict }
       setPublishStatus('');
     }, 0);
     return () => clearTimeout(t);
-  }, [open, payload]);
+  }, [open]);
 
   useEffect(() => {
     if (!open) {

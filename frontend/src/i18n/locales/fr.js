@@ -368,6 +368,20 @@ const fr = {
   pdfTimeSec: "{sec} s",
   pdfSegmentTitle: "Segment {étiquette} · {timeRange}",
   pdfFullRecordingSpectrogram: "Spectrogramme d'enregistrement complet",
+  decisionSupport: {
+    noReliableSummaryRisk: "Aucun segment n'a atteint le seuil de confiance de {threshold} % ; aucun résumé d'espèces fiable.",
+    noReliableSummaryAction: "Réenregistrez avec des chants d'oiseaux plus clairs, ou examinez les candidats de référence et l'aide à la décision de chaque segment.",
+    voteAggregateRisk: "Agrégation des votes : {name} est apparu dans les meilleures prédictions de {votes}/{validCount} fenêtre(s) (part globale des votes {pct} %). Le plus important dans la ou les fenêtres {chunkHint}.",
+    useSummaryAction: "Utilisez le résumé comme référence pour l'enregistrement complet ; si les segments sont en désaccord, utilisez la chronologie pour inspecter chaque segment.",
+    boundaryEventRisk: "{name} détecté à {peakTime}s (confiance de l'événement {pct} %). Cet événement est proche de la limite de l'enregistrement ; la couverture de déconvolution peut être plus faible, interprétez avec prudence.",
+    generalEventRisk: "{name} détecté à {peakTime}s avec une confiance d'événement de {pct} % (seuil général {minPct} %). Ce score combine l'activité déconvoluée et la couverture temporelle.",
+    eventFallbackAction: "Cet événement tombe dans la fenêtre d'analyse {timeRange}. Vérifiez le spectrogramme et l'importance temporelle XAI ; confirmez avec des observations sur le terrain ou des preuves visuelles lorsque cela est possible.",
+    noTimelineEventsRisk: "La chronologie ne montre aucun événement de vocalisation clair au-dessus des seuils de confiance des événements (général ≥{minPct} %, limite ≥{boundaryPct} %).",
+    timelineFallbackAction: "Examinez le spectrogramme complet et l'audio d'origine. Si des chants d'oiseaux étaient attendus, essayez de réenregistrer dans un environnement plus calme ou utilisez un extrait plus long.",
+    timelineSummaryRisk: "La chronologie a détecté {eventCount} événement(s) d'espèce(s) parmi {speciesCount} espèce(s) ; la confiance d'événement la plus élevée est {name} ({pct} %, pic {peakTime}). Basé sur un filtrage de chronologie déconvoluée, et non sur l'agrégation de votes par fenêtre.",
+    timelineSummaryFallbackAction: "Utilisez les événements de la chronologie comme référence de résumé pour l'enregistrement complet ; sélectionnez un événement pour inspecter cette fenêtre de temps. Pour les enquêtes écologiques, confirmez avec des observations sur le terrain ou des preuves visuelles.",
+    disclaimer: "Avis de non-responsabilité : Le module d'IA fournit uniquement des suggestions d'analyse et d'aide à la décision. Il ne prend pas de décisions finales et ne garantit pas une exactitude absolue.",
+  },
 
   apiErrors: {
     ERR_SERVER_HTTP_ERROR: "Le serveur a répondu avec une erreur, veuillez réessayer plus tard.",
@@ -387,6 +401,13 @@ const fr = {
   "flowLabel": "Pipeline d'Analyse Audio EchoWing",
   "takeawayLabel": "À retenir :",
   "backToHome": "Retour à l'Accueil",
+  "animations": {
+    "audioToSpec": "Les ondes sonores sont mappées dans des cellules temps-fréquence.",
+    "slidingWindow": "Chaque fenêtre reçoit son propre score d'espèce.",
+    "deconvolution": "Les scores des fenêtres superposées sont projetés vers le bas pour former une courbe d'activité continue.",
+    "occlusion": "Masquer un segment audio important entraîne une baisse de la confiance.",
+    "confidence": "Confiance"
+  },
   "flowSteps": [
     {
       "icon": "🎙️",

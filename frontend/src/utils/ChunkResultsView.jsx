@@ -90,7 +90,7 @@ export default function ChunkResultsView({
   const xaiAvailable = okChunks.some((chunk) => chunk.predictions?.xai_heatmap?.length);
   const isOverview = !selectedEvent;
   const activeChunk = useMemo(() => {
-    const decisionOpts = { windowSec, selectedEvent: selectedEvent ?? null };
+    const decisionOpts = { windowSec, selectedEvent: selectedEvent ?? null, dict };
     const decisionSupport = buildTimelineDecisionSupport(timeline, decisionOpts);
 
     if (selectedEvent) {
@@ -131,7 +131,7 @@ export default function ChunkResultsView({
       },
       decision_support: decisionSupport,
     };
-  }, [selectedEvent, chunks, windowSec, okChunks, timeline]);
+  }, [selectedEvent, chunks, windowSec, okChunks, timeline, dict]);
 
   const filename = result.original_filename?.trim() || '—';
   const chunkIndices = useMemo(() => chunks.map((c) => c.index), [chunks]);
@@ -150,8 +150,9 @@ export default function ChunkResultsView({
       aggregateChunksByVote(chunks, {
         confidenceThreshold: resolveConfidenceThreshold(result.confidence_threshold),
         windowSec,
+        dict,
       }),
-    [chunks, result.confidence_threshold, windowSec]
+    [chunks, result.confidence_threshold, windowSec, dict]
   );
 
   const fullReportModel = useMemo(
@@ -168,6 +169,7 @@ export default function ChunkResultsView({
         totalDurationSec,
         timeline,
         xaiAvailable,
+        dict,
       }),
     [
       result,
@@ -180,6 +182,7 @@ export default function ChunkResultsView({
       totalDurationSec,
       timeline,
       xaiAvailable,
+      dict,
     ]
   );
 

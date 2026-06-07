@@ -48,7 +48,8 @@ function AppLayout() {
 
   useEffect(() => {
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
-    document.documentElement.lang = lang === 'zh' ? 'zh-TW' : lang;
+    const htmlLang = LANG_OPTIONS.find(o => o.code === lang)?.htmlLang || lang;
+    document.documentElement.lang = htmlLang;
   }, [lang]);
 
   useEffect(() => {
