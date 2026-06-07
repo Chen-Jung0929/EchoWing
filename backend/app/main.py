@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import collections
 import logging
 import re
 import time
@@ -356,12 +357,166 @@ async def http_exception_handler(_request: Request, exc: HTTPException) -> JSONR
     )
 
 
+@app.exception_handler(Exception)
+async def global_exception_handler(_request: Request, exc: Exception) -> JSONResponse:
+    logger.error("Unhandled exception: %s", exc, exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "detail": {
+                "code": "ERR_INTERNAL_SERVER",
+                "message": "An unexpected error occurred."
+            }
+        },
+    )
+
+
+_settings = get_settings()
+
+class MaxUploadSizeMiddleware:
+    def __init__(self, app, max_upload_bytes: int):
+        self.app = app
+        self.max_upload_bytes = max_upload_bytes
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            return await self.app(scope, receive, send)
+            
+        path = scope.get("path", "")
+        if not (path.startswith("/api/predict") or path.startswith("/api/stream-predict")):
+            return await self.app(scope, receive, send)
+
+        content_length = 0
+        for name, value in scope.get("headers", []):
+            if name == b"content-length":
+                try:
+                    content_length = int(value)
+                except ValueError:
+                    content_length = 0
+                break
+                
+        if content_length > self.max_upload_bytes:
+            await self._send_413(send)
+            return
+
+        received_bytes = 0
+        payload_too_large = False
+
+        async def receive_wrapper():
+            nonlocal received_bytes, payload_too_large
+            message = await receive()
+            if message["type"] == "http.request":
+                received_bytes += len(message.get("body", b""))
+                if received_bytes > self.max_upload_bytes:
+                    payload_too_large = True
+                    raise RuntimeError("ERR_PAYLOAD_TOO_LARGE")
+            return message
+
+        try:
+            await self.app(scope, receive_wrapper, send)
+        except RuntimeError as e:
+            if payload_too_large:
+                await self._send_413(send)
+            else:
+                raise
+
+    async def _send_413(self, send):
+        import json
+        body = json.dumps({
+            "detail": {
+                "code": "ERR_PAYLOAD_TOO_LARGE",
+                "message": "Upload exceeds server safety limit."
+            }
+        }).encode("utf-8")
+        await send({
+            "type": "http.response.start",
+            "status": 413,
+            "headers": [
+                (b"content-type", b"application/json"),
+                (b"content-length", str(len(body)).encode("utf-8")),
+            ],
+        })
+        await send({
+            "type": "http.response.body",
+            "body": body,
+        })
+
+
+class RateLimitMiddleware:
+    def __init__(self, app, enable: bool, window_sec: int, max_requests: int):
+        self.app = app
+        self.enable = enable
+        self.window_sec = window_sec
+        self.max_requests = max_requests
+        self.request_records = collections.defaultdict(list)
+        
+    async def __call__(self, scope, receive, send):
+        if not self.enable or scope["type"] != "http":
+            return await self.app(scope, receive, send)
+            
+        path = scope.get("path", "")
+        if not (path.startswith("/api/predict") or path.startswith("/api/stream-predict") or path.startswith("/api/warmup")):
+            return await self.app(scope, receive, send)
+
+        client_ip = "unknown"
+        for name, value in scope.get("headers", []):
+            if name == b"x-forwarded-for":
+                client_ip = value.decode("latin1").split(",")[0].strip()
+                break
+        if client_ip == "unknown" and scope.get("client"):
+            client_ip = scope["client"][0]
+
+        now = datetime.now(timezone.utc).timestamp()
+        
+        history = self.request_records[client_ip]
+        history = [ts for ts in history if now - ts < self.window_sec]
+        
+        if len(history) >= self.max_requests:
+            await self._send_429(send)
+            return
+            
+        history.append(now)
+        self.request_records[client_ip] = history
+        
+        await self.app(scope, receive, send)
+
+    async def _send_429(self, send):
+        import json
+        body = json.dumps({
+            "detail": {
+                "code": "ERR_RATE_LIMITED",
+                "message": "Too many requests. Please wait and try again."
+            }
+        }).encode("utf-8")
+        await send({
+            "type": "http.response.start",
+            "status": 429,
+            "headers": [
+                (b"content-type", b"application/json"),
+                (b"content-length", str(len(body)).encode("utf-8")),
+            ],
+        })
+        await send({
+            "type": "http.response.body",
+            "body": body,
+        })
+
+app.add_middleware(MaxUploadSizeMiddleware, max_upload_bytes=_settings.max_upload_bytes)
+app.add_middleware(
+    RateLimitMiddleware,
+    enable=_settings.enable_rate_limit,
+    window_sec=_settings.rate_limit_window_sec,
+    max_requests=_settings.rate_limit_max_requests,
+)
+
+_parsed_origins = [o.strip() for o in _settings.allowed_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=_parsed_origins,
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Accept", "Origin", "Authorization"],
 )
 
 
