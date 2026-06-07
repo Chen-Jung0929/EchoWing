@@ -27,13 +27,13 @@ const yue = {
   "overviewNotesTitle": "總覽層田野備註",
   "segmentNotesTitle": "片段層田野備註",
   "overallConclusion": "整體結論",
-  "overallConclusionPlaceholder": "例如：成段錄音主要係麻雀叫，同 AI 預測一樣",
+  "overallConclusionPlaceholder": "例如：成段錄音主要係麻雀叫，同模型預測一樣",
   "segmentNotes": "片段專屬備註",
   "segmentNotesPlaceholder": "呢個片段特別嘅觀察...",
   "environmentDescription": "環境描述",
   "environmentDescriptionPlaceholder": "例如：空曠草地、有風、背景有車聲",
   "fieldConfirmation": "實地確認結果",
-  "fieldConfirmationPlaceholder": "例如：見到麻雀，同 AI 預測一樣",
+  "fieldConfirmationPlaceholder": "例如：見到麻雀，同模型預測一樣",
   "observerName": "觀察者名",
   "defaultObserverName": "未具名紀錄者",
   "observerNamePlaceholder": "你個名或者代號",
@@ -61,7 +61,7 @@ const yue = {
   "loadingPreparing": "準備緊音訊",
   "loadingPredicting": "模型預測緊",
   "loadingXai": "產生緊 XAI 熱圖",
-  "serverWakingText": "叫醒緊分析 AI，請等一陣...",
+  "serverWakingText": "叫醒緊分析模型，請等一陣...",
   "serverBusyText": "伺服器幫緊其他用家分析音訊，你嘅請求已經排咗隊，可能要等耐啲...",
   "themeLight": "光亮模式",
   "themeDark": "黑夜模式",
@@ -199,7 +199,7 @@ const yue = {
   "logout": "登出",
   "navGuide": "使用指南",
   "guideTitle": "使用說明同模型宣告",
-  "guideSubtitle": "EchoWing 雀鳥聲音辨識工具操作方式同 AI 模型引用",
+  "guideSubtitle": "EchoWing 雀鳥聲音辨識工具操作方式同辨識模型引用",
   "guideBackBtn": "返去首頁",
   "guideModalClose": "閂咗",
   "guideUsageTitle": "使用方法",
@@ -263,7 +263,7 @@ const yue = {
   "guideCreditsTitle": "鳴謝／課程背景",
   "guideCreditsBody": "EchoWing 係國立臺灣大學 114-2 Web App Development 課程專案，唔係臺大官方服務。團隊／專案成員資訊：確認咗之後會再補充。",
   "privacyNoticeTitle": "分析之前",
-  "privacyNoticeSummary": "音訊會送去分析；AI 預測唔保證正確。請勿上載敏感對話或者可以辨認身份嘅人聲。",
+  "privacyNoticeSummary": "音訊會送去分析；模型預測唔保證正確。請勿上載敏感對話或者可以辨認身份嘅人聲。",
   "privacyNoticeLearnMore": "私隱詳情",
   "privacyNoticeAccept": "我明白",
   "privacyNoticeReopen": "重新顯示私隱提示",
@@ -274,7 +274,7 @@ const yue = {
   "tooltipModelSelection": "揀聲學模型",
   "tooltipProcess": "開始分析音訊",
   "guideDisclaimerTitle": "免責同使用宣告",
-  "guideDisclaimerBody": "呢個網站嘅 AI 模組只會提供分析同行動建議，唔會做最終決定。本平台唔保證辨識結果一定正確。田野紀錄同試算表同步內容由用家自己填寫，請以實地觀察為準。",
+  "guideDisclaimerBody": "呢個網站嘅分析模型只會提供分析同行動建議，唔會做最終決定。本平台唔保證辨識結果一定正確。田野紀錄同試算表同步內容由用家自己填寫，請以實地觀察為準。",
   "sheetUploadSuccess": "已經同步去試算表",
   "sheetUploadError": "試算表同步失敗",
   "nearbyRecordsBtn": "附近紀錄",
@@ -382,7 +382,7 @@ const yue = {
     "timelineFallbackAction": "建議對照全段頻譜同原始音訊；如果預期有雀叫，可以試吓喺靜啲嘅環境重新錄過或者錄耐啲。",
     "timelineSummaryRisk": "時間軸偵測到 {eventCount} 個物種事件、{speciesCount} 種雀仔；最高事件信心係 {name}（{pct}%，峰值 {peakTime}）。結果係根據反卷積時間軸同事件信心篩選，唔係逐窗投票得出嘅。",
     "timelineSummaryFallbackAction": "建議用時間軸事件做成段錄音嘅參考摘要；撳事件可以睇嗰段時間嘅物種同頻譜。如果用嚟做生態調查，請配合實地觀察或者影片確認。",
-    "disclaimer": "免責聲明：本網站嘅 AI 模組只會提供分析同行動建議，唔會做最後決定。本平台唔保證辨識結果百分百準確，亦唔構成預測承諾、最終決定或者行為保證。"
+    "disclaimer": "免責聲明：本網站嘅分析模型只會提供分析同行動建議，唔會做最後決定。本平台唔保證辨識結果百分百準確，亦唔構成預測承諾、最終決定或者行為保證。"
   },
 
   "apiErrors": {
@@ -398,7 +398,7 @@ const yue = {
     "homeLabel": "首頁",
     "eyebrow": "EchoWing 教學頁",
     "title": "EchoWing 係點樣理解聲音㗎？",
-    "subtitle": "由上載音訊、模型預測，到時間定位同可解釋 AI (XAI) 嘅成個流程。",
+    "subtitle": "由上載音訊、模型預測，到時間定位同可解釋模型 (XAI) 嘅成個流程。",
     "sectionNavLabel": "點樣運作嘅章節",
     "flowLabel": "EchoWing 音訊分析流程",
     "takeawayLabel": "重點：",
@@ -518,7 +518,7 @@ const yue = {
                 "EchoWing 係一個教育、探索同輔助工具；正式嘅生態調查都係需要人工確認同田野紀錄嘅。"
             ],
             "animation": "limits",
-            "takeaway": "AI 嘅結果應該當做輔助線索，唔可以完全取代觀察者嘅判斷。"
+            "takeaway": "模型嘅結果應該當做輔助線索，唔可以完全取代觀察者嘅判斷。"
         }
     ]
 }
@@ -535,13 +535,13 @@ const yue = {
   spectrogramOverviewSummary: '總覽 · {segmentCount} 段 · {durationSec}s · {time_frames}×{freq_bins}',
   spectrogramChunkSummary: '分析窗 {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}',
   spectrogramEnlarge: '放大睇頻譜圖',
-  xaiRedHeatmapHint: '越深嘅紅色代表 AI 模型喺辨識嗰陣嘅關注度越高',
+  xaiRedHeatmapHint: '越深嘅紅色代表 模型喺辨識嗰陣嘅關注度越高',
   visualizerChunkSummary: '片段 {chunkIndex} · 5.0s · 32kHz · Mono',
-  pageMetaTitleSuffix: 'EchoWing - AI 雀鳥聲學辨識平台',
+  pageMetaTitleSuffix: 'EchoWing - 雀鳥聲學辨識平台',
   loadingTitle: '分析緊...',
   apiErrorAudioFormat: '音訊分析請求失敗',
   apiErrorStream: '音訊串流分析請求失敗',
-  voteDisclaimer: '免責聲明：本網站嘅 AI 模組淨係提供分析同行動建議，唔作最後決定。本平台唔保證辨識結果絕對啱，亦唔構成預測承諾、最終決策或者行為保證。',
+  voteDisclaimer: '免責聲明：本網站嘅 分析模型淨係提供分析同行動建議，唔作最後決定。本平台唔保證辨識結果絕對啱，亦唔構成預測承諾、最終決策或者行為保證。',
   voteEmptyOverview: '所有片段都未達 {threshold}% 信心門檻，冇可靠嘅物種辨識總覽。',
   voteEmptySuggestion: '建議重新錄過一段有清晰雀鳥聲嘅，或者逐段睇吓低信心候選同決策輔助說明。',
   voteResultOverview: '投票彙整：{species} 喺 {votes}/{validCount} 個分析窗嘅 Top 預測入面出現（整體得票率 {pct}%）。主要出現喺片段 {windows}。',

@@ -30,13 +30,13 @@ const hak = {
   overviewNotesTitle: '總覽層田野備註',
   segmentNotesTitle: '片段層田野備註',
   overallConclusion: '整體結論',
-  overallConclusionPlaceholder: '例如：歸段錄音以麻雀啼叫為主，同 AI 彙整一致',
+  overallConclusionPlaceholder: '例如：歸段錄音以麻雀啼叫為主，同模型彙整一致',
   segmentNotes: '片段專屬備註',
   segmentNotesPlaceholder: '這个片段特有嘅觀察…',
   environmentDescription: '環境描述',
   environmentDescriptionPlaceholder: '例如：闊大嘅草埔、有風、背景有車聲',
   fieldConfirmation: '現場確認結果',
-  fieldConfirmationPlaceholder: '例如：看著麻雀，同 AI 預測一致',
+  fieldConfirmationPlaceholder: '例如：看著麻雀，同模型預測一致',
   observerName: '觀察者名',
   defaultObserverName: '無具名嘅紀錄者',
   observerNamePlaceholder: '你嘅姓名或代號',
@@ -210,7 +210,7 @@ const hak = {
 
   navGuide: '使用說明',
   guideTitle: '使用說明同模型宣告',
-  guideSubtitle: 'EchoWing 鳥聲辨識工具嘅操作方式同 AI 模型引用',
+  guideSubtitle: 'EchoWing 鳥聲辨識工具嘅操作方式同辨識模型引用',
   guideBackBtn: '轉去首頁',
   guideModalClose: '關閉',
   guideUsageTitle: '使用方法',
@@ -274,13 +274,13 @@ const hak = {
   ],
   guidePrivacyTitle: '隱私同資料使用',
   guidePrivacyBody:
-    '上傳嘅音訊單淨用在分析，毋應該永久保存，也做毋得用在模型訓練。田野紀錄、觀察者備註同 GPS 單淨在使用者明確確認儲存，而且有設定 Google 試算表整合時正會送出。請避免上傳敏感私人對話或做得辨識嘅人聲。AI 預測無保證正確，應該以現場觀察來確認。',
+    '上傳嘅音訊單淨用在分析，毋應該永久保存，也做毋得用在模型訓練。田野紀錄、觀察者備註同 GPS 單淨在使用者明確確認儲存，而且有設定 Google 試算表整合時正會送出。請避免上傳敏感私人對話或做得辨識嘅人聲。模型預測無保證正確，應該以現場觀察來確認。',
   guideCreditsTitle: '致謝／課程背景',
   guideCreditsBody:
     'EchoWing 係國立臺灣大學 114-2 Web App Development 課程專案，毋係臺大官方服務。團隊／專案成員資訊：等待確認後補充。',
   privacyNoticeTitle: '分析前請先了解',
   privacyNoticeSummary:
-    '音訊會送去後端進行分析；AI 預測無保證正確。請莫上傳敏感對話或做得辨識嘅人聲。',
+    '音訊會送去後端進行分析；模型預測無保證正確。請莫上傳敏感對話或做得辨識嘅人聲。',
   privacyNoticeLearnMore: '查看隱私說明',
   privacyNoticeAccept: '我了解',
   privacyNoticeReopen: '重新顯示隱私提示',
@@ -292,7 +292,7 @@ const hak = {
   tooltipProcess: '開始分析音訊',
   guideDisclaimerTitle: '免責同使用宣告',
   guideDisclaimerBody:
-    '本網站嘅 AI 模組單淨提供分析同行動建議，無做最後決定。本平台無保證辨識結果嘅絕對正確性，也無構成預測承諾、最終決策或行為保證。田野紀錄同試算表同步嘅內容由使用者自家填寫，請以現場觀察做準。',
+    '本網站嘅分析模型單淨提供分析同行動建議，無做最後決定。本平台無保證辨識結果嘅絕對正確性，也無構成預測承諾、最終決策或行為保證。田野紀錄同試算表同步嘅內容由使用者自家填寫，請以現場觀察做準。',
   sheetUploadSuccess: '已經同步到試算表',
   sheetUploadError: '試算表同步失敗',
 
@@ -403,7 +403,7 @@ const hak = {
     timelineFallbackAction: "建議對照全段頻譜同原始音訊；若預期有鳥仔聲，做得試看在較安靜嘅環境重新錄製或延長錄音時間。",
     timelineSummaryRisk: "時間軸偵測著 {eventCount} 个物種事件、{speciesCount} 種鳥仔；最高事件信心係 {name}（{pct}%，峰值 {peakTime}）。結果照反卷積時間軸同事件信心篩選，毋係逐窗投票聚合。",
     timelineSummaryFallbackAction: "建議以時間軸事件做為歸段錄音嘅參考摘要；點選事件做得檢視該時段嘅物種同頻譜。若用在生態調查，請用現場觀察或影像做確認。",
-    disclaimer: "免責聲明：本網站嘅 AI 模組單淨提供分析同行動建議，無做最後決定。本平台無保證辨識結果嘅絕對正確性，也無構成預測承諾、最終決策或行為保證。",
+    disclaimer: "免責聲明：本網站嘅分析模型單淨提供分析同行動建議，無做最後決定。本平台無保證辨識結果嘅絕對正確性，也無構成預測承諾、最終決策或行為保證。",
   },
 
   apiErrors: {
@@ -419,7 +419,7 @@ const hak = {
     "homeLabel": "首頁",
     "eyebrow": "EchoWing 教學頁",
     "title": "EchoWing 仰般了解聲音？",
-    "subtitle": "對聲音上傳、模型辨識，到時間定位同可解釋 AI 嘅完整流程。",
+    "subtitle": "對聲音上傳、模型辨識，到時間定位同可解釋型模型嘅完整流程。",
     "sectionNavLabel": "運作原理頁面嘅章節",
     "flowLabel": "EchoWing 聲音分析嘅流程",
     "takeawayLabel": "仰般解讀：",
@@ -539,7 +539,7 @@ const hak = {
                 "EchoWing 適合做為教育、探索同輔助辨識工具；正式調查猶係應該搭配人工確認同田野紀錄。"
             ],
             "animation": "limits",
-            "takeaway": "AI 結果應該被看做輔助線索，而毋係取代觀察者嘅判斷。"
+            "takeaway": "模型結果應該被看做輔助線索，而毋係取代觀察者嘅判斷。"
         }
     ]
   }
@@ -556,9 +556,9 @@ const hak = {
   spectrogramOverviewSummary: '總覽 · {segmentCount} 段 · {durationSec}s · {time_frames}×{freq_bins}',
   spectrogramChunkSummary: '分析窗 {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}',
   spectrogramEnlarge: '放大檢視頻譜圖',
-  xaiRedHeatmapHint: '越深的紅色代表 AI 模型在辨識時的關注度越高',
+  xaiRedHeatmapHint: '越深的紅色代表 模型在辨識時的關注度越高',
   visualizerChunkSummary: '片段 {chunkIndex} · 5.0s · 32kHz · Mono',
-  pageMetaTitleSuffix: 'EchoWing - AI 鳥類聲學辨識平台',
+  pageMetaTitleSuffix: 'EchoWing - 鳥類聲學辨識平台',
   loadingTitle: '分析中...',
   apiErrorAudioFormat: '音訊分析請求失敗',
   apiErrorStream: '音訊串流分析請求失敗',

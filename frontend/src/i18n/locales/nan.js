@@ -30,13 +30,13 @@ const nan = {
   overviewNotesTitle: '總覽層田野備註',
   segmentNotesTitle: '片段層田野備註',
   overallConclusion: '整體結論',
-  overallConclusionPlaceholder: '例如：規段錄音以麻雀啼叫為主，佮 AI 彙整一致',
+  overallConclusionPlaceholder: '例如：規段錄音以麻雀啼叫為主，佮模型彙整一致',
   segmentNotes: '片段專屬備註',
   segmentNotesPlaceholder: '這个片段特有的觀察…',
   environmentDescription: '環境描述',
   environmentDescriptionPlaceholder: '例如：闊曠的草埔、有風、背景有車聲',
   fieldConfirmation: '現場確認結果',
-  fieldConfirmationPlaceholder: '例如：看著麻雀，佮 AI 預測一致',
+  fieldConfirmationPlaceholder: '例如：看著麻雀，佮模型預測一致',
   observerName: '觀察者名',
   defaultObserverName: '無具名的紀錄者',
   observerNamePlaceholder: '你的姓名抑是代號',
@@ -210,7 +210,7 @@ const nan = {
 
   navGuide: '使用說明',
   guideTitle: '使用說明佮模型宣告',
-  guideSubtitle: 'EchoWing 鳥聲辨識工具的操作方式佮 AI 模型引用',
+  guideSubtitle: 'EchoWing 鳥聲辨識工具的操作方式佮辨識模型引用',
   guideBackBtn: '轉去首頁',
   guideModalClose: '關閉',
   guideUsageTitle: '使用方法',
@@ -274,13 +274,13 @@ const nan = {
   ],
   guidePrivacyTitle: '隱私佮資料使用',
   guidePrivacyBody:
-    '上傳的音訊干焦用佇分析，不應該永久保存，也未當用佇模型訓練。田野紀錄、觀察者備註佮 GPS 干焦佇使用者明確確認儲存，而且有設定 Google 試算表整合的時才會送出。請避免上傳敏感的私人對話抑是會當辨識的人聲。AI 預測無保證正確，應該以現場觀察來確認。',
+    '上傳的音訊干焦用佇分析，不應該永久保存，也未當用佇模型訓練。田野紀錄、觀察者備註佮 GPS 干焦佇使用者明確確認儲存，而且有設定 Google 試算表整合的時才會送出。請避免上傳敏感的私人對話抑是會當辨識的人聲。模型預測無保證正確，應該以現場觀察來確認。',
   guideCreditsTitle: '致謝／課程背景',
   guideCreditsBody:
     'EchoWing 是國立臺灣大學 114-2 Web App Development 課程專案，毋是臺大官方服務。團隊／專案成員資訊：等待確認後補充。',
   privacyNoticeTitle: '分析前請先了解',
   privacyNoticeSummary:
-    '音訊會送去後端進行分析；AI 預測無保證正確。請莫上傳敏感對話抑是會當辨識的人聲。',
+    '音訊會送去後端進行分析；模型預測無保證正確。請莫上傳敏感對話抑是會當辨識的人聲。',
   privacyNoticeLearnMore: '查看隱私說明',
   privacyNoticeAccept: '我了解',
   privacyNoticeReopen: '重新顯示隱私提示',
@@ -292,7 +292,7 @@ const nan = {
   tooltipProcess: '開始分析音訊',
   guideDisclaimerTitle: '免責佮使用宣告',
   guideDisclaimerBody:
-    '本網站的 AI 模組干焦提供分析佮行動建議，無做最後的決定。本平台無保證辨識結果的絕對正確性，也無構成預測承諾、最終決策抑是行為保證。田野紀錄佮試算表同步的內容由使用者家己填寫，請以現場觀察做準。',
+    '本網站的分析模型干焦提供分析佮行動建議，無做最後的決定。本平台無保證辨識結果的絕對正確性，也無構成預測承諾、最終決策抑是行為保證。田野紀錄佮試算表同步的內容由使用者家己填寫，請以現場觀察做準。',
   sheetUploadSuccess: '已經同步到試算表',
   sheetUploadError: '試算表同步失敗',
 
@@ -403,7 +403,7 @@ const nan = {
     timelineFallbackAction: "建議對照全段頻譜佮原始音訊；若預期有鳥仔聲，會使試看覓佇較恬靜的環境重新錄製抑是延長錄音時間。",
     timelineSummaryRisk: "時間軸偵測著 {eventCount} 个物種事件、{speciesCount} 種鳥仔；最高事件信心是 {name}（{pct}%，峰值 {peakTime}）。結果照反卷積時間軸佮事件信心篩選，毋是逐窗投票聚合。",
     timelineSummaryFallbackAction: "建議以時間軸事件做為整段錄音的參考摘要；點選事件會使檢視彼个時段的物種佮頻譜。若用佇生態調查，請用現場觀察抑是影像做確認。",
-    disclaimer: "免責聲明：本網站的 AI 模組干焦提供分析佮行動建議，無做最後的決定。本平台無保證辨識結果的絕對正確性，也無構成預測承諾、最終決策抑是行為保證。",
+    disclaimer: "免責聲明：本網站的分析模型干焦提供分析佮行動建議，無做最後的決定。本平台無保證辨識結果的絕對正確性，也無構成預測承諾、最終決策抑是行為保證。",
   },
 
   apiErrors: {
@@ -419,7 +419,7 @@ const nan = {
     "homeLabel": "首頁",
     "eyebrow": "EchoWing 教學頁",
     "title": "EchoWing 是按怎了解聲音的？",
-    "subtitle": "對聲音上傳、模型辨識，到時間定位佮可解釋 AI 的完整流程。",
+    "subtitle": "對聲音上傳、模型辨識，到時間定位佮可解釋型模型的完整流程。",
     "sectionNavLabel": "運作原理頁面的章節",
     "flowLabel": "EchoWing 聲音分析的流程",
     "takeawayLabel": "按怎解讀：",
@@ -539,7 +539,7 @@ const nan = {
                 "EchoWing 適合做為教育、探索佮輔助辨識工具；正式調查猶是應該搭配人工確認佮田野紀錄。"
             ],
             "animation": "limits",
-            "takeaway": "AI 結果應該被看做輔助線索，而毋是取代觀察者的判斷。"
+            "takeaway": "模型結果應該被看做輔助線索，而毋是取代觀察者的判斷。"
         }
     ]
   }
@@ -556,13 +556,13 @@ const nan = {
   spectrogramOverviewSummary: '總覽 · {segmentCount} 段 · {durationSec}s · {time_frames}×{freq_bins}',
   spectrogramChunkSummary: '分析窗 {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}',
   spectrogramEnlarge: '放大檢視頻譜圖',
-  xaiRedHeatmapHint: '越深的紅色代表 AI 模型在辨識時的關注度越高',
+  xaiRedHeatmapHint: '越深的紅色代表 模型在辨識時的關注度越高',
   visualizerChunkSummary: '片段 {chunkIndex} · 5.0s · 32kHz · Mono',
-  pageMetaTitleSuffix: 'EchoWing - AI 鳥類聲學辨識平台',
+  pageMetaTitleSuffix: 'EchoWing - 鳥類聲學辨識平台',
   loadingTitle: '分析中...',
   apiErrorAudioFormat: '音訊分析請求失敗',
   apiErrorStream: '音訊串流分析請求失敗',
-  voteDisclaimer: '免責聲明：本網站之 AI 模組僅提供分析與行動建議，不作最後決定。本平台不保證辨識結果之絕對正確性，亦不構成預測承諾、最終決策或行為保證。',
+  voteDisclaimer: '免責聲明：本網站之分析模型僅提供分析與行動建議，不作最後決定。本平台不保證辨識結果之絕對正確性，亦不構成預測承諾、最終決策或行為保證。',
   voteEmptyOverview: '各片段皆未達 {threshold}% 信心門檻，無可靠物種辨識總覽。',
   voteEmptySuggestion: '建議重新錄製含清晰鳥鳴的片段，或逐段查看低信心候選與決策輔助說明。',
   voteResultOverview: '投票彙整：{species} 在 {votes}/{validCount} 個分析窗的 Top 預測中出現（整體得票率 {pct}%）。主要出現於片段 {windows}。',

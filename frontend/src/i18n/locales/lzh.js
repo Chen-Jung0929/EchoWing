@@ -199,7 +199,7 @@ const lzh = {
   "logout": "登出",
   "navGuide": "指南",
   "guideTitle": "指南與模型",
-  "guideSubtitle": "EchoWing 之用與 AI 模型",
+  "guideSubtitle": "EchoWing 之用與模型",
   "guideBackBtn": "返首頁",
   "guideModalClose": "閉之",
   "guideUsageTitle": "用法",
@@ -274,7 +274,7 @@ const lzh = {
   "tooltipModelSelection": "擇聲學模型",
   "tooltipProcess": "始析音聲",
   "guideDisclaimerTitle": "免責",
-  "guideDisclaimerBody": "AI 之果僅為輔助，實不可盡信。請以實地觀察為準。",
+  "guideDisclaimerBody": "模型之果僅為輔助，實不可盡信。請以實地觀察為準。",
   "sheetUploadSuccess": "已同步於試算表",
   "sheetUploadError": "試算表同步敗矣",
   "nearbyRecordsBtn": "近旁所紀",
@@ -518,7 +518,7 @@ const lzh = {
                 "EchoWing 乃格物、啟發、輔助之器。定論仍需人工驗之與實地之錄。"
             ],
             "animation": "limits",
-            "takeaway": "AI 之果，當視為輔佐之跡，不可代察者之斷也。"
+            "takeaway": "模型之果，當視為輔佐之跡，不可代察者之斷也。"
         }
     ]
 }
@@ -535,13 +535,13 @@ const lzh = {
   spectrogramOverviewSummary: '總覽 · {segmentCount} 段 · {durationSec}s · {time_frames}×{freq_bins}',
   spectrogramChunkSummary: '分析窗 {chunkIndex} · {durationSec}s · {time_frames}×{freq_bins}',
   spectrogramEnlarge: '廓而視頻譜之圖',
-  xaiRedHeatmapHint: '愈深之紅，表 AI 於辨時愈為著意。',
+  xaiRedHeatmapHint: '愈深之紅，表 模型於辨時愈為著意。',
   visualizerChunkSummary: '段 {chunkIndex} · 5.0s · 32kHz · Mono',
-  pageMetaTitleSuffix: 'EchoWing - AI 鳥語辨識之平臺',
+  pageMetaTitleSuffix: 'EchoWing - 鳥語辨識之平臺',
   loadingTitle: '方析...',
   apiErrorAudioFormat: '音訊分析之求敗矣',
   apiErrorStream: '音訊串流分析之求敗矣',
-  voteDisclaimer: '免責之聲：本站之 AI 僅備分析與建言，非為定論。吾等不保其絕對無誤，亦不為預測之諾或行之保。',
+  voteDisclaimer: '免責之聲：本站之模型僅備分析與建言，非為定論。吾等不保其絕對無誤，亦不為預測之諾或行之保。',
   voteEmptyOverview: '各段皆未達 {threshold}% 信度之限，無可信之物種總覽。',
   voteEmptySuggestion: '議重錄含晰鳥音之段，或逐段察低信之選與決之助。',
   voteResultOverview: '投之彙：{species} 於 {votes}/{validCount} 分析窗之首測中現（總得票率 {pct}%）。要見於段 {windows}。',
