@@ -1,0 +1,81 @@
+{
+  "model_path": "C:\\EchoWing\\backend\\models\\perch\\perch_v2_cpu_savedmodel",
+  "model_size_mb": 391.269,
+  "load_seconds": 1.993883399999504,
+  "first_zero_inference_seconds": 2.9281551000003674,
+  "signatures": [
+    "serving_default"
+  ],
+  "structured_input_signature": "((), {'inputs': TensorSpec(shape=(None, 160000), dtype=tf.float32, name='inputs')})",
+  "outputs": {
+    "spatial_embedding": {
+      "shape": [
+        1,
+        16,
+        4,
+        1536
+      ],
+      "dtype": "float32",
+      "min": -0.27846458554267883,
+      "max": 2.662137031555176
+    },
+    "spectrogram": {
+      "shape": [
+        1,
+        500,
+        128
+      ],
+      "dtype": "float32",
+      "min": -1.1512925624847412,
+      "max": -1.1512925624847412
+    },
+    "label": {
+      "shape": [
+        1,
+        14795
+      ],
+      "dtype": "float32",
+      "min": -9.122648239135742,
+      "max": 4.509859561920166
+    },
+    "embedding": {
+      "shape": [
+        1,
+        1536
+      ],
+      "dtype": "float32",
+      "min": -0.16677287220954895,
+      "max": 0.3305191993713379
+    }
+  },
+  "labels_count": 14795,
+  "echowing_preprocessing": {
+    "sample_rate_hz": 32000,
+    "window_seconds": 5,
+    "input_shape": [
+      "batch",
+      160000
+    ],
+    "external_perch_frontend": false,
+    "note": "EchoWing resamples/segments waveform; SavedModel produces its own spectrogram."
+  },
+  "echowing_output_mapping": {
+    "species_score_preference": [
+      "logits",
+      "label"
+    ],
+    "current_resolved_key": "label",
+    "scores_are_sigmoid_normalized_by_predictor": true,
+    "embedding_currently_returned_to_api": false
+  },
+  "environment": {
+    "python": "3.11.15",
+    "tensorflow": "2.20.0",
+    "platform": "Windows-10-10.0.26200-SP0"
+  },
+  "source_files": [
+    "C:\\EchoWing\\backend\\app\\perch_inference.py",
+    "C:\\EchoWing\\backend\\app\\config.py",
+    "C:\\EchoWing\\backend\\app\\xai.py"
+  ]
+}

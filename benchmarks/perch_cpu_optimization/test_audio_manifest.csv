@@ -1,0 +1,2 @@
+path,duration_seconds,sample_rate_hz,source,sha256,biological_accuracy_suitable,note
+benchmarks\perch_cpu_optimization\synthetic_pipeline_test_30s.wav,30,32000,generated,5e6d8830d0463f9e2d813bc6d64edea0cf4fe1c508b141ad5ad37a65897530ec,no,Synthetic non-biological placeholder for pipeline/speed testing only; unsuitable for accuracy claims.

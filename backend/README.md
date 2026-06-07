@@ -36,3 +36,28 @@ curl -s "https://<your-space>.hf.space/api/warmup"
 或瀏覽器開啟 `/api/ready`，出現 200 即可開始 demo。
 
 詳細部署步驟見倉庫內 `DEPLOY_HF.md`。
+
+# Perch CPU Runtime Selector
+
+The original TensorFlow Perch runtime remains the default:
+
+```bash
+TRIAGELENS_PERCH_RUNTIME=tf
+```
+
+Validated converted artifacts can be tested without changing the API or UI:
+
+```bash
+TRIAGELENS_PERCH_RUNTIME=tflite
+TRIAGELENS_PERCH_TFLITE_PATH=models/perch/perch_v2_cpu_fp32.tflite
+```
+
+Available selector values are `tf`, `onnx`, `onnx_int8`, `tflite`, and
+`tflite_int8`. The current Perch v2 CPU SavedModel cannot be exported to a
+validated ONNX artifact because it contains `XlaCallModule`, so ONNX selections
+fall back to TensorFlow. Any optimized-runtime load failure is logged and also
+falls back to TensorFlow.
+
+Use one Uvicorn worker to avoid loading duplicate model copies. Keep
+`TRIAGELENS_PERCH_XAI_STRIDE_SEC=0.3` for production; the 0.1 setting is for
+benchmarking and is substantially slower.

@@ -1,0 +1,344 @@
+[
+  {
+    "setting": {
+      "runtime": "tf",
+      "xai": "off",
+      "model_size_mb": 391.269,
+      "load_seconds": 6.65,
+      "first_inference_seconds": 1.0761,
+      "mean_total_seconds": 17.4425,
+      "best_total_seconds": 17.2471,
+      "mean_per_window_inference_seconds": 0.58038,
+      "mean_xai_seconds": 0.0,
+      "peak_memory_mb_approx": 2957.96,
+      "runs": 3
+    },
+    "runs": [
+      {
+        "total_seconds": 17.654292427934706,
+        "inference_seconds": 17.626550957094878,
+        "spectrogram_seconds": 0.027741470839828253,
+        "xai_seconds": 0.0,
+        "per_window_inference_seconds": 0.5875516985698293
+      },
+      {
+        "total_seconds": 17.247135288082063,
+        "inference_seconds": 17.217006800230592,
+        "spectrogram_seconds": 0.03012848785147071,
+        "xai_seconds": 0.0,
+        "per_window_inference_seconds": 0.573900226674353
+      },
+      {
+        "total_seconds": 17.42618299089372,
+        "inference_seconds": 17.3908899910748,
+        "spectrogram_seconds": 0.03529299981892109,
+        "xai_seconds": 0.0,
+        "per_window_inference_seconds": 0.5796963330358267
+      }
+    ]
+  },
+  {
+    "setting": {
+      "runtime": "tf",
+      "xai": "0.3",
+      "model_size_mb": 391.269,
+      "load_seconds": 6.65,
+      "first_inference_seconds": 1.0761,
+      "mean_total_seconds": 79.0916,
+      "best_total_seconds": 78.7421,
+      "mean_per_window_inference_seconds": 0.57791,
+      "mean_xai_seconds": 61.7219,
+      "peak_memory_mb_approx": 2982.72,
+      "runs": 3
+    },
+    "runs": [
+      {
+        "total_seconds": 78.74208957981318,
+        "inference_seconds": 17.288578914944082,
+        "spectrogram_seconds": 0.03283076826483011,
+        "xai_seconds": 61.42067989660427,
+        "per_window_inference_seconds": 0.5762859638314695
+      },
+      {
+        "total_seconds": 79.09050968801603,
+        "inference_seconds": 17.2877185116522,
+        "spectrogram_seconds": 0.03193113673478365,
+        "xai_seconds": 61.77086003962904,
+        "per_window_inference_seconds": 0.57625728372174
+      },
+      {
+        "total_seconds": 79.44209761777893,
+        "inference_seconds": 17.435481178108603,
+        "spectrogram_seconds": 0.03236539289355278,
+        "xai_seconds": 61.97425104677677,
+        "per_window_inference_seconds": 0.5811827059369534
+      }
+    ]
+  },
+  {
+    "setting": {
+      "runtime": "tf",
+      "xai": "0.1",
+      "model_size_mb": 391.269,
+      "load_seconds": 6.65,
+      "first_inference_seconds": 1.0761,
+      "mean_total_seconds": 173.3517,
+      "best_total_seconds": 173.1139,
+      "mean_per_window_inference_seconds": 0.52106,
+      "mean_xai_seconds": 157.6898,
+      "peak_memory_mb_approx": 3016.77,
+      "runs": 3
+    },
+    "runs": [
+      {
+        "total_seconds": 173.11391579313204,
+        "inference_seconds": 15.387346018105745,
+        "spectrogram_seconds": 0.031877654138952494,
+        "xai_seconds": 157.69469212088734,
+        "per_window_inference_seconds": 0.5129115339368582
+      },
+      {
+        "total_seconds": 173.47194985253736,
+        "inference_seconds": 15.76985485991463,
+        "spectrogram_seconds": 0.028975946363061666,
+        "xai_seconds": 157.67311904625967,
+        "per_window_inference_seconds": 0.525661828663821
+      },
+      {
+        "total_seconds": 173.46927257068455,
+        "inference_seconds": 15.737804182805121,
+        "spectrogram_seconds": 0.029750282876193523,
+        "xai_seconds": 157.70171810500324,
+        "per_window_inference_seconds": 0.5245934727601707
+      }
+    ]
+  },
+  {
+    "setting": {
+      "runtime": "tflite",
+      "xai": "off",
+      "model_size_mb": 388.478,
+      "load_seconds": 2.5499,
+      "first_inference_seconds": 1.395,
+      "mean_total_seconds": 6.0555,
+      "best_total_seconds": 6.0246,
+      "mean_per_window_inference_seconds": 0.20091,
+      "mean_xai_seconds": 0.0,
+      "peak_memory_mb_approx": 6176.96,
+      "runs": 3
+    },
+    "runs": [
+      {
+        "total_seconds": 6.095845364499837,
+        "inference_seconds": 6.0692599061876535,
+        "spectrogram_seconds": 0.02658545831218362,
+        "xai_seconds": 0.0,
+        "per_window_inference_seconds": 0.20230866353958846
+      },
+      {
+        "total_seconds": 6.046032225713134,
+        "inference_seconds": 6.016248242929578,
+        "spectrogram_seconds": 0.029783982783555984,
+        "xai_seconds": 0.0,
+        "per_window_inference_seconds": 0.2005416080976526
+      },
+      {
+        "total_seconds": 6.024618410505354,
+        "inference_seconds": 5.996252134907991,
+        "spectrogram_seconds": 0.02836627559736371,
+        "xai_seconds": 0.0,
+        "per_window_inference_seconds": 0.19987507116359968
+      }
+    ]
+  },
+  {
+    "setting": {
+      "runtime": "tflite",
+      "xai": "0.3",
+      "model_size_mb": 388.478,
+      "load_seconds": 2.5499,
+      "first_inference_seconds": 1.395,
+      "mean_total_seconds": 28.9701,
+      "best_total_seconds": 28.8708,
+      "mean_per_window_inference_seconds": 0.19319,
+      "mean_xai_seconds": 23.1465,
+      "peak_memory_mb_approx": 6192.15,
+      "runs": 3
+    },
+    "runs": [
+      {
+        "total_seconds": 29.15680753532797,
+        "inference_seconds": 5.97715953271836,
+        "spectrogram_seconds": 0.02728063380345702,
+        "xai_seconds": 23.152367368806154,
+        "per_window_inference_seconds": 0.199238651090612
+      },
+      {
+        "total_seconds": 28.882862841244787,
+        "inference_seconds": 5.707430818118155,
+        "spectrogram_seconds": 0.027778045739978552,
+        "xai_seconds": 23.147653977386653,
+        "per_window_inference_seconds": 0.19024769393727184
+      },
+      {
+        "total_seconds": 28.870774630922824,
+        "inference_seconds": 5.7027858989313245,
+        "spectrogram_seconds": 0.028389031067490578,
+        "xai_seconds": 23.13959970092401,
+        "per_window_inference_seconds": 0.19009286329771083
+      }
+    ]
+  },
+  {
+    "setting": {
+      "runtime": "tflite",
+      "xai": "0.1",
+      "model_size_mb": 388.478,
+      "load_seconds": 2.5499,
+      "first_inference_seconds": 1.395,
+      "mean_total_seconds": 65.3248,
+      "best_total_seconds": 65.172,
+      "mean_per_window_inference_seconds": 0.19032,
+      "mean_xai_seconds": 59.5855,
+      "peak_memory_mb_approx": 6174.01,
+      "runs": 3
+    },
+    "runs": [
+      {
+        "total_seconds": 65.17202533548698,
+        "inference_seconds": 5.698678984772414,
+        "spectrogram_seconds": 0.027271958999335766,
+        "xai_seconds": 59.44607439171523,
+        "per_window_inference_seconds": 0.18995596615908047
+      },
+      {
+        "total_seconds": 65.34228787804022,
+        "inference_seconds": 5.714019620791078,
+        "spectrogram_seconds": 0.03127772826701403,
+        "xai_seconds": 59.59699052898213,
+        "per_window_inference_seconds": 0.19046732069303593
+      },
+      {
+        "total_seconds": 65.46001223428175,
+        "inference_seconds": 5.715949842706323,
+        "spectrogram_seconds": 0.030723960604518652,
+        "xai_seconds": 59.71333843097091,
+        "per_window_inference_seconds": 0.19053166142354408
+      }
+    ]
+  },
+  {
+    "setting": {
+      "runtime": "tflite_int8",
+      "xai": "off",
+      "model_size_mb": 358.928,
+      "load_seconds": 2.5219,
+      "first_inference_seconds": 1.1906,
+      "mean_total_seconds": 7.1877,
+      "best_total_seconds": 7.162,
+      "mean_per_window_inference_seconds": 0.23858,
+      "mean_xai_seconds": 0.0,
+      "peak_memory_mb_approx": 6118.35,
+      "runs": 3
+    },
+    "runs": [
+      {
+        "total_seconds": 7.23425589222461,
+        "inference_seconds": 7.204425150062889,
+        "spectrogram_seconds": 0.02983074216172099,
+        "xai_seconds": 0.0,
+        "per_window_inference_seconds": 0.2401475050020963
+      },
+      {
+        "total_seconds": 7.166789384558797,
+        "inference_seconds": 7.136851663701236,
+        "spectrogram_seconds": 0.029937720857560635,
+        "xai_seconds": 0.0,
+        "per_window_inference_seconds": 0.2378950554567079
+      },
+      {
+        "total_seconds": 7.161976404022425,
+        "inference_seconds": 7.130836965981871,
+        "spectrogram_seconds": 0.031139438040554523,
+        "xai_seconds": 0.0,
+        "per_window_inference_seconds": 0.23769456553272902
+      }
+    ]
+  },
+  {
+    "setting": {
+      "runtime": "tflite_int8",
+      "xai": "0.3",
+      "model_size_mb": 358.928,
+      "load_seconds": 2.5219,
+      "first_inference_seconds": 1.1906,
+      "mean_total_seconds": 33.9078,
+      "best_total_seconds": 33.6983,
+      "mean_per_window_inference_seconds": 0.22702,
+      "mean_xai_seconds": 27.0608,
+      "peak_memory_mb_approx": 6128.12,
+      "runs": 3
+    },
+    "runs": [
+      {
+        "total_seconds": 34.171381688676775,
+        "inference_seconds": 7.095768068917096,
+        "spectrogram_seconds": 0.032150997780263424,
+        "xai_seconds": 27.043462621979415,
+        "per_window_inference_seconds": 0.23652560229723651
+      },
+      {
+        "total_seconds": 33.8536365297623,
+        "inference_seconds": 6.6780553041026,
+        "spectrogram_seconds": 0.0465575298294425,
+        "xai_seconds": 27.129023695830256,
+        "per_window_inference_seconds": 0.22260184347008666
+      },
+      {
+        "total_seconds": 33.69834198476747,
+        "inference_seconds": 6.658070077188313,
+        "spectrogram_seconds": 0.03031186293810606,
+        "xai_seconds": 27.009960044641048,
+        "per_window_inference_seconds": 0.22193566923961044
+      }
+    ]
+  },
+  {
+    "setting": {
+      "runtime": "tflite_int8",
+      "xai": "0.1",
+      "model_size_mb": 358.928,
+      "load_seconds": 2.5219,
+      "first_inference_seconds": 1.1906,
+      "mean_total_seconds": 75.7555,
+      "best_total_seconds": 75.1604,
+      "mean_per_window_inference_seconds": 0.22193,
+      "mean_xai_seconds": 69.0661,
+      "peak_memory_mb_approx": 6110.72,
+      "runs": 3
+    },
+    "runs": [
+      {
+        "total_seconds": 76.10273016989231,
+        "inference_seconds": 6.687590221874416,
+        "spectrogram_seconds": 0.032746021170169115,
+        "xai_seconds": 69.38239392684773,
+        "per_window_inference_seconds": 0.22291967406248053
+      },
+      {
+        "total_seconds": 76.0032336753793,
+        "inference_seconds": 6.64200488012284,
+        "spectrogram_seconds": 0.03139807702973485,
+        "xai_seconds": 69.32983071822673,
+        "per_window_inference_seconds": 0.22140016267076135
+      },
+      {
+        "total_seconds": 75.16044175671414,
+        "inference_seconds": 6.643660238943994,
+        "spectrogram_seconds": 0.03073592996224761,
+        "xai_seconds": 68.4860455878079,
+        "per_window_inference_seconds": 0.22145534129813313
+      }
+    ]
+  }
+]

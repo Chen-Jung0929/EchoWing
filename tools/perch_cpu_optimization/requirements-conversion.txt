@@ -1,0 +1,11 @@
+tensorflow-cpu==2.20.0
+protobuf>=6.31.1,<8
+numpy>=1.26
+onnx>=1.17
+onnxruntime>=1.20
+tf2onnx>=1.17
+psutil>=5.9
+soundfile>=0.12
+torch>=2.1
+torchaudio>=2.1
+pydantic-settings>=2.2

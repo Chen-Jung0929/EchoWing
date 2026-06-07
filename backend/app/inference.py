@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 
 import numpy as np
 import onnxruntime as ort
@@ -10,9 +11,29 @@ import torch
 from app.audio_mel import AudioToMelSpectrogram
 from app.config import Settings, chunk_samples, get_settings
 
+logger = logging.getLogger(__name__)
+
 
 def create_perch_predictor(settings: Settings | None = None):
     cfg = settings or get_settings()
+    runtime = cfg.perch_runtime.lower().strip()
+    if runtime != "tf":
+        try:
+            if runtime == "tflite":
+                from app.perch_tflite_predictor import PerchTFLitePredictor
+                return PerchTFLitePredictor(cfg, cfg.perch_tflite_path)
+            if runtime == "tflite_int8":
+                from app.perch_tflite_predictor import PerchTFLitePredictor
+                return PerchTFLitePredictor(cfg, cfg.perch_tflite_int8_path)
+            if runtime in {"onnx", "onnx_int8"}:
+                raise RuntimeError(
+                    "Perch ONNX runtime is unavailable because no validated Perch ONNX artifact exists"
+                )
+            raise ValueError(
+                "TRIAGELENS_PERCH_RUNTIME must be tf|onnx|onnx_int8|tflite|tflite_int8"
+            )
+        except Exception:
+            logger.exception("Failed to load Perch runtime '%s'; falling back to TensorFlow", runtime)
     from app.perch_inference import PerchChunkPredictor
     return PerchChunkPredictor(cfg)
 

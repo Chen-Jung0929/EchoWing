@@ -17,7 +17,12 @@ class Settings(BaseSettings):
     inference_backend: str = "perch" # Default
     
     # Model Paths (layout: models/perch | models/birdnet | models/silic | ONNX at models root)
+    perch_runtime: str = "tf"
     perch_savedmodel_path: Path = Path("models/perch/perch_v2_cpu_savedmodel")
+    perch_tflite_path: Path = Path("models/perch/perch_v2_cpu_fp32.tflite")
+    perch_tflite_int8_path: Path = Path("models/perch/perch_v2_cpu_dynamic_int8.tflite")
+    perch_onnx_path: Path = Path("models/perch/perch_v2_cpu_fp32.onnx")
+    perch_onnx_int8_path: Path = Path("models/perch/perch_v2_cpu_dynamic_int8.onnx")
     perch_pseudo_head_path: Path = Path("models/perch/pseudo_best_model.pt")
     perch_labels_path: Path = Path("models/perch/perch_v2_cpu_savedmodel/assets/labels.csv")
     taxonomy_csv_path: Path = Path("models/perch/species_info_completed_comma.csv")
