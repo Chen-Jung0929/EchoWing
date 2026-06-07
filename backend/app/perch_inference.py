@@ -8,6 +8,7 @@ import numpy as np
 import torch
 
 from app.config import Settings, chunk_samples
+from app.model_assets import resolve_perch_labels_path, validate_labels_file, validate_tflite_file
 from app.tensorflow_threads import (
     configure_tensorflow_threads,
     recommended_tf_intra_op_threads,
@@ -36,9 +37,8 @@ def _import_tflite():
 
 
 def _load_perch_labels(labels_path: Path) -> list[str]:
-    """Load Perch v2 class list from SavedModel assets/labels.csv (one scientific name per line)."""
-    if not labels_path.is_file():
-        raise FileNotFoundError(f"Perch labels file not found: {labels_path}")
+    """Load Perch v2 class list (one scientific name per line)."""
+    validate_labels_file(labels_path, min_lines=1000)
 
     lines = [
         line.strip()
@@ -145,6 +145,7 @@ class _PerchTfliteBackend:
     def __init__(self, settings: Settings, labels: list[str], model_path: Path) -> None:
         if not model_path.is_file():
             raise FileNotFoundError(f"Perch TFLite model not found: {model_path}")
+        validate_tflite_file(model_path, label="Perch TFLite model")
 
         self.settings = settings
         self.labels = labels
@@ -293,11 +294,13 @@ class PerchChunkPredictor:
         self.settings = settings
         self.device = torch.device("cpu")
 
-        labels_path = settings.perch_labels_path
-        if not labels_path.is_file():
-            fallback = settings.perch_savedmodel_path / "assets" / "labels.csv"
-            if fallback.is_file():
-                labels_path = fallback
+        labels_path = resolve_perch_labels_path(
+            settings.perch_labels_path,
+            fallback_paths=(
+                Path("models/perch/labels.csv"),
+                settings.perch_savedmodel_path / "assets" / "labels.csv",
+            ),
+        )
         self.labels = _load_perch_labels(labels_path)
         logger.info("Loaded %s Perch labels from %s", len(self.labels), labels_path)
 

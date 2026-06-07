@@ -35,12 +35,16 @@ def _load_models_sync(settings: Settings):
     try:
         predictors["perch-fast"] = create_perch_fast_predictor(settings)
     except Exception as e:
-        logger.warning(f"Failed to load Perch-fast: {e}")
-        
+        logger.warning("Failed to load Perch-fast: %s", e)
+
     try:
-        predictors["birdnet"] = create_birdnet_predictor(settings)
+        birdnet = create_birdnet_predictor(settings)
+        if birdnet.is_ready:
+            predictors["birdnet"] = birdnet
+        else:
+            logger.warning("BirdNET skipped: model file missing or invalid")
     except Exception as e:
-        logger.warning(f"Failed to load BirdNET: {e}")
+        logger.warning("Failed to load BirdNET: %s", e)
         
     try:
         predictors["silic"] = create_silic_predictor(settings)

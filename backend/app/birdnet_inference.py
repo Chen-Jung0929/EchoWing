@@ -1,5 +1,6 @@
 import logging
 import threading
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -35,6 +36,9 @@ def _resample_waveform(wave: np.ndarray, src_sr: int, dst_sr: int) -> np.ndarray
 def _load_label_lines(path) -> list[str]:
     with open(path, encoding="utf-8") as f:
         return [line.strip() for line in f if line.strip()]
+
+
+from app.model_assets import validate_tflite_file
 
 
 def logit_from_score(score: float) -> float:
@@ -87,12 +91,13 @@ class BirdNetPredictor:
 
         logger.info("Loading BirdNET TFLite from %s", self.model_path)
         try:
+            validate_tflite_file(self.model_path, label="BirdNET model")
             self.interpreter = tflite.Interpreter(model_path=str(self.model_path))
             self.interpreter.allocate_tensors()
             self.input_details = self.interpreter.get_input_details()
             self.output_details = self.interpreter.get_output_details()
         except Exception as e:
-            logger.warning(f"Could not load BirdNET model: {e}")
+            logger.warning("Could not load BirdNET model: %s", e)
             self.interpreter = None
 
         if self.labels_path.is_file():
@@ -112,6 +117,10 @@ class BirdNetPredictor:
         # TFLite Interpreter is not thread-safe; stream Phase 1 may run batches in parallel.
         self._invoke_lock = threading.Lock()
 
+    @property
+    def is_ready(self) -> bool:
+        return self.interpreter is not None
+
     def _logits_to_confidence(self, logits: np.ndarray) -> np.ndarray:
         return logits_to_birdnet_confidence(
             logits,
@@ -125,7 +134,10 @@ class BirdNetPredictor:
         Returns (probs, None)
         """
         if self.interpreter is None:
-            raise RuntimeError("BirdNET model not loaded.")
+            raise RuntimeError(
+                "BirdNET model not loaded. Ensure models/birdnet/audio-model.tflite is present "
+                "(not a Git LFS pointer). See DEPLOY_HF.md or run scripts/bootstrap_hf_models.py."
+            )
 
         waveforms = chunks.squeeze(1).detach().cpu().numpy().astype(np.float32, copy=False)
         n = waveforms.shape[0]

@@ -78,14 +78,19 @@ DISCLAIMER = ZhAndEn(
 
 def _resolve_model(model_selection: str, predictors: dict) -> str:
     """Single-model inference only (no ensemble)."""
+    available = {
+        name: pred
+        for name, pred in predictors.items()
+        if getattr(pred, "is_ready", True)
+    }
     if model_selection == "perch":
         model_selection = "perch-fast"
-    if model_selection in predictors:
+    if model_selection in available:
         return model_selection
     for fallback in ("perch-fast", "birdnet", "silic"):
-        if fallback in predictors:
+        if fallback in available:
             return fallback
-    return next(iter(predictors), "perch-fast")
+    return next(iter(available), "perch-fast")
 
 
 def _taxonomy_for_model(
@@ -138,8 +143,11 @@ def _build_top_species(
     *,
     threshold: float,
 ) -> tuple[list[TopSpecies], list[TopSpecies], bool]:
-    k_eff = max(1, min(k, len(labels), len(probs)))
-    idxs = np.argsort(-probs)[:k_eff]
+    n = min(len(labels), len(probs))
+    if n == 0:
+        return [], [], False
+    k_eff = max(1, min(k, n))
+    idxs = np.argsort(-probs[:n])[:k_eff]
     candidates: list[TopSpecies] = []
     for i in idxs:
         species_id = labels[i]
@@ -174,8 +182,11 @@ def _build_top_classes(
     *,
     threshold: float,
 ) -> list[TopClass]:
-    k_eff = max(1, min(k, len(labels), len(probs)))
-    idxs = np.argsort(-probs)[:k_eff]
+    n = min(len(labels), len(probs))
+    if n == 0:
+        return []
+    k_eff = max(1, min(k, n))
+    idxs = np.argsort(-probs[:n])[:k_eff]
     class_counts: dict[str, int] = {}
     for i in idxs:
         if float(probs[i]) < threshold:
@@ -646,8 +657,8 @@ async def _stream_process_audio(
     
     model_name = _resolve_model(model_selection, predictors)
     predictor = predictors.get(model_name)
-    if not predictor:
-        yield f"data: {json.dumps({'error': f'Model not available: {model_name}'})}\n\n"
+    if not predictor or not getattr(predictor, "is_ready", True):
+        yield f"data: {json.dumps({'error': f'Model not available: {model_selection}'}, ensure_ascii=False)}\n\n"
         return
 
     window_sec = _window_sec_for_model(model_name)

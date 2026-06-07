@@ -35,6 +35,7 @@ RUN pip install --no-cache-dir -U pip \
 
 COPY app ./app
 COPY models ./models
+RUN python -m app.bootstrap_hf_models
 
 EXPOSE 7860
 

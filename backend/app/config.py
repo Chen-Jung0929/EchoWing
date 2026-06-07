@@ -24,7 +24,7 @@ class Settings(BaseSettings):
     perch_tflite_int8_path: Path = Path("models/perch/perch_v2_cpu_dynamic_int8.tflite")
     perch_savedmodel_path: Path = Path("models/perch/perch_v2_cpu_savedmodel")
     perch_pseudo_head_path: Path = Path("models/perch/pseudo_best_model.pt")
-    perch_labels_path: Path = Path("models/perch/perch_v2_cpu_savedmodel/assets/labels.csv")
+    perch_labels_path: Path = Path("models/perch/labels.csv")
     taxonomy_csv_path: Path = Path("models/perch/species_info_completed_comma.csv")
 
     birdnet_model_path: Path = Path("models/birdnet/audio-model.tflite")

@@ -316,7 +316,7 @@ npm run build
 
 **BirdNET v2.4（`models/birdnet/`）**
 
-- `audio-model.tflite` — [Zenodo BirdNET_v2.4](https://zenodo.org/records/7430856)
+- `audio-model.tflite` — [Zenodo BirdNET_v2.4](https://zenodo.org/records/15050749)（`BirdNET_v2.4_tflite.zip` 內的 `audio-model.tflite`）
 - `labels/zh.txt` — 中文標籤（倉庫僅版控 `zh.txt`，其餘語系請本地放置）
 
 **SILIC（`models/silic/`）**
