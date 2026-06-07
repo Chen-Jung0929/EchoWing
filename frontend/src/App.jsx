@@ -15,15 +15,14 @@ import { buildTimelineModel } from './utils/timeline/buildTimelineModel';
 import { ensureTimeline } from './utils/timeline/ensureTimeline';
 import ResultPanel from './features/results/ResultPanel';
 import {
-  MdClose,
   MdLanguage,
   MdDarkMode,
   MdLightMode,
   MdCloudUpload,
-  MdDownload,
   MdHelpOutline,
 } from 'react-icons/md';
 import AudioRecorder from './components/AudioRecorder/AudioRecorder';
+import AudioPreview from './components/AudioPreview/AudioPreview';
 import { isSupportedMediaFile, MEDIA_FILE_ACCEPT } from './utils/supportedMedia';
 import { isInAppBrowser } from './utils/inAppBrowser';
 import DayHeroScene from './features/hero/DayHeroScene';
@@ -93,6 +92,10 @@ export default function App() {
 
   const [selectedFile, setSelectedFile] = useState(null);
   const [isRecordedFile, setIsRecordedFile] = useState(false);
+  const [selectedFileMetadata, setSelectedFileMetadata] = useState({
+    status: 'idle',
+    duration: null,
+  });
   const [recorderError, setRecorderError] = useState('');
   const [predictionResult, setPredictionResult] = useState(null);
   const [spectrogramByIndex, setSpectrogramByIndex] = useState({});
@@ -115,6 +118,27 @@ export default function App() {
 
   const dict = getDict(lang);
   const recordingBlocked = useMemo(() => isInAppBrowser(), []);
+
+  useEffect(() => {
+    if (!selectedFile) return undefined;
+
+    let cancelled = false;
+    decodeAudioDuration(selectedFile)
+      .then((duration) => {
+        if (cancelled) return;
+        setSelectedFileMetadata(
+          duration == null
+            ? { status: 'unavailable', duration: null }
+            : { status: 'ready', duration }
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setSelectedFileMetadata({ status: 'unavailable', duration: null });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedFile]);
 
   useEffect(() => {
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
@@ -267,6 +291,7 @@ export default function App() {
     }
 
     setSelectedFile(file);
+    setSelectedFileMetadata({ status: 'decoding', duration: null });
     setIsRecordedFile(false);
     setRecorderError('');
     setPredictionResult(null);
@@ -284,6 +309,7 @@ export default function App() {
   const handleFileClear = () => {
     fileRef.current.value = '';
     setSelectedFile(null);
+    setSelectedFileMetadata({ status: 'idle', duration: null });
     setIsRecordedFile(false);
     setRecorderError('');
     setPredictionResult(null);
@@ -294,6 +320,7 @@ export default function App() {
   const handleRecordingComplete = (file) => {
     if (fileRef.current) fileRef.current.value = '';
     setSelectedFile(file);
+    setSelectedFileMetadata({ status: 'decoding', duration: null });
     setIsRecordedFile(true);
     setRecorderError('');
     setPredictionResult(null);
@@ -327,7 +354,10 @@ export default function App() {
     }
 
     try {
-      const duration = await decodeAudioDuration(file);
+      const duration =
+        selectedFileMetadata.status === 'ready'
+          ? selectedFileMetadata.duration
+          : await decodeAudioDuration(file);
       if (duration != null && duration < MIN_AUDIO_DURATION_SEC) {
         setErrorMessage(dict.fileTooShort);
         return;
@@ -618,18 +648,60 @@ export default function App() {
               </button>
             </Tooltip>
 
-            <Tooltip label={dict.languageMenuLabel}>
-              <button
-              type="button"
-              onClick={() => setIsMenuOpen((prev) => !prev)}
-              className="p-2 rounded-lg hover:bg-[var(--c-card)]/40 transition-colors focus:outline-none"
-              aria-label={dict.languageMenuLabel}
-              title={dict.languageMenuLabel}
-              aria-expanded={isMenuOpen}
-            >
-              <MdLanguage className="w-6 h-6 text-[var(--c-text)]" />
-              </button>
-            </Tooltip>
+            <div className="relative">
+              <Tooltip label={dict.languageMenuLabel}>
+                <button
+                  type="button"
+                  onClick={() => setIsMenuOpen((prev) => !prev)}
+                  className="p-2 rounded-lg hover:bg-[var(--c-card)]/40 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--c-primary)]"
+                  aria-label={dict.languageMenuLabel}
+                  title={dict.languageMenuLabel}
+                  aria-expanded={isMenuOpen}
+                  aria-haspopup="listbox"
+                >
+                  <MdLanguage className="w-6 h-6 text-[var(--c-text)]" />
+                </button>
+              </Tooltip>
+
+              {isMenuOpen ? (
+                <div className="absolute right-0 top-full mt-2 max-h-[70vh] w-56 overflow-y-auto rounded-2xl border border-[var(--c-text)]/10 bg-[var(--c-card)]/95 p-2 shadow-2xl backdrop-blur-md">
+                  <div className="flex flex-col gap-1" role="listbox" aria-label={dict.languageMenuLabel}>
+                    {[
+                      { code: 'zh', label: '中文' },
+                      { code: 'en', label: 'English' },
+                      { code: 'ja', label: '日本語' },
+                      { code: 'ko', label: '한국어' },
+                      { code: 'fr', label: 'Français' },
+                      { code: 'es', label: 'Español' },
+                      { code: 'th', label: 'ไทย' },
+                      { code: 'de', label: 'Deutsch' },
+                      { code: 'lzh', label: '文言文' },
+                      { code: 'id', label: 'Bahasa Indonesia' },
+                      { code: 'yue', label: '粵語' },
+                      { code: 'ms', label: 'Bahasa Melayu' },
+                    ].map(({ code, label }) => (
+                      <button
+                        key={code}
+                        type="button"
+                        role="option"
+                        aria-selected={lang === code}
+                        onClick={() => {
+                          setLang(code);
+                          setIsMenuOpen(false);
+                        }}
+                        className={`w-full rounded-xl px-4 py-2.5 text-left text-sm font-bold transition-all focus-visible:ring-2 focus-visible:ring-[var(--c-primary)] ${
+                          lang === code
+                            ? 'bg-[var(--c-primary)]/20 text-[var(--c-primary)] ring-1 ring-[var(--c-primary)]/40'
+                            : 'text-[var(--c-text)]/70 hover:bg-[var(--c-bg)]/70 hover:text-[var(--c-text)]'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
 
             <Tooltip label={dict.navGuide}>
               <button
@@ -661,36 +733,6 @@ export default function App() {
           </div>
         </div>
 
-        {isMenuOpen && (
-          <div className="absolute top-full right-0 w-full md:w-48 bg-[var(--c-card)]/90 backdrop-blur-md border-b md:border-l md:border-b md:rounded-bl-2xl border-[var(--c-text)]/10 shadow-2xl p-4">
-            <div className="grid grid-cols-2 gap-2" role="listbox" aria-label={dict.languageMenuLabel}>
-              {[
-                { code: 'zh', label: '中文' },
-                { code: 'en', label: 'English' },
-                { code: 'ja', label: '日本語' },
-                { code: 'ko', label: '한국어' },
-              ].map(({ code, label }) => (
-                <button
-                  key={code}
-                  type="button"
-                  role="option"
-                  aria-selected={lang === code}
-                  onClick={() => {
-                    setLang(code);
-                    setIsMenuOpen(false);
-                  }}
-                  className={`flex-1 py-2.5 px-3 rounded-xl text-sm font-bold transition-all ${
-                    lang === code
-                      ? 'bg-[var(--c-primary)]/20 text-[var(--c-primary)] ring-2 ring-[var(--c-primary)]/40'
-                      : 'text-[var(--c-text)]/70 hover:bg-[var(--c-card)]/60 hover:text-[var(--c-text)]'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </nav>
 
       <main className="relative z-10 min-h-screen">
@@ -752,32 +794,18 @@ export default function App() {
                   ) : null}
                 </div>
 
-                {selectedFile && (
-                  <div className="flex min-w-0 items-center gap-2 rounded-xl bg-[var(--c-bg)]/70 px-4 py-3 text-sm text-[var(--c-text)]/70">
-                    <span className="shrink-0 font-bold">{dict.selectedFile}：</span>
-                    <span className="min-w-0 flex-1 break-all">{selectedFile.name}</span>
-                    {isRecordedFile ? (
-                      <button
-                        type="button"
-                        onClick={downloadSelectedFile}
-                        className="shrink-0 rounded-lg p-1 text-[var(--c-text)] transition-colors hover:bg-[var(--c-card)]"
-                        aria-label={dict.downloadRecording}
-                        title={dict.downloadRecording}
-                      >
-                        <MdDownload className="h-5 w-5" aria-hidden />
-                      </button>
-                    ) : null}
-                    <button
-                      type="button"
-                      onClick={handleFileClear}
-                      className="shrink-0 rounded-lg p-1 text-[var(--c-text)] transition-colors hover:bg-[var(--c-card)]"
-                      aria-label={dict.clearSelectedFile}
-                      title={dict.clearSelectedFile}
-                    >
-                      <MdClose className="h-5 w-5" aria-hidden />
-                    </button>
-                  </div>
-                )}
+                {selectedFile ? (
+                  <AudioPreview
+                    key={`${selectedFile.name}-${selectedFile.lastModified}-${selectedFile.size}`}
+                    file={selectedFile}
+                    metadata={selectedFileMetadata}
+                    recorded={isRecordedFile}
+                    dict={dict}
+                    onClear={handleFileClear}
+                    onReplace={() => fileRef.current?.click()}
+                    onDownload={downloadSelectedFile}
+                  />
+                ) : null}
 
                 {errorMessage && (
                   <div className="text-sm font-bold text-red-500 bg-red-500/10 rounded-xl px-4 py-3">

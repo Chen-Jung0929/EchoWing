@@ -249,6 +249,7 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
     timelineEventRows,
     timelineSpeciesSummary,
     timelineEvents,
+    xaiAvailable = false,
   } = reportModel;
   const speciesReports = resolveSpeciesReports(reportModel);
 
@@ -326,6 +327,10 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
       {
         label: dict.modelUsed,
         value: modelLabel,
+      },
+      {
+        label: dict.xaiStatusLabel,
+        value: xaiAvailable ? dict.xaiStatusAvailable : dict.xaiStatusUnavailablePdf,
       },
     ],
     { fontSize: 9 }
