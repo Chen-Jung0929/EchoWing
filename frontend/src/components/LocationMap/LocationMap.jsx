@@ -1,5 +1,4 @@
 import {
-  buildGoogleMapsEmbedUrl,
   buildGoogleMapsExternalUrl,
   buildGoogleStaticMapUrl,
 } from '../../config/googleMaps';
@@ -37,9 +36,14 @@ export default function LocationMap({
 }) {
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
 
-  const embedUrl = buildGoogleMapsEmbedUrl(latitude, longitude);
+  const staticUrl = buildGoogleStaticMapUrl({
+    center: { latitude, longitude },
+    markers: [],
+    width: 640,
+    height: Math.min(640, Math.max(120, height)),
+  });
 
-  if (!embedUrl) {
+  if (!staticUrl) {
     return (
       <MapFallback
         latitude={latitude}
@@ -51,20 +55,24 @@ export default function LocationMap({
     );
   }
 
+  const externalUrl = buildGoogleMapsExternalUrl(latitude, longitude);
+
   return (
-    <div
-      className={`overflow-hidden rounded-xl border border-[var(--c-text)]/10 ${className}`}
+    <a
+      href={externalUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      title={dict.googleMapsOpenExternal}
+      className={`block overflow-hidden rounded-xl border border-[var(--c-text)]/10 ${className}`}
       style={{ height }}
     >
-      <iframe
-        title={title}
-        src={embedUrl}
-        className="h-full w-full border-0"
+      <img
+        src={staticUrl}
+        alt={title}
+        className="h-full w-full object-cover"
         loading="lazy"
-        referrerPolicy="no-referrer-when-downgrade"
-        allowFullScreen
       />
-    </div>
+    </a>
   );
 }
 
