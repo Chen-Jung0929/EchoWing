@@ -7,10 +7,11 @@
 - Hugging Face 帳號
 - 本機已安裝 [Git LFS](https://git-lfs.com/)
 - `backend/models/` 內含：
-  - `perch/perch_v2_cpu_savedmodel/`
+  - `perch/perch_v2_cpu_fp32.tflite`（**Perch 主要推論模型**，TFLite FP32）
+  - `perch/perch_v2_cpu_savedmodel/`（TFLite 載入失敗時 fallback）
   - `perch/pseudo_best_model.pt`
   - `perch/species_info_completed_comma.csv`
-  - （選用）`perch/taxonomy.csv`、`val_line.json`（ONNX）、`resnet18_v3_int8.onnx`
+  - （選用）`perch/perch_v2_cpu_dynamic_int8.tflite`、`val_line.json`（ONNX）、`resnet18_v3_int8.onnx`
 
 ## 1. 建立 Docker Space
 
@@ -36,6 +37,7 @@ backend
 ```powershell
 cd backend
 git lfs install
+git lfs track "models/perch/perch_v2_cpu_fp32.tflite"
 git lfs track "models/perch/perch_v2_cpu_savedmodel/**"
 git lfs track "models/perch/pseudo_best_model.pt"
 git add .gitattributes
@@ -58,12 +60,14 @@ Space 會依 `backend/Dockerfile`：
 
 | 變數 | 預設 | 說明 |
 |------|------|------|
+| `TRIAGELENS_PERCH_RUNTIME` | `tf` | 通用 Perch runtime 預設（各 API 模型鍵已固定：`perch`=tf、`perch-fast`=tflite） |
+| `TRIAGELENS_PERCH_TFLITE_PATH` | `models/perch/perch_v2_cpu_fp32.tflite` | TFLite FP32 模型路徑 |
 | `TRIAGELENS_EAGER_WARMUP` | `true` | 啟動後背景載入模型 |
 | `TRIAGELENS_SKIP_PREFLIGHT` | `true` | 略過啟動試推論（省時） |
 | `TRIAGELENS_NUM_THREADS` | `2` | Phase 1 Perch / PyTorch CPU 執行緒 |
-| `TRIAGELENS_XAI_PARALLEL` | `2` | Phase 2 同時進行的 XAI 工作數（2 vCPU 建議 2） |
+| `TRIAGELENS_XAI_PARALLEL` | `1` | Phase 2 同時進行的 XAI 工作數（TFLite 建議 1） |
 | `TRIAGELENS_SPECTROGRAM_PARALLEL` | `2` | Phase 1 並行計算頻譜圖 |
-| `TRIAGELENS_INFERENCE_BATCH_PARALLEL` | `2` | Phase 1 並行推論批次數（2 vCPU 建議 2） |
+| `TRIAGELENS_INFERENCE_BATCH_PARALLEL` | `1` | Phase 1 並行推論批次數（TFLite 建議 1） |
 | `TRIAGELENS_MAX_CONCURRENT_PREDICTIONS` | `1` | 同時分析請求數（1 = 單使用者吃滿雙核） |
 | `TRIAGELENS_CONFIDENCE_THRESHOLD` | `0.5` | SILIC 等通用信心門檻 |
 | `TRIAGELENS_PERCH_CONFIDENCE_THRESHOLD` | `0.75` | Perch 信心門檻 |
@@ -114,7 +118,7 @@ Swagger：`https://<space>.hf.space/docs`
 | 問題 | 處理 |
 |------|------|
 | Build 失敗 / 逾時 | 確認 LFS 模型已 push；必要時升級 Space 硬體 |
-| `ready` 長期 `false` | 看 Space **Logs** 是否 OOM 或缺 `perch_v2_cpu_savedmodel` |
+| `ready` 長期 `false` | 看 Space **Logs** 是否 OOM 或缺 `perch_v2_cpu_fp32.tflite`（或 fallback 用的 SavedModel） |
 | 前端 CORS | 後端已 `allow_origins=["*"]` |
 | 第一次 predict 仍慢 | 先 `/api/ready` 200 再操作前端 |
 | Space 休眠 | 免費方案閒置會暫停；DEMO 前再預熱 |

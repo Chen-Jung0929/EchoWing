@@ -1,4 +1,6 @@
 # Git LFS — required for Hugging Face Spaces (~410MB models)
+models/perch/perch_v2_cpu_fp32.tflite filter=lfs diff=lfs merge=lfs -text
+models/perch/perch_v2_cpu_dynamic_int8.tflite filter=lfs diff=lfs merge=lfs -text
 models/perch/perch_v2_cpu_savedmodel/** filter=lfs diff=lfs merge=lfs -text
 models/perch/pseudo_best_model.pt filter=lfs diff=lfs merge=lfs -text
 models/resnet18_v3_int8.onnx filter=lfs diff=lfs merge=lfs -text

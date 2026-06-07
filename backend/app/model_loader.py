@@ -12,7 +12,7 @@ from app.adjustion import load_silic_taxonomy_map, load_taxonomy_map
 from app.audio_mel import configure_torch_threads
 from app.config import Settings
 from app.inference import (
-    create_perch_predictor,
+    create_perch_fast_predictor,
     create_birdnet_predictor,
     create_silic_predictor,
     create_onnx_predictor
@@ -33,9 +33,9 @@ def _load_models_sync(settings: Settings):
     
     predictors = {}
     try:
-        predictors["perch"] = create_perch_predictor(settings)
+        predictors["perch-fast"] = create_perch_fast_predictor(settings)
     except Exception as e:
-        logger.warning(f"Failed to load Perch: {e}")
+        logger.warning(f"Failed to load Perch-fast: {e}")
         
     try:
         predictors["birdnet"] = create_birdnet_predictor(settings)
@@ -49,7 +49,7 @@ def _load_models_sync(settings: Settings):
         
     taxonomy = load_taxonomy_map(settings.taxonomy_csv_path)
     taxonomy_by_model: dict[str, dict[str, dict[str, str]]] = {
-        "perch": taxonomy,
+        "perch-fast": taxonomy,
         "birdnet": taxonomy,
     }
     if settings.silic_taxonomy_csv_path.is_file():
@@ -117,9 +117,10 @@ def status_payload(app) -> dict:
         "status": state.model_status.value,
     }
     if state.model_status == ModelStatus.READY and hasattr(state, "predictors"):
-        # Just use perch classes count for status payload or sum them
-        perch = state.predictors.get("perch")
-        body["num_classes"] = len(perch.labels) if perch else 0
+        perch_fast = state.predictors.get("perch-fast")
+        body["num_classes"] = len(perch_fast.labels) if perch_fast else 0
+        body["perch_fast_runtime"] = getattr(perch_fast, "runtime", None) if perch_fast else None
+        body["models_loaded"] = sorted(state.predictors.keys())
         body["confidence_threshold"] = state.settings.confidence_threshold
     if state.model_status == ModelStatus.ERROR and state.load_error:
         body["error"] = state.load_error

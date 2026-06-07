@@ -1,54 +1,79 @@
-# 本地資料目錄（保留空目錄結構）
+# EchoWing backend — 本地產物、密鑰與大型權重預設不納版控。
+# HF Space 部署需追蹤的模型／標籤見下方 models/ 白名單（搭配 .gitattributes Git LFS）。
+
+# ── Python ────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ── 虛擬環境 ──────────────────────────────────────────────────────
+venv/
+.venv/
+
+# ── 環境設定（勿提交密鑰）────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── 本地資料 ──────────────────────────────────────────────────────
 data/raw/*
 !data/raw/.gitkeep
 data/processed/*
 !data/processed/.gitkeep
 
-# 虛擬環境
-venv/
-.venv/
-
-# 環境設定（勿提交密鑰）
-.env
-.env.*
-!.env.example
-
-# 筆記本與實驗輸出
+# ── 筆記本與實驗 ──────────────────────────────────────────────────
 notebooks/
+*.ipynb
 .ipynb_checkpoints/
 
-# 快取
+# ── 快取 ──────────────────────────────────────────────────────────
 .cache/
 .hf_cache/
 **/.keras/
 
-# 大型模型 — HF 部署請用 Git LFS（見 .gitattributes、DEPLOY_HF.md）
+# ── 日誌 ──────────────────────────────────────────────────────────
+*.log
+
+# ── 模型（一層式 ignore + 白名單；避免 models/** 導致 ! 放行失效）────
 models/*
 !models/.gitkeep
 
-# Perch（SavedModel + 物種表；權重可走 LFS）
+# Perch v2 Fast：TFLite FP32 + 標籤／物種表（SavedModel expert 已停用）
 !models/perch/
-!models/perch/**
+models/perch/*
+!models/perch/labels.csv
+!models/perch/species_info_completed_comma.csv
+!models/perch/perch_v2_cpu_fp32.tflite
+models/perch/perch_v2_cpu_savedmodel/
+models/perch/pseudo_best_model.pt
+models/perch/perch_v2_cpu_dynamic_int8.tflite
+models/perch/perch_taxonomy.csv
 
-# BirdNET：目錄結構 + 中文標籤 + 模型檔（tflite 需自行下載）
+# BirdNET：目錄結構 + 中文標籤（tflite 需自行下載）
 !models/birdnet/
+models/birdnet/*
 !models/birdnet/.gitkeep
-!models/birdnet/labels/zh.txt
+!models/birdnet/labels/
 models/birdnet/labels/*
 !models/birdnet/labels/zh.txt
-models/birdnet/*.tflite
-models/birdnet/meta-model.tflite
 
-# SILIC：taxonomy 可版控；權重與原始 soundclass 不納入
+# SILIC：taxonomy 可版控（權重不納入）
 !models/silic/
+models/silic/*
 !models/silic/.gitkeep
 !models/silic/silic_taxonomy.csv
-models/silic/*.pt
-models/silic/soundclass.csv
 
-# ONNX（根目錄，可走 LFS）
+# ONNX 實驗路徑（選用；大檔走 Git LFS）
 !models/val_line.json
 !models/resnet18_v3_int8.onnx
-
-# 舊版／備用 taxonomy（非 Perch 推論主路徑）
-models/perch/perch_taxonomy.csv

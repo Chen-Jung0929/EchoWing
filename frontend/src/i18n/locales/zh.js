@@ -74,8 +74,7 @@ const zh = {
   modelUsed: '使用模型',
   modelSelectionLabel: '模型選擇',
   modelTagFast: 'fast',
-  modelTagExpert: 'expert',
-  modelPerch: 'Perch v2 (Google)',
+  modelPerchFast: 'Perch v2 Fast (Google TFLite)',
   modelBirdnet: 'BirdNET v2.4 (Cornell)',
   modelSilic: 'SILIC (Academia Sinica)',
   modelHintLearnMore: '了解更多',
@@ -229,7 +228,7 @@ const zh = {
       source: 'Google Research',
       link: 'https://github.com/google-research/perch',
       citation:
-        'Google 開發之鳥類聲學 embedding 模型，適用於 BirdCLEF 等聲學辨識任務。本應用透過 SavedModel 進行 CPU 推論。',
+        'Google 開發之鳥類聲學 embedding 模型，以 TFLite FP32（perch_v2_cpu_fp32.tflite）在 CPU 上推論，適用於 BirdCLEF 等聲學辨識任務。',
     },
     {
       name: 'BirdNET v2.4 (Cornell Lab of Ornithology)',

@@ -76,8 +76,7 @@ const en = {
   modelUsed: 'Model',
   modelSelectionLabel: 'Model',
   modelTagFast: 'fast',
-  modelTagExpert: 'expert',
-  modelPerch: 'Perch v2 (Google)',
+  modelPerchFast: 'Perch v2 Fast (Google TFLite)',
   modelBirdnet: 'BirdNET v2.4 (Cornell)',
   modelSilic: 'SILIC (Academia Sinica)',
   modelHintLearnMore: 'Learn more',
@@ -236,7 +235,7 @@ const en = {
       source: 'Google Research',
       link: 'https://github.com/google-research/perch',
       citation:
-        'Google bird acoustic embedding model used in tasks such as BirdCLEF. This app runs CPU inference via SavedModel.',
+        'Google bird acoustic embedding model; CPU inference via TFLite FP32 (perch_v2_cpu_fp32.tflite) for tasks such as BirdCLEF.',
     },
     {
       name: 'BirdNET v2.4 (Cornell Lab of Ornithology)',

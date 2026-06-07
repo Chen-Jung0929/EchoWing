@@ -78,9 +78,14 @@ DISCLAIMER = ZhAndEn(
 
 def _resolve_model(model_selection: str, predictors: dict) -> str:
     """Single-model inference only (no ensemble)."""
+    if model_selection == "perch":
+        model_selection = "perch-fast"
     if model_selection in predictors:
         return model_selection
-    return "perch"
+    for fallback in ("perch-fast", "birdnet", "silic"):
+        if fallback in predictors:
+            return fallback
+    return next(iter(predictors), "perch-fast")
 
 
 def _taxonomy_for_model(
@@ -807,7 +812,7 @@ async def predict(
     audio_chunks: list[UploadFile] = File(...),
     original_filename: str = Form(""),
     sample_rate: int = Form(32_000),
-    model_selection: str = Form("perch"),
+    model_selection: str = Form("birdnet"),
 ) -> PredictResponse:
     try:
         await ensure_models_loaded(request.app)
@@ -878,7 +883,7 @@ async def stream_predict(
     audio_chunks: list[UploadFile] = File(...),
     original_filename: str = Form(""),
     sample_rate: int = Form(32_000),
-    model_selection: str = Form("perch"),
+    model_selection: str = Form("birdnet"),
 ):
     try:
         await ensure_models_loaded(request.app)
