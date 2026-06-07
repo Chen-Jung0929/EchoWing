@@ -1,6 +1,7 @@
 import { toDatetimeLocalValue } from './downloadMetadata';
 
 const LOCATION_STORAGE_KEY = 'echowing_survey_location';
+const COORDINATES_STORAGE_KEY = 'echowing_survey_coordinates';
 
 /** @typedef {{ fieldConfirmation: string, segmentNotes: string }} SegmentNotes */
 
@@ -30,6 +31,36 @@ export function writeStoredLocation(location) {
   try {
     const trimmed = location?.trim();
     if (trimmed) localStorage.setItem(LOCATION_STORAGE_KEY, trimmed);
+  } catch {
+    // ignore quota / private mode
+  }
+}
+
+export function readStoredCoordinates() {
+  try {
+    const raw = localStorage.getItem(COORDINATES_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    const latitude = Number(parsed?.latitude);
+    const longitude = Number(parsed?.longitude);
+    if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+      return { latitude, longitude };
+    }
+  } catch {
+    // ignore parse / private mode
+  }
+  return null;
+}
+
+export function writeStoredCoordinates(coordinates) {
+  const latitude = Number(coordinates?.latitude);
+  const longitude = Number(coordinates?.longitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+  try {
+    localStorage.setItem(
+      COORDINATES_STORAGE_KEY,
+      JSON.stringify({ latitude, longitude })
+    );
   } catch {
     // ignore quota / private mode
   }
@@ -112,6 +143,9 @@ export function trimSurveyMetadata(metadata, defaults = {}) {
     metadata.overview.observerName.trim() || defaults.observerName?.trim() || '';
 
   if (location) writeStoredLocation(location);
+  if (metadata.overview.coordinates) {
+    writeStoredCoordinates(metadata.overview.coordinates);
+  }
 
   const overview = {
     observedAt: metadata.overview.observedAt,
@@ -135,22 +169,41 @@ export function isSurveyMetadataSaved(metadata) {
   return metadata != null;
 }
 
-export function fetchCurrentCoordinates() {
+function requestGeolocationPosition(options) {
   return new Promise((resolve, reject) => {
-    if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      reject(new Error('unsupported'));
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (pos) =>
-        resolve({
-          latitude: pos.coords.latitude,
-          longitude: pos.coords.longitude,
-        }),
-      reject,
-      { enableHighAccuracy: true, timeout: 12_000, maximumAge: 60_000 }
-    );
+    navigator.geolocation.getCurrentPosition(resolve, reject, options);
   });
+}
+
+export async function fetchCurrentCoordinates() {
+  if (typeof navigator === 'undefined' || !navigator.geolocation) {
+    throw new Error('unsupported');
+  }
+
+  const attempts = [
+    { enableHighAccuracy: false, timeout: 12_000, maximumAge: 300_000 },
+    { enableHighAccuracy: true, timeout: 15_000, maximumAge: 60_000 },
+  ];
+
+  let lastError = new Error('unavailable');
+  for (const options of attempts) {
+    try {
+      const pos = await requestGeolocationPosition(options);
+      const coordinates = {
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+      };
+      writeStoredCoordinates(coordinates);
+      return coordinates;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+    }
+  }
+
+  const stored = readStoredCoordinates();
+  if (stored) return stored;
+
+  throw lastError;
 }
 
 export function formatCoordinatesLabel({ latitude, longitude }) {

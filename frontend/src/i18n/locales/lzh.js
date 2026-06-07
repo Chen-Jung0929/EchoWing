@@ -286,7 +286,7 @@ const lzh = {
   "nearbyRecordsLoading": "方尋近旁之紀...",
   "nearbyRecordsDistance": "約 {distance}",
   "nearbyRecordsRadiusLabel": "尋徑",
-  "nearbyRecordsRadiusOption": "{km} 里",
+  "nearbyRecordsRadiusOption": "{km} 公里",
   "locationMapTitle": "所在之圖",
   "googleMapsNotConfigured": "未設Google Maps API之鑰，無以嵌圖。",
   "googleMapsOpenExternal": "於Google圖中啟之",

@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { MdClose } from 'react-icons/md';
 import { formatMessage } from '../../i18n';
 import { queryNearbyRecords } from '../../services/surveySheet';
-import { fetchCurrentCoordinates } from '../../utils/surveyMetadata';
+import { fetchCurrentCoordinates, readStoredCoordinates } from '../../utils/surveyMetadata';
 import { formatDistanceKm } from '../../utils/formatDistanceKm';
 import LocationMap, { RecordsOverviewMap } from '../LocationMap/LocationMap';
 
@@ -107,7 +107,7 @@ export default function NearbyRecordsModal({
         try {
           resolved = await fetchCurrentCoordinates();
         } catch {
-          resolved = null;
+          resolved = readStoredCoordinates();
         }
       }
 

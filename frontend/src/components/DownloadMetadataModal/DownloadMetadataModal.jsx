@@ -6,7 +6,9 @@ import {
   fetchCurrentCoordinates,
   formatCoordinatesLabel,
   normalizeSurveyMetadata,
+  readStoredCoordinates,
   trimSurveyMetadata,
+  writeStoredCoordinates,
 } from '../../utils/surveyMetadata';
 import { isGoogleMapsConfigured } from '../../config/googleMaps';
 import LocationMap from '../LocationMap/LocationMap';
@@ -60,6 +62,18 @@ export default function DownloadMetadataModal({
         }));
       })
       .catch(() => {
+        const stored = readStoredCoordinates();
+        if (stored) {
+          setForm((prev) => ({
+            ...prev,
+            overview: {
+              ...prev.overview,
+              coordinates: stored,
+              location: formatCoordinatesLabel(stored),
+            },
+          }));
+          return;
+        }
         setLocationError(dict.locationError);
       })
       .finally(() => setLocating(false));
@@ -67,6 +81,7 @@ export default function DownloadMetadataModal({
 
   const handleMapPickConfirm = useCallback(({ latitude, longitude, location }) => {
     setLocationError('');
+    writeStoredCoordinates({ latitude, longitude });
     setForm((prev) => ({
       ...prev,
       overview: {
@@ -95,33 +110,56 @@ export default function DownloadMetadataModal({
     );
     setLocationError('');
 
-    const savedLocation = initialMetadataRef.current?.overview?.location?.trim();
+    const savedOverview = initialMetadataRef.current?.overview;
+    const savedCoordinates = savedOverview?.coordinates;
+    if (
+      savedCoordinates &&
+      Number.isFinite(savedCoordinates.latitude) &&
+      Number.isFinite(savedCoordinates.longitude)
+    ) {
+      setLocating(false);
+      return undefined;
+    }
+
+    const savedLocation = savedOverview?.location?.trim();
     if (savedLocation) {
       setLocating(false);
       return undefined;
     }
 
-    if (!navigator.geolocation) {
-      setLocationError(dict.locationUnsupported);
+    let cancelled = false;
+
+    const applyCoordinates = (latitude, longitude) => {
+      if (cancelled) return;
+      const coordinates = { latitude, longitude };
+      writeStoredCoordinates(coordinates);
+      setForm((prev) => ({
+        ...prev,
+        overview: {
+          ...prev.overview,
+          coordinates,
+          location: formatCoordinatesLabel(coordinates),
+        },
+      }));
+    };
+
+    const storedCoordinates = readStoredCoordinates();
+    if (storedCoordinates) {
+      applyCoordinates(storedCoordinates.latitude, storedCoordinates.longitude);
       return undefined;
     }
 
-    let cancelled = false;
+    if (!navigator.geolocation) {
+      return undefined;
+    }
+
     setLocating(true);
     fetchCurrentCoordinates()
       .then(({ latitude, longitude }) => {
-        if (cancelled) return;
-        setForm((prev) => ({
-          ...prev,
-          overview: {
-            ...prev.overview,
-            coordinates: { latitude, longitude },
-            location: formatCoordinatesLabel({ latitude, longitude }),
-          },
-        }));
+        applyCoordinates(latitude, longitude);
       })
       .catch(() => {
-        if (!cancelled) setLocationError(dict.locationError);
+        // 開啟表單時定位失敗不顯示錯誤，使用者可手動輸入或按「目前位置」重試
       })
       .finally(() => {
         if (!cancelled) setLocating(false);
