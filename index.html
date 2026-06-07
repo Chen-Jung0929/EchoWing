@@ -168,7 +168,7 @@
     .browser-header {
       height: 40px;
       background: #F2EBE1;
-      border-b: 1px solid var(--c-card-border);
+      border-bottom: 1px solid var(--c-card-border);
       display: flex;
       align-items: center;
       padding: 0 16px;
@@ -236,7 +236,7 @@
       margin-left: 12px;
     }
 
-    /* Slide 2: languages */
+    /* Slide 2: Languages */
     .huge-number {
       font-family: var(--font-heading);
       font-size: 340px;
@@ -272,13 +272,127 @@
       right: 120px;
       bottom: 110px;
       background: var(--c-card-bg);
-      border: 1px solid var(--c-card-border);
+      border: 2px solid var(--c-brand);
       border-radius: 12px;
-      padding: 16px 24px;
+      padding: 18px 28px;
       display: flex;
       align-items: center;
-      gap: 12px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.03);
+      gap: 14px;
+      box-shadow: 0 10px 30px rgba(192, 108, 83, 0.1);
+      cursor: pointer;
+      transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1), box-shadow 0.2s ease;
+    }
+    .search-mockup:hover {
+      transform: translateY(-4px) scale(1.03);
+      box-shadow: 0 15px 35px rgba(192, 108, 83, 0.2);
+    }
+    
+    /* Interactive Giant Search Overlay */
+    #search-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(244, 237, 228, 0.96); /* Semi-transparent warm paper */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    #search-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .search-modal {
+      width: 1200px;
+      background: #FFFDFB;
+      border: 1px solid var(--c-brand);
+      box-shadow: 0 30px 90px rgba(192, 108, 83, 0.15);
+      border-radius: 24px;
+      padding: 60px;
+      transform: translateY(30px) scale(0.95);
+      transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+      position: relative;
+    }
+    #search-overlay.active .search-modal {
+      transform: translateY(0) scale(1);
+    }
+    .search-close {
+      position: absolute;
+      right: 35px;
+      top: 30px;
+      font-size: 44px;
+      font-weight: 300;
+      cursor: pointer;
+      color: var(--c-text-muted);
+      line-height: 1;
+      transition: color 0.2s ease;
+    }
+    .search-close:hover {
+      color: var(--c-brand);
+    }
+    .search-modal-title {
+      font-size: 36px;
+      font-weight: 900;
+      color: var(--c-brand);
+      margin-bottom: 30px;
+      text-align: center;
+    }
+    .search-bar-huge {
+      display: flex;
+      align-items: center;
+      background: #FAF6F0;
+      border: 2px solid var(--c-card-border);
+      border-radius: 99px;
+      padding: 16px 36px;
+      gap: 20px;
+      margin-bottom: 40px;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.02);
+    }
+    .search-icon-huge {
+      font-size: 32px;
+    }
+    .search-input-huge {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-size: 30px;
+      font-family: var(--font-body);
+      color: var(--c-text-primary);
+      outline: none;
+      font-weight: 700;
+    }
+    .search-results-huge {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .search-result-item {
+      display: flex;
+      align-items: center;
+      background: #FFFDFB;
+      border: 1px solid var(--c-card-border);
+      padding: 24px 35px;
+      border-radius: 16px;
+      gap: 24px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.01);
+    }
+    .result-badge {
+      background: var(--c-brand-light);
+      color: var(--c-brand);
+      padding: 8px 20px;
+      border-radius: 99px;
+      font-size: 18px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+    .result-text {
+      font-size: 22px;
+      color: var(--c-text-primary);
     }
 
     /* Slide 3: Roadmap */
@@ -303,32 +417,27 @@
     .roadmap-card {
       position: absolute;
       width: 280px;
-      height: 210px;
+      height: 140px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
       text-align: center;
     }
     .roadmap-icon {
-      font-size: 32px;
-      margin-bottom: 12px;
+      font-size: 36px;
+      margin-bottom: 10px;
       color: var(--c-brand);
     }
     .roadmap-title {
-      font-size: 22px;
+      font-size: 24px;
       font-weight: 900;
-      margin-bottom: 8px;
-    }
-    .roadmap-desc {
-      font-size: 15px;
-      color: var(--c-text-muted);
-      line-height: 1.4;
     }
 
     /* Slide 4: Capture */
     .capture-card {
       width: 580px;
-      height: 520px;
+      height: 360px;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -337,84 +446,59 @@
       padding: 40px;
     }
     .capture-icon {
-      font-size: 64px;
+      font-size: 72px;
       margin-bottom: 24px;
       color: var(--c-brand);
     }
     .capture-title {
-      font-size: 32px;
+      font-size: 34px;
       font-weight: 900;
-      margin-bottom: 16px;
-    }
-    .capture-desc {
-      font-size: 18px;
-      color: var(--c-text-muted);
-      line-height: 1.6;
-      max-width: 420px;
     }
 
     /* Slide 5: Models */
     .model-card {
       width: 440px;
-      height: 480px;
+      height: 320px;
       display: flex;
       flex-direction: column;
-      padding: 40px 30px;
-      justify-content: flex-start;
-    }
-    .model-logo {
-      height: 60px;
-      margin-bottom: 30px;
-      align-self: flex-start;
-      object-fit: contain;
+      padding: 50px 30px;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
     }
     .model-title {
       font-family: var(--font-heading);
-      font-size: 28px;
+      font-size: 32px;
       font-weight: 900;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
     .model-type {
-      font-size: 18px;
+      font-size: 22px;
       color: var(--c-brand);
-      font-weight: 700;
-      margin-bottom: 24px;
-    }
-    .model-desc {
-      font-size: 16px;
-      color: var(--c-text-muted);
-      line-height: 1.6;
-      border-top: 1px solid var(--c-card-border);
-      padding-top: 20px;
+      font-weight: 900;
     }
     .model-footer-text {
-      font-size: 26px;
+      font-size: 28px;
       font-weight: 500;
       color: var(--c-brand);
       text-align: center;
       width: 100%;
-      margin-top: 60px;
+      margin-top: 100px;
     }
 
     /* Slide 6: Results Pointer */
     .callout-card {
       width: 460px;
-      height: 140px;
-      padding: 16px 24px;
+      height: 100px;
+      padding: 16px 28px;
       display: flex;
       flex-direction: column;
       justify-content: center;
     }
     .callout-title {
-      font-size: 20px;
+      font-size: 24px;
       font-weight: 900;
       color: var(--c-brand);
-      margin-bottom: 4px;
-    }
-    .callout-desc {
-      font-size: 15px;
-      color: var(--c-text-muted);
-      line-height: 1.4;
     }
     
     /* Callout Lines SVG Overlay */
@@ -441,78 +525,30 @@
     /* Slide 7: Explainable XAI */
     .xai-detail-card {
       width: 680px;
-      height: 160px;
-      padding: 24px 30px;
+      height: 120px;
+      padding: 20px 30px;
       display: flex;
       flex-direction: column;
       justify-content: center;
     }
     .xai-detail-title {
       font-family: var(--font-heading);
-      font-size: 22px;
+      font-size: 26px;
       font-weight: 900;
       color: var(--c-brand);
-      margin-bottom: 6px;
-    }
-    .xai-detail-desc {
-      font-size: 16px;
-      color: var(--c-text-muted);
-      line-height: 1.5;
     }
 
     /* Slide 8: Timeline & Events */
     .timeline-badge {
       width: 380px;
-      height: 110px;
+      height: 90px;
       padding: 16px 24px;
-      text-align: center;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
     .timeline-badge-title {
-      font-size: 20px;
-      font-weight: 900;
-      color: var(--c-brand);
-      margin-bottom: 4px;
-    }
-    .timeline-badge-desc {
-      font-size: 15px;
-      color: var(--c-text-muted);
-    }
-
-    /* Slide 9: Field Record Note Paper */
-    .note-paper {
-      background: #FFFDFB;
-      border: 1px solid #E8DFD0;
-      border-radius: 8px;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.05);
-      padding: 50px 40px;
-      position: relative;
-      overflow: hidden;
-    }
-    .note-paper::before {
-      content: '';
-      position: absolute;
-      left: 60px;
-      top: 0;
-      bottom: 0;
-      width: 1px;
-      background: rgba(192, 108, 83, 0.3); /* Lined paper red line */
-    }
-    .note-title {
-      font-size: 28px;
-      font-weight: 900;
-      margin-bottom: 30px;
-      color: var(--c-text-primary);
-      padding-left: 40px;
-    }
-    .note-row {
-      font-size: 20px;
-      line-height: 2;
-      border-bottom: 1px dashed rgba(47, 74, 95, 0.12); /* Lined paper line */
-      margin-bottom: 16px;
-      padding-left: 40px;
-      color: #34495E;
-    }
-    .note-label {
+      font-size: 26px;
       font-weight: 900;
       color: var(--c-brand);
     }
@@ -532,11 +568,11 @@
       line-height: 1.5;
       color: var(--c-text-primary);
       max-width: 1500px;
-      margin-bottom: 60px;
+      margin-bottom: 80px;
     }
     .ending-core-values {
       display: flex;
-      gap: 100px;
+      gap: 120px;
     }
     .ending-value {
       display: flex;
@@ -546,14 +582,9 @@
       padding-left: 20px;
     }
     .ending-value-title {
-      font-size: 32px;
+      font-size: 36px;
       font-weight: 900;
       color: var(--c-text-primary);
-      margin-bottom: 8px;
-    }
-    .ending-value-desc {
-      font-size: 18px;
-      color: var(--c-text-muted);
     }
 
     /* UTILITY GLOBAL NAV ELEMENTS */
@@ -573,7 +604,7 @@
       bottom: 42px;
       left: 60px;
       font-size: 14px;
-      font-weight: 500;
+      font-weight: 700;
       color: rgba(47, 74, 95, 0.4);
       letter-spacing: 1px;
     }
@@ -609,10 +640,8 @@
           
           <!-- Stylized Wing + Soundwave SVG logo -->
           <svg class="opening-logo fade-in" width="240" height="240" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <!-- Stylized wing and wave -->
             <path d="M15,50 C25,20 60,15 85,35 C65,40 50,55 45,75 C40,55 25,50 15,50 Z" fill="#C06C53" />
             <path d="M35,60 C42,45 62,40 78,52 C65,58 55,68 52,80 C48,68 40,62 35,60 Z" fill="#DCA392" opacity="0.8" />
-            <!-- Wave lines overlapping -->
             <path d="M55,30 C65,25 75,32 85,28" stroke="#C06C53" stroke-width="3" stroke-linecap="round" />
             <path d="M62,42 C70,37 78,44 86,40" stroke="#C06C53" stroke-width="2.5" stroke-linecap="round" />
             <path d="M68,54 C74,50 80,56 87,52" stroke="#C06C53" stroke-width="2" stroke-linecap="round" />
@@ -665,14 +694,41 @@
           <div class="lang-chip slide-up stagger-8" style="left: 1200px; top: 140px;">हिन्दी (Hindi)</div>
           <div class="lang-chip slide-up stagger-8" style="left: 910px; top: 800px;">Tagalog</div>
 
-          <!-- Small Search Mockup -->
-          <div class="search-mockup slide-up stagger-8">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-brand)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <!-- Clickable Search Mockup -->
+          <div class="search-mockup slide-up stagger-8" onclick="openSearchOverlay(event)">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--c-brand)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="11" cy="11" r="8"></circle>
               <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
             </svg>
-            <span style="font-size: 16px; font-weight: 700; color: var(--c-text-primary);">可被搜尋的網站</span>
+            <span style="font-size: 20px; font-weight: 900; color: var(--c-brand);">可被搜尋的網站</span>
           </div>
+          
+          <!-- Full-screen giant search overlay modal -->
+          <div id="search-overlay" onclick="closeSearchOverlay(event)">
+            <div class="search-modal card" onclick="event.stopPropagation()">
+              <span class="search-close" onclick="closeSearchOverlay(event)">&times;</span>
+              <h3 class="search-modal-title">可被搜尋的網站</h3>
+              <div class="search-bar-huge">
+                <span class="search-icon-huge">🔍</span>
+                <input type="text" class="search-input-huge" placeholder="搜尋鳥音、時間、地點、物種..." value="麻雀 2026/06/08 陽明山" readonly>
+              </div>
+              <div class="search-results-huge">
+                <div class="search-result-item">
+                  <span class="result-badge">主要預測</span>
+                  <span class="result-text"><strong>麻雀 (Tree Sparrow)</strong> · 信心分數 92% · 陽明山國家公園</span>
+                </div>
+                <div class="search-result-item">
+                  <span class="result-badge">田野紀錄</span>
+                  <span class="result-text">觀察者：林小明 · 環境：開闊林地 · 與模型預測一致</span>
+                </div>
+                <div class="search-result-item">
+                  <span class="result-badge">模型特徵</span>
+                  <span class="result-text">使用模型：Google Perch v2 · 聲學特徵 XAI 熱圖已匯出</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
         </div>
       </section>
 
@@ -690,10 +746,9 @@
 
           <!-- Node 1: 聽見鳥聲 (Above) -->
           <div class="roadmap-node" style="left: 250px;"></div>
-          <div class="roadmap-card card slide-up stagger-2" style="left: 120px; top: 250px;">
+          <div class="roadmap-card card slide-up stagger-2" style="left: 120px; top: 270px;">
             <div class="roadmap-icon">🐦</div>
             <h4 class="roadmap-title">1. 聽見鳥聲</h4>
-            <p class="roadmap-desc">身處大自然與田野間，聆聽並感受周遭鳥類的聲學訊號。</p>
           </div>
 
           <!-- Node 2: 捕捉聲音 (Below) -->
@@ -701,15 +756,13 @@
           <div class="roadmap-card card slide-up stagger-3" style="left: 470px; top: 580px;">
             <div class="roadmap-icon">🎙️</div>
             <h4 class="roadmap-title">2. 捕捉聲音</h4>
-            <p class="roadmap-desc">利用瀏覽器即時錄音，或直接上傳包含鳥鳴的音訊/影片檔案。</p>
           </div>
 
-          <!-- Node 3: AI 分析 (Above) -->
+          <!-- Node 3: 模型分析 (Above) -->
           <div class="roadmap-node" style="left: 960px;"></div>
-          <div class="roadmap-card card slide-up stagger-4" style="left: 830px; top: 250px;">
+          <div class="roadmap-card card slide-up stagger-4" style="left: 830px; top: 270px;">
             <div class="roadmap-icon">🧠</div>
-            <h4 class="roadmap-title">3. AI 分析</h4>
-            <p class="roadmap-desc">將音訊切段降採樣，送往後端透過 Perch 或 BirdNET 模型進行分類。</p>
+            <h4 class="roadmap-title">3. 模型分析</h4>
           </div>
 
           <!-- Node 4: 看懂結果 (Below) -->
@@ -717,77 +770,68 @@
           <div class="roadmap-card card slide-up stagger-5" style="left: 1190px; top: 580px;">
             <div class="roadmap-icon">📊</div>
             <h4 class="roadmap-title">4. 看懂結果</h4>
-            <p class="roadmap-desc">呈現物種預測與 confidence 分數，並藉由頻譜及 XAI 檢視依賴特徵。</p>
           </div>
 
           <!-- Node 5: 轉為紀錄 (Above) -->
           <div class="roadmap-node" style="left: 1670px;"></div>
-          <div class="roadmap-card card slide-up stagger-6" style="left: 1540px; top: 250px;">
+          <div class="roadmap-card card slide-up stagger-6" style="left: 1540px; top: 270px;">
             <div class="roadmap-icon">📝</div>
             <h4 class="roadmap-title">5. 轉為紀錄</h4>
-            <p class="roadmap-desc">記錄田野筆記與 GPS 位置，儲存為 PDF 或同步整合至雲端試算表。</p>
           </div>
         </div>
       </section>
 
 
-      <!-- ==================== SLIDE 4: STEP 1 CAPTURE ==================== -->
+      <!-- ==================== SLIDE 4: CAPTURE ==================== -->
       <section class="slide" id="slide-4">
         <div class="slide-up">
-          <h2 class="slide-title">Step 1 捕捉聲音</h2>
+          <h2 class="slide-title">捕捉聲音</h2>
           <p class="slide-subtitle">極簡靈活的音訊與影片輸入管道</p>
         </div>
 
-        <div style="display: flex; gap: 80px; width: 100%; justify-content: center; margin-top: 40px;">
+        <div style="display: flex; gap: 80px; width: 100%; justify-content: center; margin-top: 80px;">
           <!-- Card 1: Upload -->
           <div class="capture-card card slide-up stagger-1">
             <div class="capture-icon">📤</div>
             <h3 class="capture-title">上傳音訊或影片</h3>
-            <p class="capture-desc">支援播放與解析 WAV, MP3, FLAC, OGG, M4A, AAC, WEBM。上傳影片檔時，瀏覽器會自動擷取其中音軌，限制單檔 30 秒與 20MB。</p>
           </div>
 
           <!-- Card 2: Record -->
           <div class="capture-card card slide-up stagger-2">
             <div class="capture-icon">🎙️</div>
             <h3 class="capture-title">瀏覽器錄音</h3>
-            <p class="capture-desc">利用 HTML5 MediaRecorder API 設計直接錄音。整合即時麥克風輸入音量計（dB），限制錄音區間為 5 至 30 秒以維護推論品質。</p>
           </div>
         </div>
       </section>
 
 
-      <!-- ==================== SLIDE 5: STEP 2 MODELS ==================== -->
+      <!-- ==================== SLIDE 5: MODELS ==================== -->
       <section class="slide" id="slide-5">
         <div class="slide-up">
-          <h2 class="slide-title">Step 2 選擇 AI 模型</h2>
+          <h2 class="slide-title">選擇模型</h2>
           <p class="slide-subtitle">同一段聲音，來自不同模型的判斷視角</p>
         </div>
 
-        <div style="display: flex; gap: 60px; width: 100%; justify-content: center; margin-top: 40px;">
+        <div style="display: flex; gap: 60px; width: 100%; justify-content: center; margin-top: 80px;">
           <!-- Model 1: Perch -->
           <div class="model-card card slide-up stagger-1">
-            <img class="model-logo" src="assets/presentation/homepage.png" style="display:none;" alt="">
-            <!-- Inline Google Perch representation -->
-            <div style="font-size: 32px; font-weight: 900; color: #4285F4; margin-bottom: 20px;">G</div>
+            <div style="font-size: 36px; font-weight: 900; color: #4285F4; margin-bottom: 20px;">G</div>
             <h3 class="model-title">Perch v2</h3>
             <p class="model-type">Google Research</p>
-            <p class="model-desc">基於 EfficientNet 架構開發的通用鳥類聲學 Embedding 模型，使用 5 秒滑動分析窗，專為大規模生態辨識設計。</p>
           </div>
 
           <!-- Model 2: BirdNET -->
           <div class="model-card card slide-up stagger-2">
-            <div style="font-size: 32px; font-weight: 900; color: #B31B1B; margin-bottom: 20px;">C</div>
+            <div style="font-size: 36px; font-weight: 900; color: #B31B1B; margin-bottom: 20px;">C</div>
             <h3 class="model-title">BirdNET v2.4</h3>
-            <p class="model-type">Cornell Lab of Ornithology</p>
-            <p class="model-desc">全球最具代表性的鳥音分類模型。使用 3 秒滑動分析窗，具備極強的物種覆蓋率與精細的分數校準演算法。</p>
+            <p class="model-type">Cornell Lab</p>
           </div>
 
           <!-- Model 3: SILIC -->
           <div class="model-card card slide-up stagger-3">
-            <div style="font-size: 32px; font-weight: 900; color: #16A085; margin-bottom: 20px;">S</div>
+            <div style="font-size: 36px; font-weight: 900; color: #16A085; margin-bottom: 20px;">S</div>
             <h3 class="model-title">SILIC</h3>
-            <p class="model-type">Academia Sinica</p>
-            <p class="model-desc">中央研究院團隊開發之生物聲學模型，採用 5 秒分析窗，針對臺灣本土及特有種鳥音提供優化與特定辨識支援。</p>
+            <p class="model-type">中研院</p>
           </div>
         </div>
 
@@ -795,10 +839,10 @@
       </section>
 
 
-      <!-- ==================== SLIDE 6: STEP 3 RESULTS ==================== -->
+      <!-- ==================== SLIDE 6: RESULTS ==================== -->
       <section class="slide" id="slide-6">
         <div class="slide-up">
-          <h2 class="slide-title">Step 3 看見 AI 聽到了什麼</h2>
+          <h2 class="slide-title">看見模型聽到了什麼</h2>
           <p class="slide-subtitle">模型預測、音訊頻譜與可解釋性熱圖的直觀解析</p>
         </div>
 
@@ -819,56 +863,52 @@
 
           <!-- SVG Lines Overlay connecting calls to screenshot parts -->
           <svg class="callout-svg fade-in stagger-2" viewBox="0 0 1680 650" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%;">
-            <!-- 1. Species List: species list in screenshot is approx at x=180, y=280 inside browser. Screen offset is left=40, top=10. -->
-            <path d="M 1160,80 L 1020,80 C 850,80 650,220 280,260" />
+            <!-- 1. Species List -->
+            <path d="M 1160,120 L 1020,120 C 850,120 650,220 280,260" />
             <circle cx="280" cy="260" r="6" />
 
-            <!-- 2. Confidence: confidence score badge is approx at x=500, y=280. -->
-            <path d="M 1160,220 L 1000,220 C 800,220 700,280 640,290" />
+            <!-- 2. Confidence -->
+            <path d="M 1160,260 L 1000,260 C 800,260 700,280 640,290" />
             <circle cx="640" cy="290" r="6" />
 
-            <!-- 3. Spectrogram: spectrogram canvas starts at x=140, y=410. -->
-            <path d="M 1160,370 L 1000,370 C 800,370 650,420 540,430" />
+            <!-- 3. Spectrogram -->
+            <path d="M 1160,400 L 1000,400 C 800,400 650,420 540,430" />
             <circle cx="540" cy="430" r="6" />
 
-            <!-- 4. XAI Heatmap: attention bar/heat is at x=140, y=550. -->
-            <path d="M 1160,520 L 1020,520 C 800,520 600,530 500,530" />
+            <!-- 4. Heatmap -->
+            <path d="M 1160,540 L 1020,540 C 800,540 600,530 500,530" />
             <circle cx="500" cy="530" r="6" />
           </svg>
 
           <!-- Right Callout Stack -->
           <!-- Callout 1 -->
-          <div class="callout-card card slide-up stagger-3" style="position: absolute; left: 1160px; top: 20px;">
+          <div class="callout-card card slide-up stagger-3" style="position: absolute; left: 1160px; top: 70px;">
             <h4 class="callout-title">1. 候選物種列表</h4>
-            <p class="callout-desc">整合滑動時間窗的預測，排除低信心雜訊，列出主要候選鳥類。</p>
           </div>
 
           <!-- Callout 2 -->
-          <div class="callout-card card slide-up stagger-4" style="position: absolute; left: 1160px; top: 170px;">
-            <h4 class="callout-title">2. 信心分數 (Confidence)</h4>
-            <p class="callout-desc">顯示模型推論信心度，引導觀察者客觀評估 AI 的辨識可靠度。</p>
+          <div class="callout-card card slide-up stagger-4" style="position: absolute; left: 1160px; top: 210px;">
+            <h4 class="callout-title">2. 信心分數</h4>
           </div>
 
           <!-- Callout 3 -->
-          <div class="callout-card card slide-up stagger-5" style="position: absolute; left: 1160px; top: 320px;">
-            <h4 class="callout-title">3. 音訊頻譜圖 (Spectrogram)</h4>
-            <p class="callout-desc">在網頁端重繪時間-頻率強度，呈現清晰的鳥叫聲學指紋。</p>
+          <div class="callout-card card slide-up stagger-5" style="position: absolute; left: 1160px; top: 350px;">
+            <h4 class="callout-title">3. 音訊頻譜圖</h4>
           </div>
 
           <!-- Callout 4 -->
-          <div class="callout-card card slide-up stagger-6" style="position: absolute; left: 1160px; top: 470px;">
-            <h4 class="callout-title">4. XAI 熱圖 (Heatmap)</h4>
-            <p class="callout-desc">展示可解釋 AI 的時間特徵歸因，直觀呈現模型判斷的依賴區間。</p>
+          <div class="callout-card card slide-up stagger-6" style="position: absolute; left: 1160px; top: 490px;">
+            <h4 class="callout-title">4. 可解釋性模型熱圖</h4>
           </div>
         </div>
       </section>
 
 
-      <!-- ==================== SLIDE 7: XAI EXPLANABILITY ==================== -->
+      <!-- ==================== SLIDE 7: EXPLAINABILITY ==================== -->
       <section class="slide" id="slide-7">
         <div class="slide-up">
           <h2 class="slide-title">不只顯示結果，也解釋結果</h2>
-          <p class="slide-subtitle">內建可解釋性 AI 運作機制教育頁面</p>
+          <p class="slide-subtitle">內建可解釋性模型運作機制教育頁面</p>
         </div>
 
         <div style="display: flex; gap: 80px; width: 100%; align-items: center; margin-top: 20px;">
@@ -886,21 +926,18 @@
           </div>
 
           <!-- Right: Key Terminology cards -->
-          <div style="display: flex; flex-direction: column; gap: 30px; flex: 1;">
+          <div style="display: flex; flex-direction: column; gap: 40px; flex: 1;">
             
             <div class="xai-detail-card card slide-up stagger-2">
               <h4 class="xai-detail-title">Occlusion-based Explanation</h4>
-              <p class="xai-detail-desc">透過在時間軸上依序「遮蔽」局部聲音訊號，重新送入模型，觀察信心分數的下跌幅度，從而回推判斷所依賴的關鍵時段。</p>
             </div>
 
             <div class="xai-detail-card card slide-up stagger-3">
-              <h4 class="xai-detail-title">Mel Spectrogram Mapping</h4>
-              <p class="xai-detail-desc">將一維聲學訊號進行傅立葉轉換與 Mel 頻率尺度映射，轉化成模型理解的二維時間-頻率特徵圖，保留頻率變化細節。</p>
+              <h4 class="xai-detail-title">Spectrogram</h4>
             </div>
 
             <div class="xai-detail-card card slide-up stagger-4">
-              <h4 class="xai-detail-title">Progressive Heatmap Reveal</h4>
-              <p class="xai-detail-desc">以半透明的橘紅色調將權重疊加在頻譜下方，清楚呈現關注程度波形峰值，幫助生態愛好者深入理解 AI 的決策脈絡。</p>
+              <h4 class="xai-detail-title">Heatmap</h4>
             </div>
 
           </div>
@@ -908,10 +945,10 @@
       </section>
 
 
-      <!-- ==================== SLIDE 8: STEP 4 TIMELINE ==================== -->
+      <!-- ==================== SLIDE 8: TIMELINE ==================== -->
       <section class="slide" id="slide-8">
         <div class="slide-up">
-          <h2 class="slide-title">Step 4 定位鳥聲出現的時間</h2>
+          <h2 class="slide-title">定位鳥聲出現的時間</h2>
           <p class="slide-subtitle">物種活動時間軸與事件反卷積重構</p>
         </div>
 
@@ -925,7 +962,6 @@
               <div class="browser-address">https://echo-wing.vercel.app/result#timeline</div>
             </div>
             <div class="browser-content" style="height: 478px;">
-              <!-- Timeline and events screenshot -->
               <img src="assets/presentation/result_timeline.png" style="object-position: top; object-fit: cover;" alt="EchoWing Timeline Screenshot">
             </div>
           </div>
@@ -935,17 +971,14 @@
             
             <div class="timeline-badge card slide-up stagger-2">
               <h4 class="timeline-badge-title">開始 (Onset)</h4>
-              <p class="timeline-badge-desc">自動分析相鄰時間窗之預測累積，定位聲音事件出現的起點。</p>
             </div>
 
             <div class="timeline-badge card slide-up stagger-3">
               <h4 class="timeline-badge-title">峰值 (Peak)</h4>
-              <p class="timeline-badge-desc">反卷積估計出該聲音事件最強烈、模型信心最高的主峰區間。</p>
             </div>
 
             <div class="timeline-badge card slide-up stagger-4">
               <h4 class="timeline-badge-title">結束 (Offset)</h4>
-              <p class="timeline-badge-desc">標定鳥叫特徵減弱、淡出並低於信心門檻的終結時刻。</p>
             </div>
 
           </div>
@@ -953,49 +986,43 @@
       </section>
 
 
-      <!-- ==================== SLIDE 9: STEP 5 FIELD RECORD ==================== -->
+      <!-- ==================== SLIDE 9: FIELD RECORD ==================== -->
       <section class="slide" id="slide-9">
         <div class="slide-up">
-          <h2 class="slide-title">Step 5 轉為野外紀錄</h2>
+          <h2 class="slide-title">轉為野外紀錄</h2>
           <p class="slide-subtitle">將聲學分析成果無縫寫入個人生態紀錄庫</p>
         </div>
 
-        <div style="display: flex; gap: 80px; width: 100%; align-items: center; margin-top: 30px;">
-          <!-- Left: Field Record Card (Paper look) -->
-          <div class="note-paper slide-up stagger-1" style="width: 680px; height: 560px;">
-            <h3 class="note-title">📝 田野觀察紀錄</h3>
-            <div class="note-row"><span class="note-label">觀察者：</span> 林小明 (Y. M. Lin)</div>
-            <div class="note-row"><span class="note-label">時間：</span> 2026年6月8日 07:05</div>
-            <div class="note-row"><span class="note-label">地點：</span> 陽明山國家公園 (25.1558, 121.5476)</div>
-            <div class="note-row"><span class="note-label">環境：</span> 晨間開闊雜木林，有些微風，偶有背景雜噪</div>
-            <div class="note-row"><span class="note-label">實地結論：</span> 親眼目擊 Robin 於枝頭鳴叫，AI 熱圖標定極準</div>
+        <div style="position: relative; width: 100%; height: 650px; margin-top: 10px;">
+          <!-- Left: Real Field Notes Modal Screenshot in Browser -->
+          <div class="browser-frame slide-up stagger-1" style="position: absolute; left: 140px; top: 10px; width: 780px; height: 600px;">
+            <div class="browser-header">
+              <div class="browser-dot"></div>
+              <div class="browser-dot"></div>
+              <div class="browser-dot"></div>
+              <div class="browser-address">https://echo-wing.vercel.app/result#field-notes</div>
+            </div>
+            <div class="browser-content" style="height: 558px;">
+              <img src="assets/presentation/result_field_notes.png" style="object-position: center; object-fit: cover;" alt="EchoWing Field Notes Modal Screenshot">
+            </div>
           </div>
 
           <!-- Right: Action / Output cards -->
-          <div style="display: flex; flex-direction: column; gap: 24px; flex: 1;">
+          <div style="display: flex; flex-direction: column; gap: 40px; position: absolute; left: 980px; top: 10px; width: 700px; height: 600px; justify-content: center;">
             
-            <div class="card slide-up stagger-2" style="display: flex; align-items: center; gap: 24px;">
-              <div style="font-size: 40px;">🗒️</div>
-              <div>
-                <h4 style="font-size: 20px; font-weight: 900; color: var(--c-brand); margin-bottom: 4px;">觀察筆記與 GPS 紀錄</h4>
-                <p style="font-size: 15px; color: var(--c-text-muted); line-height: 1.4;">允許直接調用瀏覽器 GPS 座標，並在總覽與片段中隨手添加地標、天氣、環境與實地確認備註。</p>
-              </div>
+            <div class="card slide-up stagger-2" style="display: flex; align-items: center; gap: 24px; padding: 24px 30px;">
+              <div style="font-size: 44px;">🗒️</div>
+              <h4 style="font-size: 26px; font-weight: 900; color: var(--c-brand);">觀察筆記與 GPS 紀錄</h4>
             </div>
 
-            <div class="card slide-up stagger-3" style="display: flex; align-items: center; gap: 24px;">
-              <div style="font-size: 40px;">📄</div>
-              <div>
-                <h4 style="font-size: 20px; font-weight: 900; color: var(--c-brand); margin-bottom: 4px;">匯出專業 PDF 報告</h4>
-                <p style="font-size: 15px; color: var(--c-text-muted); line-height: 1.4;">整合 jsPDF 程式庫，一鍵編排包含原始音訊、主要物種排名、頻譜、反卷積時間軸與田野筆記的正式分析報告。</p>
-              </div>
+            <div class="card slide-up stagger-3" style="display: flex; align-items: center; gap: 24px; padding: 24px 30px;">
+              <div style="font-size: 44px;">📄</div>
+              <h4 style="font-size: 26px; font-weight: 900; color: var(--c-brand);">匯出專業 PDF 報告</h4>
             </div>
 
-            <div class="card slide-up stagger-4" style="display: flex; align-items: center; gap: 24px;">
-              <div style="font-size: 40px;">🔗</div>
-              <div>
-                <h4 style="font-size: 20px; font-weight: 900; color: var(--c-brand); margin-bottom: 4px;">社群媒體輕鬆分享</h4>
-                <p style="font-size: 15px; color: var(--c-text-muted); line-height: 1.4;">自動在剪貼簿中生成含標籤的精美格式短文，並自動在前端合成繪有浮水印的頻譜結果圖，方便貼上分享。</p>
-              </div>
+            <div class="card slide-up stagger-4" style="display: flex; align-items: center; gap: 24px; padding: 24px 30px;">
+              <div style="font-size: 44px;">🔗</div>
+              <h4 style="font-size: 26px; font-weight: 900; color: var(--c-brand);">社群媒體輕鬆分享</h4>
             </div>
 
           </div>
@@ -1017,18 +1044,15 @@
           <div class="ending-core-values slide-up stagger-3">
             
             <div class="ending-value">
-              <h4 class="ending-value-title">可解釋 AI</h4>
-              <p class="ending-value-desc">透過 Occlusion 讓黑盒子模型變透明，促進科學教育與信任。</p>
+              <h4 class="ending-value-title">可解釋模型</h4>
             </div>
 
             <div class="ending-value">
               <h4 class="ending-value-title">多語言支持</h4>
-              <p class="ending-value-desc">內建 20 種在地語言包，消弭數位生態探索的語言隔閡。</p>
             </div>
 
             <div class="ending-value">
               <h4 class="ending-value-title">田野數位化</h4>
-              <p class="ending-value-desc">一鍵產生正式 PDF 與同步雲端，加速野外調查數位化。</p>
             </div>
 
           </div>
@@ -1038,7 +1062,7 @@
 
       <!-- UTILITY FOOTER ELEMENTS -->
       <div class="slide-footer-nav">
-        使用左右方向鍵或空白鍵切換 · EchoWing 114-2 期末成果發表
+        EchoWing 114-2 期末成果發表
       </div>
       
       <div class="slide-counter">
@@ -1060,15 +1084,10 @@
       const stage = document.querySelector('.slide-stage');
       const width = window.innerWidth;
       const height = window.innerHeight;
-      
-      // Calculate scaling factor to fit 1920x1080 to current viewport
       const scale = Math.min(width / 1920, height / 1080);
-      
-      // Apply scaling
       stage.style.transform = `scale(${scale})`;
     }
 
-    // Trigger scaling on resize and load
     window.addEventListener('resize', resizeStage);
     window.addEventListener('load', resizeStage);
     
@@ -1094,7 +1113,7 @@
         progressBar.style.width = `${progressPercent}%`;
       }
 
-      // Update slide index label (e.g. 03 / 10)
+      // Update slide index label
       if (counterLabel) {
         const pad = (n) => String(n).padStart(2, '0');
         counterLabel.textContent = `${pad(currentSlide + 1)} / ${pad(totalSlides)}`;
@@ -1125,8 +1144,8 @@
 
     // MOUSE CLICK NAVIGATION (Right half = Next, Left half = Prev)
     document.addEventListener('click', (e) => {
-      // Ignore clicks on links, details/summary, or buttons
-      if (e.target.closest('button, a, input, select, details, summary')) return;
+      // Ignore clicks on links, details/summary, buttons or search modal
+      if (e.target.closest('button, a, input, select, details, summary, #search-overlay .search-modal, .search-mockup')) return;
 
       const halfWidth = window.innerWidth / 2;
       if (e.clientX > halfWidth) {
@@ -1135,6 +1154,17 @@
         showSlide(currentSlide - 1);
       }
     });
+
+    // INTERACTIVE SEACH DIALOG ACTIONS
+    function openSearchOverlay(event) {
+      event.stopPropagation();
+      document.getElementById('search-overlay').classList.add('active');
+    }
+    
+    function closeSearchOverlay(event) {
+      event.stopPropagation();
+      document.getElementById('search-overlay').classList.remove('active');
+    }
 
     // INITIALIZATION
     resizeStage();
