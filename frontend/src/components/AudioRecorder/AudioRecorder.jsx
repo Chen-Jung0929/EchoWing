@@ -115,7 +115,7 @@ export default function AudioRecorder({
   }, [buildFileFromChunks, clearTimers, onRecordingComplete, stopStream]);
 
   const startRecording = async () => {
-    if (recordingDisabled) return;
+    if (recordingDisabled || phase !== 'idle') return;
 
     setRecorderError('');
     chunksRef.current = [];
@@ -144,7 +144,7 @@ export default function AudioRecorder({
       try {
         recorder = new MediaRecorder(stream);
         mimeRef.current = recorder.mimeType || 'audio/webm';
-      } catch (e) {
+      } catch {
         stopStream();
         setRecorderError(dict.recorderStartError);
         return;
@@ -167,6 +167,8 @@ export default function AudioRecorder({
 
     maxTimerRef.current = window.setTimeout(() => {
       setElapsedMs(MAX_MS);
+      setPhase('stopping');
+      clearTimers();
       finalizeRecording();
     }, MAX_MS);
 
@@ -175,6 +177,7 @@ export default function AudioRecorder({
 
   const stopRecording = () => {
     if (phase !== 'recording') return;
+    setPhase('stopping');
     clearTimers();
     finalizeRecording();
   };
@@ -183,7 +186,7 @@ export default function AudioRecorder({
 
   return (
     <>
-      {!isRecording ? (
+      {phase === 'idle' ? (
         <button
           type="button"
           onClick={recordingDisabled ? undefined : startRecording}
@@ -195,12 +198,12 @@ export default function AudioRecorder({
           }
           aria-label={dict.startRecording}
           aria-disabled={recordingDisabled || undefined}
-          title={recordingDisabled ? dict.inAppBrowserRecordingHint : undefined}
+          title={recordingDisabled ? dict.inAppBrowserRecordingHint : dict.tooltipRecord}
         >
           <MdMic className="h-8 w-8 shrink-0" aria-hidden />
           <span className="text-center text-xs leading-tight">{dict.startRecording}</span>
         </button>
-      ) : (
+      ) : isRecording ? (
         <button
           type="button"
           onClick={stopRecording}
@@ -215,6 +218,20 @@ export default function AudioRecorder({
           <span className="tabular-nums text-[10px] leading-none opacity-60">
             / {formatClock(MAX_MS)}
           </span>
+        </button>
+      ) : (
+        <button
+          type="button"
+          disabled
+          aria-label={dict.stoppingRecording}
+          aria-busy="true"
+          className="flex h-full min-h-[5.5rem] w-full cursor-wait flex-col items-center justify-center gap-1 rounded-xl border-2 border-[var(--c-primary)]/45 bg-[var(--c-primary)]/10 px-1 py-2 font-bold text-[var(--c-primary)] opacity-80"
+        >
+          <span
+            className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--c-primary)]/30 border-t-[var(--c-primary)]"
+            aria-hidden
+          />
+          <span className="text-center text-[10px] leading-tight">{dict.stoppingRecording}</span>
         </button>
       )}
     </>

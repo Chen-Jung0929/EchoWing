@@ -1,9 +1,18 @@
-import { useEffect, useId } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { MdClose } from 'react-icons/md';
+import { MdClose, MdOpenInNew, MdPrivacyTip } from 'react-icons/md';
 
-export default function GuideModal({ open, dict, onClose }) {
+const SECTION_KEYS = ['usage', 'models', 'how', 'privacy', 'credits'];
+
+export default function GuideModal({
+  open,
+  dict,
+  onClose,
+  initialSection = 'usage',
+  onReopenPrivacy,
+}) {
   const titleId = useId();
+  const [section, setSection] = useState(initialSection);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -50,8 +59,32 @@ export default function GuideModal({ open, dict, onClose }) {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
-          <section className="rounded-2xl border border-[var(--c-text)]/10 bg-[var(--c-bg)]/50 p-5">
+        <div
+          className="flex shrink-0 gap-2 overflow-x-auto border-b border-[var(--c-text)]/8 px-4 py-3"
+          role="tablist"
+          aria-label={dict.guideTitle}
+        >
+          {SECTION_KEYS.map((key) => (
+            <button
+              key={key}
+              type="button"
+              role="tab"
+              aria-selected={section === key}
+              onClick={() => setSection(key)}
+              className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-black transition-colors ${
+                section === key
+                  ? 'bg-[var(--c-primary)] text-[var(--c-bg)]'
+                  : 'bg-[var(--c-bg)]/65 text-[var(--c-text)]/65 hover:text-[var(--c-text)]'
+              }`}
+            >
+              {dict.guideTabs[key]}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex-1 overflow-y-auto px-6 py-5">
+          {section === 'usage' ? (
+            <section className="rounded-2xl border border-[var(--c-text)]/10 bg-[var(--c-bg)]/50 p-5">
             <h3 className="text-base font-black text-[var(--c-primary)] mb-3">
               {dict.guideUsageTitle}
             </h3>
@@ -61,11 +94,16 @@ export default function GuideModal({ open, dict, onClose }) {
               ))}
             </ol>
           </section>
+          ) : null}
 
-          <section className="rounded-2xl border border-[var(--c-text)]/10 bg-[var(--c-bg)]/50 p-5">
+          {section === 'models' ? (
+            <section className="rounded-2xl border border-[var(--c-text)]/10 bg-[var(--c-bg)]/50 p-5">
             <h3 className="text-base font-black text-[var(--c-primary)] mb-3">
               {dict.guideModelsTitle}
             </h3>
+            <p className="mb-4 text-sm leading-relaxed text-[var(--c-text)]/70">
+              {dict.guideModelsComparison}
+            </p>
             <div className="space-y-3">
               {dict.guideModels.map((model) => (
                 <article
@@ -73,22 +111,75 @@ export default function GuideModal({ open, dict, onClose }) {
                   className="rounded-xl border border-[var(--c-text)]/10 bg-[var(--c-card)]/60 p-4"
                 >
                   <h4 className="font-black text-[var(--c-text)]">{model.name}</h4>
+                  <dl className="mt-2 grid gap-1 text-xs text-[var(--c-text)]/65 sm:grid-cols-2">
+                    <div><dt className="font-black">{dict.guideModelWindow}</dt><dd>{model.window}</dd></div>
+                    <div><dt className="font-black">{dict.guideModelType}</dt><dd>{model.type}</dd></div>
+                    <div><dt className="font-black">{dict.guideModelSource}</dt><dd>{model.source}</dd></div>
+                  </dl>
                   <p className="mt-1 text-sm text-[var(--c-text)]/75 leading-relaxed">
                     {model.citation}
                   </p>
+                  {model.link ? (
+                    <a
+                      href={model.link}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 inline-flex items-center gap-1 text-xs font-black text-[var(--c-primary)] underline decoration-dotted underline-offset-4"
+                    >
+                      {dict.guideModelExternalLink}
+                      <MdOpenInNew aria-hidden />
+                    </a>
+                  ) : null}
                 </article>
               ))}
             </div>
           </section>
+          ) : null}
 
-          <section className="rounded-2xl border border-[var(--c-text)]/10 bg-[var(--c-bg)]/50 p-5">
+          {section === 'how' ? (
+            <section className="rounded-2xl border border-[var(--c-text)]/10 bg-[var(--c-bg)]/50 p-5">
+              <h3 className="text-base font-black text-[var(--c-primary)] mb-3">
+                {dict.guideHowTitle}
+              </h3>
+              <ol className="list-decimal space-y-2.5 pl-5 text-sm leading-relaxed text-[var(--c-text)]/85">
+                {dict.guideHowSteps.map((step) => <li key={step}>{step}</li>)}
+              </ol>
+            </section>
+          ) : null}
+
+          {section === 'privacy' ? (
+            <section className="rounded-2xl border border-[var(--c-text)]/10 bg-[var(--c-bg)]/50 p-5">
+              <h3 className="flex items-center gap-2 text-base font-black text-[var(--c-primary)] mb-3">
+                <MdPrivacyTip aria-hidden />
+                {dict.guidePrivacyTitle}
+              </h3>
+              <p className="text-sm leading-relaxed text-[var(--c-text)]/80">
+                {dict.guidePrivacyBody}
+              </p>
+              <h4 className="mt-5 font-black text-[var(--c-text)]">{dict.guideDisclaimerTitle}</h4>
+              <p className="mt-1 text-sm leading-relaxed text-[var(--c-text)]/70">
+                {dict.guideDisclaimerBody}
+              </p>
+              <button
+                type="button"
+                onClick={onReopenPrivacy}
+                className="mt-4 rounded-xl border border-[var(--c-primary)]/35 px-3 py-2 text-sm font-black text-[var(--c-primary)] hover:bg-[var(--c-primary)]/10"
+              >
+                {dict.privacyNoticeReopen}
+              </button>
+            </section>
+          ) : null}
+
+          {section === 'credits' ? (
+            <section className="rounded-2xl border border-[var(--c-text)]/10 bg-[var(--c-bg)]/50 p-5">
             <h3 className="text-base font-black text-[var(--c-primary)] mb-2">
-              {dict.guideDisclaimerTitle}
+              {dict.guideCreditsTitle}
             </h3>
             <p className="text-sm text-[var(--c-text)]/80 leading-relaxed whitespace-pre-line">
-              {dict.guideDisclaimerBody}
+              {dict.guideCreditsBody}
             </p>
           </section>
+          ) : null}
         </div>
 
         <div className="shrink-0 border-t border-[var(--c-text)]/8 px-6 py-4 flex justify-end">
