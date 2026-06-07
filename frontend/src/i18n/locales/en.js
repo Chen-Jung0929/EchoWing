@@ -397,6 +397,136 @@ const en = {
   pdfTimeSec: '{sec} s',
   pdfSegmentTitle: 'Segment {label} · {timeRange}',
   pdfFullRecordingSpectrogram: 'Full recording spectrogram',
+
+  apiErrors: {
+    ERR_SERVER_HTTP_ERROR: "Server responded with an error, please try again later.",
+    ERR_SERVER_NOT_READY: "Analysis server is not ready, please try again later.",
+    ERR_BACKEND_TIMEOUT: "Backend preparation timed out, please try again or check if the server is running.",
+    ERR_BACKEND_MODEL_FAILED: "Backend model failed to load.",
+    ERR_STREAM_CALLBACK_REQUIRED: "Server responded with an error, please try again later.",
+    ERR_UNKNOWN_BACKEND: "Server responded with an error, please try again later.",
+  },
+  xaiEducation: {
+    "navLabel": "How It Works / XAI",
+    "eyebrow": "EchoWing Education Page",
+    "title": "How does EchoWing understand sound?",
+    "subtitle": "From audio upload and model prediction to timeline localization and Explainable AI.",
+    "sectionNavLabel": "How It Works Sections",
+    "flowLabel": "EchoWing Audio Analysis Pipeline",
+    "takeawayLabel": "Takeaway:",
+    "backToHome": "Back to Home",
+    "flowSteps": [
+        {
+            "icon": "🎙️",
+            "label": "Audio Input"
+        },
+        {
+            "icon": "〰️",
+            "label": "Preprocessing"
+        },
+        {
+            "icon": "🪟",
+            "label": "Window Prediction"
+        },
+        {
+            "icon": "📊",
+            "label": "Species Score"
+        },
+        {
+            "icon": "⏱️",
+            "label": "Timeline Localization"
+        },
+        {
+            "icon": "🔥",
+            "label": "XAI Heatmap"
+        }
+    ],
+    "sections": [
+        {
+            "id": "overview",
+            "navLabel": "Overview",
+            "kicker": "Overview",
+            "title": "What happens when a bird call enters EchoWing?",
+            "paragraphs": [
+                "EchoWing does not directly \"listen\" to the whole audio at once. Instead, it converts the audio into a signal the model can analyze and feeds it in segments.",
+                "The model outputs candidate species and confidence scores for each time window. EchoWing then aggregates these overlapping windows into a timeline to estimate when sound events occur.",
+                "Finally, the XAI module masks different time segments of the audio to observe how model confidence changes, showing which audio segments the model relied on most."
+            ],
+            "animation": "pipeline",
+            "takeaway": "EchoWing’s output is a mix of model inference and algorithm estimation, not an absolute ground truth annotated by humans."
+        },
+        {
+            "id": "preprocessing",
+            "navLabel": "Preprocessing",
+            "kicker": "Audio preprocessing",
+            "title": "Audio is standardized into a format the model can read",
+            "paragraphs": [
+                "Uploaded or recorded audio may have different formats, sample rates, channels, and volumes. EchoWing decodes, converts to mono, and resamples the audio to meet model requirements.",
+                "The model then transforms the time-domain acoustic waves into a time-frequency spectrogram-like acoustic feature, making frequency variations, short calls, and continuous songs easier to recognize."
+            ],
+            "formula": "x(t) \\rightarrow S(f,t)",
+            "formulaCaption": "Raw acoustic wave x(t) is converted to a time-frequency representation S(f,t).",
+            "animation": "spectrogram",
+            "takeaway": "Models usually do not directly read raw waveforms, but analyze transformed acoustic features."
+        },
+        {
+            "id": "windows",
+            "navLabel": "Window Prediction",
+            "kicker": "Sliding-window prediction",
+            "title": "The model analyzes fixed-length windows instead of the entire audio",
+            "paragraphs": [
+                "Bird sound models are usually trained on fixed-length audio clips. EchoWing slices a long recording into multiple time windows and feeds them to the model individually.",
+                "Each time window receives a set of species scores, representing which bird sounds the model thinks might be present in that specific window."
+            ],
+            "formula": "p_i^{(c)} = f_c(x_{w_i})",
+            "formulaCaption": "Model f outputs a score p_i^{(c)} for species c on the i-th time window x_{w_i}.",
+            "animation": "slidingWindow",
+            "takeaway": "A single model score usually corresponds to an entire time window, not a single instant."
+        },
+        {
+            "id": "timeline",
+            "navLabel": "Localization",
+            "kicker": "Timeline localization",
+            "title": "Estimating a finer timeline from window-level scores",
+            "paragraphs": [
+                "If a bird call truly occurs at a certain time point, all time windows covering that point are likely to have elevated species scores.",
+                "EchoWing projects window scores back onto a finer timeline and normalizes by coverage, estimating which time points contributed most to the model’s high scores."
+            ],
+            "formula": "\\hat{z}_t^{(c)} = \\frac{\\sum_i A_{i,t} p_i^{(c)}}{\\sum_i A_{i,t} + \\lambda}",
+            "formulaCaption": "The more high-score windows covering time t, the higher the estimated activity \\hat{z}_t^{(c)}.",
+            "animation": "deconvolution",
+            "takeaway": "This is an activity curve estimated from window scores, not manual second-by-second annotation."
+        },
+        {
+            "id": "occlusion",
+            "navLabel": "XAI Heatmap",
+            "kicker": "Occlusion-based XAI",
+            "title": "Masking a small audio segment to observe confidence drop",
+            "paragraphs": [
+                "EchoWing’s XAI temporarily masks or lowers a small segment of the audio and reruns the model.",
+                "If the confidence score for a species drops significantly after masking, it means the model heavily relied on that audio segment to make its decision."
+            ],
+            "formula": "I_t^{(c)} = p^{(c)}(x) - p^{(c)}(x_{\\setminus t})",
+            "formulaCaption": "A larger score drop after masking implies that time segment is more important for the prediction.",
+            "animation": "occlusion",
+            "takeaway": "XAI shows which audio segments the model relied on, but does not guarantee it is the only true location of the bird call."
+        },
+        {
+            "id": "limits",
+            "navLabel": "Limitations",
+            "kicker": "Limitations",
+            "title": "How to correctly interpret EchoWing results?",
+            "paragraphs": [
+                "Confidence scores are not ecological occurrence probabilities.",
+                "The XAI heatmap shows model reliance, not manually annotated true bird call locations.",
+                "The model may be disturbed if multiple birds, insects, human voices, or background noises are present simultaneously.",
+                "EchoWing is an educational, exploratory, and assistive tool; formal surveys still require manual verification and field records."
+            ],
+            "animation": "limits",
+            "takeaway": "AI results should be treated as supportive clues, rather than replacing observer judgment."
+        }
+    ]
+}
 };
 
 export default en;

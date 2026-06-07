@@ -2,7 +2,6 @@ import { useEffect, useId, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { MdClose, MdOpenInNew, MdPrivacyTip } from 'react-icons/md';
 
-const SECTION_KEYS = ['usage', 'models', 'how', 'privacy', 'credits'];
 
 export default function GuideModal({
   open,
@@ -64,7 +63,7 @@ export default function GuideModal({
           role="tablist"
           aria-label={dict.guideTitle}
         >
-          {SECTION_KEYS.map((key) => (
+          {Object.keys(dict.guideTabs).map((key) => (
             <button
               key={key}
               type="button"

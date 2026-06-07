@@ -588,14 +588,7 @@ export default function ChunkResultsView({
         <p className="text-center text-red-500 text-sm mt-4">{dict.errorTitle}</p>
       )}
 
-      <details className="mt-6 bg-[var(--c-bg)]/50 rounded-xl p-4">
-        <summary className="cursor-pointer font-bold text-[var(--c-text)]/70 text-sm">
-          {dict.rawResponse}
-        </summary>
-        <pre className="mt-3 text-xs overflow-auto max-h-64 text-[var(--c-text)]/80">
-          {JSON.stringify(result, null, 2)}
-        </pre>
-      </details>
+
 
       <div className="text-center mt-8">
         <button

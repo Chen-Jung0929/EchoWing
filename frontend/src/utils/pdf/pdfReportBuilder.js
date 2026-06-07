@@ -1,5 +1,3 @@
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { formatObservedAtForDisplay } from '../downloadMetadata';
 import { PdfLayoutEngine } from './pdfLayoutEngine';
 import {
@@ -98,7 +96,7 @@ function hasOverviewNotes(overview) {
  * @param {{ head: string[][], body: string[][], startY?: number }} tableOpts
  * @returns {number} table height in mm (approx)
  */
-function drawTable(pdf, layout, tableOpts) {
+function drawTable(pdf, layout, tableOpts, autoTable) {
   const startY = tableOpts.startY ?? layout.y;
   const lang = layout.lang ?? 'zh';
   const body = (tableOpts.body ?? []).map((row) =>
@@ -261,6 +259,11 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
   );
   const sampleId = analysisId || sourceName;
 
+  const [{ jsPDF }, { default: autoTable }] = await Promise.all([
+    import('jspdf'),
+    import('jspdf-autotable'),
+  ]);
+
   const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
   pdf.setProperties({
     title: reportTitle,
@@ -349,7 +352,7 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
       ],
     ],
     body: timelineSpeciesTableBody(timelineSpeciesSummary, lang, dict),
-  });
+  }, autoTable);
 
   layout.drawSectionHeading(dict.pdfSpeciesEvents, {
     compact: true,
@@ -365,7 +368,7 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
       ],
     ],
     body: timelineEventTableBody(timelineEventRows, lang, dict),
-  });
+  }, autoTable);
 
   if (stitchedSpectrogram) {
     layout.drawSectionHeading(dict.pdfFullSpectrogram, {
@@ -486,7 +489,7 @@ export async function buildBirdReportPdf(reportModel, options = {}) {
         ],
       ],
       body: timelineEventTableBody(sp.events, lang, dict).map((row) => row.slice(1)),
-    });
+    }, autoTable);
 
     layout.drawSectionHeading(
       dict.pdfFullSpecSpeciesLabels,

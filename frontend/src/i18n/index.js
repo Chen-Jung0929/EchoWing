@@ -17,6 +17,21 @@ import ms from './locales/ms.js';
 const messages = { zh, en, ja, ko, fr, es, th, de, lzh, id, yue, ms };
 export const SUPPORTED_LANGS = Object.keys(messages);
 
+export const LANG_OPTIONS = [
+  { code: 'zh', label: '中文' },
+  { code: 'en', label: 'English' },
+  { code: 'ja', label: '日本語' },
+  { code: 'ko', label: '한국어' },
+  { code: 'fr', label: 'Français' },
+  { code: 'es', label: 'Español' },
+  { code: 'th', label: 'ไทย' },
+  { code: 'de', label: 'Deutsch' },
+  { code: 'lzh', label: '文言文' },
+  { code: 'id', label: 'Bahasa Indonesia' },
+  { code: 'yue', label: '粵語' },
+  { code: 'ms', label: 'Bahasa Melayu' },
+];
+
 export function detectBrowserLanguage() {
   if (typeof navigator === 'undefined') return 'en';
   const code = String(navigator.languages?.[0] ?? navigator.language ?? 'en').toLowerCase();
