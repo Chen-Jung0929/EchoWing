@@ -1,4 +1,3 @@
-import React from 'react';
 
 export function OcclusionXaiAnimation({ dict }) {
   const bars = Array.from({ length: 18 }, (_, index) => {

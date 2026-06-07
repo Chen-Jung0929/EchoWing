@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import usePageMeta from '../../hooks/usePageMeta';
 import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
 import './XaiEducationPage.css';
 import { MathBlock } from './math/MathBlock.jsx';
 import { AudioToSpectrogramAnimation } from './animations/AudioToSpectrogramAnimation.jsx';
@@ -27,9 +26,8 @@ function AnimationSlot({ type, dict }) {
 
 export default function XaiEducationPage({ dict }) {
   const xaiDict = dict.xaiEducation || {};
-  usePageMeta(xaiDict.navLabel || 'How It Works', xaiDict.subtitle);
-  const navigate = useNavigate();
-  const sections = xaiDict.sections || [];
+  usePageMeta(xaiDict.navLabel, xaiDict.subtitle);
+    const sections = xaiDict.sections || [];
 
   useEffect(() => {
     const script = document.createElement('script');
@@ -65,7 +63,7 @@ export default function XaiEducationPage({ dict }) {
             to="/"
             className="text-sm font-bold text-[var(--c-primary)] hover:text-[var(--c-text)] transition-colors flex items-center gap-2 no-underline"
           >
-            <span aria-hidden="true">←</span> {xaiDict.backToHome || 'Back to Home'}
+            <span aria-hidden="true">←</span> {xaiDict.backToHome}
           </Link>
         </div>
 

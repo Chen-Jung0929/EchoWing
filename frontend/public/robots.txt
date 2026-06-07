@@ -1,7 +1,4 @@
 User-agent: *
 Allow: /
-Disallow: /loading
-Disallow: /error
-Disallow: /result
 
 Sitemap: https://echo-wing.vercel.app/sitemap.xml

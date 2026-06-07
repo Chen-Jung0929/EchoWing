@@ -1,4 +1,3 @@
-import React from 'react';
 import usePageMeta from '../hooks/usePageMeta';
 import KiwiAnimation from '../features/loading/KiwiAnimation';
 import { useAudioAnalysisContext } from '../context/AudioAnalysisContext';

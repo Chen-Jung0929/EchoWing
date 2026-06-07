@@ -63,7 +63,7 @@ export default function PerchResultBody({
 
       <section className="mt-6 bg-[var(--c-bg)]/72 rounded-2xl p-6">
         <h3 className="text-xl font-black text-[var(--c-text)] mb-4">
-          {dict.decisionSupport}
+          {dict.decisionSupportTitle}
         </h3>
         <div className="space-y-4 text-[var(--c-text)]/80 leading-relaxed">
           <div>

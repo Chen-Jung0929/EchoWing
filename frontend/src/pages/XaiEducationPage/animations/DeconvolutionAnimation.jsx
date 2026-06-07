@@ -1,4 +1,3 @@
-import React from 'react';
 
 export function DeconvolutionAnimation({ dict }) {
   const windows = [

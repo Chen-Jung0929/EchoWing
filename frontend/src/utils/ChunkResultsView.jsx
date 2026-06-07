@@ -484,7 +484,7 @@ export default function ChunkResultsView({
           </details>
         </header>
 
-        {result.warnings?.length > 0 && (
+        {Array.isArray(result.warnings) && result.warnings.length > 0 && (
           <section className="mb-4 bg-amber-500/10 rounded-xl p-3 text-xs text-amber-800 dark:text-amber-200">
             <p className="font-black mb-1">{dict.warnings}</p>
             <ul className="list-disc pl-4 space-y-0.5">

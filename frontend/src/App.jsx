@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { SpeedInsights } from '@vercel/speed-insights/react';
-import { BrowserRouter, Routes, Route, useNavigate, useLocation , Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation , Link } from 'react-router-dom';
 import { MdLanguage, MdDarkMode, MdLightMode, MdHelpOutline } from 'react-icons/md';
 
 import { detectBrowserLanguage, getDict, LANG_OPTIONS } from './i18n';
@@ -44,8 +44,7 @@ function AppLayout() {
   });
 
   const dict = getDict(lang);
-  const navigate = useNavigate();
-
+  
   useEffect(() => {
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
     const htmlLang = LANG_OPTIONS.find(o => o.code === lang)?.htmlLang || lang;
@@ -131,8 +130,8 @@ function AppLayout() {
             </div>
 
             <div className="hidden md:flex items-center gap-6 text-sm font-bold text-[var(--c-text)]/70 mr-auto ml-8">
-              <Link to="/" className="nav-link-button no-underline">{dict.xaiEducation?.homeLabel || 'Home'}</Link>
-              <Link to="/how-it-works" className="nav-link-button no-underline">{dict.xaiEducation?.navLabel || 'How It Works / XAI'}</Link>
+              <Link to="/" className="nav-link-button no-underline">{dict.xaiEducation?.homeLabel}</Link>
+              <Link to="/how-it-works" className="nav-link-button no-underline">{dict.xaiEducation?.navLabel}</Link>
             </div>
 
             <div className="flex items-center gap-1">
@@ -226,9 +225,9 @@ function AppLayout() {
         
         <footer className="relative z-10 border-t border-[var(--c-text)]/10 py-6 text-center text-sm text-[var(--c-text)]/50">
           <div className="max-w-6xl mx-auto px-6">
-            <p>© {new Date().getFullYear()} EchoWing Team. {dict.footerRights || 'All rights reserved.'}</p>
+            <p>© {new Date().getFullYear()} EchoWing Team. {dict.footerRights}</p>
             <p className="mt-1">
-              {dict.footerDescription || 'AI-powered bird sound recognition platform.'}
+              {dict.footerDescription}
             </p>
           </div>
         </footer>
