@@ -2,19 +2,34 @@ import zh from './locales/zh.js';
 import en from './locales/en.js';
 import ja from './locales/ja.js';
 import ko from './locales/ko.js';
+import fr from './locales/fr.js';
+import es from './locales/es.js';
+import th from './locales/th.js';
+import de from './locales/de.js';
+import lzh from './locales/lzh.js';
+import id from './locales/id.js';
+import yue from './locales/yue.js';
+import ms from './locales/ms.js';
 
 /** @typedef {typeof zh} LocaleMessages */
-/** @typedef {'zh' | 'en' | 'ja' | 'ko'} LangCode */
+/** @typedef {'zh' | 'en' | 'ja' | 'ko' | 'fr' | 'es' | 'th' | 'de' | 'lzh' | 'id' | 'yue' | 'ms'} LangCode */
 
-const messages = { zh, en, ja, ko };
-export const SUPPORTED_LANGS = ['zh', 'en', 'ja', 'ko'];
+const messages = { zh, en, ja, ko, fr, es, th, de, lzh, id, yue, ms };
+export const SUPPORTED_LANGS = Object.keys(messages);
 
 export function detectBrowserLanguage() {
   if (typeof navigator === 'undefined') return 'en';
   const code = String(navigator.languages?.[0] ?? navigator.language ?? 'en').toLowerCase();
+  if (code.startsWith('yue') || code.startsWith('zh-hk') || code.startsWith('zh-mo')) return 'yue';
   if (code.startsWith('zh')) return 'zh';
   if (code.startsWith('ja')) return 'ja';
   if (code.startsWith('ko')) return 'ko';
+  if (code.startsWith('fr')) return 'fr';
+  if (code.startsWith('es')) return 'es';
+  if (code.startsWith('th')) return 'th';
+  if (code.startsWith('de')) return 'de';
+  if (code.startsWith('id')) return 'id';
+  if (code.startsWith('ms')) return 'ms';
   return 'en';
 }
 
@@ -38,4 +53,4 @@ export function formatMessage(template, params = {}) {
   );
 }
 
-export { zh, en, ja, ko };
+export { zh, en, ja, ko, fr, es, th, de, lzh, id, yue, ms };

@@ -22,6 +22,7 @@ export function buildFullReportModel({
   windowSec = modelWindowSec(modelName),
   totalDurationSec = 0,
   timeline = null,
+  xaiAvailable = false,
 }) {
   const resolvedThreshold = resolveConfidenceThreshold(confidenceThreshold);
   const okChunks = (chunks ?? []).filter((c) => !c.error);
@@ -90,5 +91,6 @@ export function buildFullReportModel({
     timelineSpeciesSummary,
     eventSegments,
     timelineEvents: timeline?.species_events ?? [],
+    xaiAvailable,
   };
 }
