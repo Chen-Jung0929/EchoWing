@@ -772,6 +772,22 @@ def _process_audio(
 
 import json
 
+
+async def _client_disconnected(request: Request | None) -> bool:
+    if request is None:
+        return False
+    return await request.is_disconnected()
+
+
+async def _cancel_tasks(tasks: list[asyncio.Task]) -> None:
+    pending = [task for task in tasks if not task.done()]
+    if not pending:
+        return
+    for task in pending:
+        task.cancel()
+    await asyncio.gather(*pending, return_exceptions=True)
+
+
 async def _stream_process_audio(
     settings: Settings,
     predictors: dict,
@@ -782,6 +798,7 @@ async def _stream_process_audio(
     claimed_sample_rate: int,
     model_selection: str,
     taxonomy_by_model: dict[str, dict[str, dict[str, str]]] | None,
+    request: Request | None = None,
 ):
     by_index = sorted(blobs, key=lambda x: x[0])
     waveforms = []
@@ -871,6 +888,9 @@ async def _stream_process_audio(
 
     # Phase 1: parallel sliding-window batches (spectrogram only on display-aligned windows)
     for wave_start in range(0, len(batch_groups), batch_parallel):
+        if await _client_disconnected(request):
+            logger.info("Client disconnected during Phase 1; stopping stream")
+            return
         wave = batch_groups[wave_start : wave_start + batch_parallel]
         wave_results = await asyncio.gather(*(run_batch_async(bs) for bs in wave))
         wave_items: list[tuple] = []
@@ -910,6 +930,10 @@ async def _stream_process_audio(
                     }
                 )
 
+    if await _client_disconnected(request):
+        logger.info("Client disconnected after Phase 1; stopping stream")
+        return
+
     phase1_ms = int((time.perf_counter() - phase1_t0) * 1000)
     timeline_payload = build_timeline_deconv_payload(
         evidence_acc,
@@ -924,6 +948,10 @@ async def _stream_process_audio(
     yield f"data: {json.dumps(timeline_event)}\n\n"
     await asyncio.sleep(0)
 
+    if await _client_disconnected(request):
+        logger.info("Client disconnected before Phase 2; stopping stream")
+        return
+
     # Phase 2: XAI per display-aligned window, then patch heatmaps via xai_update events
     if settings.enable_xai:
         phase2_t0 = time.perf_counter()
@@ -935,6 +963,8 @@ async def _stream_process_audio(
 
             async def run_xai_job(job: dict) -> dict:
                 async with xai_sem:
+                    if await _client_disconnected(request):
+                        raise asyncio.CancelledError("Client disconnected")
                     cw = job["chunk_wave"]
                     target_idx = job["target_idx"]
 
@@ -949,6 +979,8 @@ async def _stream_process_audio(
                         )
 
                     xai_heatmap = await run_in_threadpool(run_xai)
+                    if await _client_disconnected(request):
+                        raise asyncio.CancelledError("Client disconnected")
                     return {
                         "event": "xai_update",
                         "index": job["index"],
@@ -958,12 +990,41 @@ async def _stream_process_audio(
                     }
 
             tasks = [asyncio.create_task(run_xai_job(job)) for job in xai_jobs]
-            for finished in asyncio.as_completed(tasks):
-                update_event = await finished
-                yield f"data: {json.dumps(update_event)}\n\n"
-                await asyncio.sleep(0.01)
+            pending = set(tasks)
+            try:
+                while pending:
+                    if await _client_disconnected(request):
+                        logger.info(
+                            "Client disconnected during Phase 2; cancelling %d XAI jobs",
+                            len(pending),
+                        )
+                        await _cancel_tasks(list(pending))
+                        return
+                    done, pending = await asyncio.wait(
+                        pending,
+                        timeout=0.25,
+                        return_when=asyncio.FIRST_COMPLETED,
+                    )
+                    for task in done:
+                        if task.cancelled():
+                            continue
+                        exc = task.exception()
+                        if exc is not None:
+                            if isinstance(exc, asyncio.CancelledError):
+                                continue
+                            logger.warning("XAI job failed: %s", exc)
+                            continue
+                        update_event = task.result()
+                        yield f"data: {json.dumps(update_event)}\n\n"
+                        await asyncio.sleep(0.01)
+            finally:
+                await _cancel_tasks(tasks)
         else:
             logger.info("Phase 2: XAI skipped (no display windows above threshold)")
+
+        if await _client_disconnected(request):
+            logger.info("Client disconnected after Phase 2; stopping stream")
+            return
 
         phase2_ms = max(0, round((time.perf_counter() - phase2_t0) * 1000))
         if xai_jobs and phase2_ms < 1:
@@ -1086,18 +1147,29 @@ async def stream_predict(
         blobs.append((chunk_idx, data, name))
 
     async def event_generator():
-        async with _prediction_slot(request.app):
-            async for chunk in _stream_process_audio(
-                settings,
-                predictors,
-                taxonomy,
-                blobs,
-                original_filename=original_filename,
-                claimed_sample_rate=sample_rate,
-                model_selection=model_selection,
-                taxonomy_by_model=taxonomy_by_model,
-            ):
-                yield chunk
-            yield "data: {\"event\": \"done\"}\n\n"
+        disconnected = False
+        try:
+            async with _prediction_slot(request.app):
+                async for chunk in _stream_process_audio(
+                    settings,
+                    predictors,
+                    taxonomy,
+                    blobs,
+                    original_filename=original_filename,
+                    claimed_sample_rate=sample_rate,
+                    model_selection=model_selection,
+                    taxonomy_by_model=taxonomy_by_model,
+                    request=request,
+                ):
+                    if await _client_disconnected(request):
+                        disconnected = True
+                        logger.info("Client disconnected; closing stream-predict")
+                        break
+                    yield chunk
+                if not disconnected and not await _client_disconnected(request):
+                    yield "data: {\"event\": \"done\"}\n\n"
+        except asyncio.CancelledError:
+            logger.info("stream-predict generator cancelled")
+            raise
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")

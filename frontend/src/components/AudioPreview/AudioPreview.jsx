@@ -3,8 +3,7 @@ import { MdClose, MdDownload, MdRefresh } from 'react-icons/md';
 import { formatMessage } from '../../i18n';
 import { MAX_AUDIO_DURATION_SEC, MIN_AUDIO_DURATION_SEC } from '../../utils/audioDuration';
 
-function formatBytes(bytes) {
-  if (!Number.isFinite(bytes) || bytes < 0) return '—';
+function formatBytes(bytes) {  if (!Number.isFinite(bytes) || bytes < 0) return '—';
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -15,8 +14,14 @@ function formatDuration(seconds) {
   return `${seconds.toFixed(1)} s`;
 }
 
-export default function AudioPreview({
-  file,
+function isVideoPreviewFile(file) {
+  const type = (file?.type || '').toLowerCase();
+  if (type.startsWith('video/')) return true;
+  const ext = file?.name?.includes('.') ? file.name.split('.').pop().toLowerCase() : '';
+  return ['mp4', 'mov', 'mkv', 'webm', 'avi', 'wmv', '3gp'].includes(ext);
+}
+
+export default function AudioPreview({  file,
   metadata,
   recorded = false,
   dict,
@@ -24,14 +29,19 @@ export default function AudioPreview({
   onReplace,
   onDownload,
 }) {
-  const [url] = useState(() => URL.createObjectURL(file));
+  const [url, setUrl] = useState(null);
+  const isVideoPreview = isVideoPreviewFile(file);
 
   useEffect(() => {
-    return () => URL.revokeObjectURL(url);
-  }, [url]);
+    const objectUrl = URL.createObjectURL(file);
+    setUrl(objectUrl);
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+      setUrl(null);
+    };
+  }, [file]);
 
-  const durationState = useMemo(() => {
-    if (metadata.status === 'decoding') return { tone: 'muted', text: dict.audioDurationDetecting };
+  const durationState = useMemo(() => {    if (metadata.status === 'decoding') return { tone: 'muted', text: dict.audioDurationDetecting };
     if (metadata.status === 'unavailable') return { tone: 'warning', text: dict.audioDurationUnavailable };
     if (metadata.duration < MIN_AUDIO_DURATION_SEC) return { tone: 'error', text: dict.fileTooShort };
     if (metadata.duration > MAX_AUDIO_DURATION_SEC + 0.5) return { tone: 'error', text: dict.fileTooLong };
@@ -92,16 +102,35 @@ export default function AudioPreview({
         </div>
       </div>
 
-      <audio
-        className="mt-3 w-full"
-        controls
-        preload="metadata"
-        src={url}
-        aria-label={dict.audioPlaybackLabel}
-      />
+      {url ? (
+        isVideoPreview ? (
+          <video
+            key={url}
+            className="mt-3 w-full rounded-lg"
+            controls
+            preload="auto"
+            src={url}
+            aria-label={dict.audioPlaybackLabel}
+          />
+        ) : (
+          <audio
+            key={url}
+            className="mt-3 w-full"
+            controls
+            preload="auto"
+            src={url}
+            aria-label={dict.audioPlaybackLabel}
+          />
+        )
+      ) : (
+        <div
+          className="mt-3 h-10 animate-pulse rounded-lg bg-[var(--c-text)]/5"
+          aria-busy="true"
+          aria-label={dict.audioPlaybackLabel}
+        />
+      )}
 
-      <dl className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-        <div>
+      <dl className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">        <div>
           <dt className="text-[var(--c-text)]/50">{dict.audioDurationLabel}</dt>
           <dd className="font-bold text-[var(--c-text)]">{formatDuration(metadata.duration)}</dd>
         </div>

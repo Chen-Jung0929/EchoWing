@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { isRemoteApiBase, waitForBackendReady, analyzeAudioStream } from '../services/api';
 import { DEFAULT_CONFIDENCE_THRESHOLD, resolveConfidenceThreshold } from '../config/confidenceThreshold';
 import { buildSpectrogramCache } from '../utils/spectrogramCache';
@@ -10,6 +11,7 @@ import { decodeAudioDuration, MIN_AUDIO_DURATION_SEC, MAX_AUDIO_DURATION_SEC } f
 const USE_MOCK_FALLBACK = false;
 const MOCK_RESULT_URL = '/mock_data/perch_result.json';
 const MIN_SERVER_WAKING_HINT_MS = 3000;
+const ANALYSIS_ROUTES = new Set(['/loading', '/result']);
 
 function wait(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
@@ -29,6 +31,7 @@ async function loadMockPredictionResult(file) {
 }
 
 export function useAudioAnalysis(dict, onNavigate) {
+  const location = useLocation();
   const [selectedFile, setSelectedFile] = useState(null);
   const [isRecordedFile, setIsRecordedFile] = useState(false);
   const [selectedFileMetadata, setSelectedFileMetadata] = useState({ status: 'idle', duration: null });
@@ -44,6 +47,7 @@ export function useAudioAnalysis(dict, onNavigate) {
   const predictionStartedAtRef = useRef(null);
   const phase1StartedAtRef = useRef(null);
   const phase2StartedAtRef = useRef(null);
+  const prevPathRef = useRef(location.pathname);
 
   useEffect(() => {
     if (!selectedFile) return undefined;
@@ -79,12 +83,34 @@ export function useAudioAnalysis(dict, onNavigate) {
     setErrorMessage('');
   };
 
-  const resetToLanding = () => {
+  const cancelAnalysis = () => {
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
+    predictionStartedAtRef.current = null;
+    phase1StartedAtRef.current = null;
+    phase2StartedAtRef.current = null;
+    setLoadingHint('');
+    setIsProcessing(false);
     handleFileClear();
+  };
+
+  const resetToLanding = () => {
+    cancelAnalysis();
     onNavigate?.('/');
   };
+
+  useEffect(() => {
+    const prev = prevPathRef.current;
+    const next = location.pathname;
+    prevPathRef.current = next;
+
+    if (prev === next) return;
+
+    const leftAnalysisFlow = ANALYSIS_ROUTES.has(prev) && !ANALYSIS_ROUTES.has(next);
+    if (leftAnalysisFlow && next !== '/error') {
+      cancelAnalysis();
+    }
+  }, [location.pathname]);
 
   const resolvePhase2Ms = (timing = {}, prev) => {
     const clientMs = phase2StartedAtRef.current != null ? Date.now() - phase2StartedAtRef.current : undefined;

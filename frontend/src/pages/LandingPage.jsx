@@ -79,10 +79,10 @@ export default function LandingPage({ dict, openGuide }) {
           <div className="flex w-full min-w-0 flex-col gap-2">
             <div className="flex w-full min-w-0 items-stretch gap-3">
               <label
-                className="flex min-h-[5.5rem] min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-[var(--c-primary)] py-4 text-lg font-bold text-[var(--c-primary)] transition-all duration-300 hover:bg-[var(--c-primary)] hover:text-[var(--c-muted)]"
+                className="group flex min-h-[5.5rem] min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed border-[var(--c-primary)] py-4 text-lg font-bold text-[var(--c-primary)] transition-all duration-300 hover:bg-[var(--c-primary)] hover:text-[var(--c-muted)]"
                 title={dict.tooltipUpload}
               >
-                <MdCloudUpload className="h-10 w-10 text-[var(--c-primary)]" />
+                <MdCloudUpload className="h-10 w-10 text-current transition-colors" />
                 <span className="px-1 text-center leading-tight">{dict.uploadBtn}</span>
                 <input
                   type="file"

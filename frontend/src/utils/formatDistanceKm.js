@@ -1,3 +1,5 @@
+import { getDict } from '../i18n';
+
 /**
  * @param {number} km
  * @param {'zh'|'en'} lang

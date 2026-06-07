@@ -57,6 +57,7 @@ function SpectrogramEventSegmentLabels({
   onSelectEvent,
   getLocalizedText,
   lang,
+  dict,
 }) {
   const segments = useMemo(() => buildEventRangeSegments(events), [events]);
   if (!segments.length || durationSec <= 0) return null;
@@ -521,6 +522,7 @@ export default function SpectrogramView({
               onSelectEvent={onSelectEvent}
               getLocalizedText={getLocalizedText}
               lang={lang}
+              dict={dict}
             />
             <SpectrogramPlot
               spectrogram={spectrogram}

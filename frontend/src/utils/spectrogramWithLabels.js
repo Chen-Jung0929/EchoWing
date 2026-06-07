@@ -5,6 +5,7 @@ import {
 } from './spectrogramCache';
 import { buildEventRangeSegments } from './timeline/eventRangeSegments.js';
 import { getEventPeakTimes } from './timeline/mergeConsecutiveEvents.js';
+import { getDict } from '../i18n';
 
 function shiftEventsToLocalTime(events, offsetSec) {
   if (!offsetSec) return events ?? [];
@@ -176,11 +177,12 @@ export function renderSpectrogramWithLabels(spectrogram, options = {}) {
   ctx.lineWidth = 1;
   ctx.strokeRect(axisPadL, plotY, resolvedPlotW, plotSize.height);
 
+  const dict = getDict(lang);
+
   if (showAxes) {
     ctx.fillStyle = '#4b5563';
     ctx.font = '11px Helvetica, Arial, sans-serif';
-    const dict = getDict(lang);
-  const xLabel = dict.spectrogramXLabel || 'Time (seconds)';
+    const xLabel = dict.spectrogramXLabel || 'Time (seconds)';
     const yLabel = dict.spectrogramYLabel || 'Mel frequency';
     ctx.textAlign = 'center';
     ctx.fillText(xLabel, axisPadL + resolvedPlotW / 2, plotY + plotSize.height + 16);
