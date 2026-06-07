@@ -178,7 +178,17 @@ TRIAGELENS_PERCH_XAI_STRIDE_SEC=0.3
 
 ## 8. Artifact 位置
 
-GitHub 不包含大型 `.tflite` artifacts。NCHC 產出的模型位於：
+三個 `.tflite` artifacts 已透過 Git LFS 上傳到本功能分支：
+
+`feature/perch-cpu-onnx-int8-optimization`
+
+Git checkout 後若只有 LFS pointer，請執行：
+
+```bash
+git lfs pull
+```
+
+NCHC 產出的原始模型副本也位於：
 
 `/staging/biology/kevinlin0411/EchoWing/artifacts/perch_cpu_optimization`
 

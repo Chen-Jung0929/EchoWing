@@ -78,4 +78,3 @@ backend/.hf_cache/
 scripts/google-sheets/
 # Perch CPU optimization binaries are generated locally or on NCHC.
 artifacts/perch_cpu_optimization/*.onnx
-artifacts/perch_cpu_optimization/*.tflite

@@ -1,7 +1,8 @@
 # NCHC Benchmarked Artifact Manifest
 
 These are the model artifacts generated and benchmarked on NCHC in job
-`1472128`. Generated local copies may have different hashes.
+`1472128`. The exact benchmarked artifacts are tracked on the feature branch
+through Git LFS.
 
 | artifact | size MB | SHA256 | status |
 |---|---:|---|---|
