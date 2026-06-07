@@ -37,7 +37,7 @@ npm run dev
 
 | 區塊 | 功能 |
 |------|------|
-| **首頁** | 上傳音檔／影片、錄音、日／夜主題、12國語言支援 |
+| **首頁** | 上傳音檔／影片、錄音、日／夜主題、17國語言支援 |
 | **XAI 教學頁** | 獨立的運作原理與 XAI 頁面，包含視覺動畫與數學推導解說流程 |
 | **推論流程** | 音檔上傳 -> `POST /api/stream-predict`（SSE） |
 | **串流階段** | ① 各窗推論 + 頻譜 → ② 各窗 XAI → `xai_done` |
@@ -162,7 +162,7 @@ BirdCLEF/
         │   ├── shareResult.js          # 分享文字模板、平台／系統分享
         │   ├── ShareResultMenu.jsx
         │   └── pdf/
-        └── i18n/locales/zh.js · en.js
+        └── i18n/locales/zh.js · en.js 等 17 國語系
 ```
 
 ---
